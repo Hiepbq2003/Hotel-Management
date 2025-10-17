@@ -27,7 +27,7 @@ const Footer = () => {
                                         marginBottom: "15px",
                                     }}
                                 >
-                                    🌸 Flowerly
+                                    ✨<span style={{ color: '#FFBF58' }}>Mr.</span >STELLAR
                                 </div>
                                 <p style={{ color: "#ccc", lineHeight: "1.6" }}>
                                     We inspire and reach millions of travelers <br />
@@ -51,20 +51,21 @@ const Footer = () => {
                                                 transition: "all 0.3s",
                                             }}
                                             onMouseEnter={(e) => {
-                                                e.target.style.backgroundColor = "#ff4d6d";
-                                                e.target.style.color = "#fff";
-                                                e.target.style.borderColor = "#ff4d6d";
+                                                e.currentTarget.style.backgroundColor = "var(--main-color)";
+                                                e.currentTarget.style.color = "#fff";
+                                                e.currentTarget.style.borderColor = "var(--main-color)";
                                             }}
                                             onMouseLeave={(e) => {
-                                                e.target.style.backgroundColor = "transparent";
-                                                e.target.style.color = "#fff";
-                                                e.target.style.borderColor = "#555";
+                                                e.currentTarget.style.backgroundColor = "transparent";
+                                                e.currentTarget.style.color = "#fff";
+                                                e.currentTarget.style.borderColor = "#555";
                                             }}
                                         >
                                             <Icon />
                                         </span>
                                     ))}
                                 </div>
+
                             </Col>
 
                             {/* --- Middle: Contact --- */}
@@ -73,7 +74,7 @@ const Footer = () => {
                                     style={{
                                         fontWeight: "600",
                                         fontSize: "1.1rem",
-                                        color: "#fff",
+                                        color: "var(--main-color)",
                                     }}
                                 >
                                     CONTACT US
@@ -92,7 +93,7 @@ const Footer = () => {
                                     style={{
                                         fontWeight: "600",
                                         fontSize: "1.1rem",
-                                        color: "#fff",
+                                        color: "var(--main-color)",
                                     }}
                                 >
                                     NEW LATEST
@@ -108,9 +109,20 @@ const Footer = () => {
                                     />
                                     <InputGroup.Text
                                         style={{
-                                            backgroundColor: "#ff4d6d",
+                                            backgroundColor: "var(--main-color)",
                                             color: "#fff",
                                             cursor: "pointer",
+                                            border: "1px solid var(--main-color)",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = "#6d2b91";
+                                            e.currentTarget.style.color = "light gray";
+                                            e.currentTarget.style.borderColor = "#6d2b91";
+                                        }}
+                                        onMouseLeave={(e) => {                                           
+                                            e.currentTarget.style.backgroundColor = "var(--main-color)";
+                                            e.currentTarget.style.color = "#fff";
+                                            e.currentTarget.style.borderColor = "var(--main-color)";
                                         }}
                                     >
                                         <GrSend />
@@ -153,8 +165,8 @@ const Footer = () => {
                             </Col>
                             <Col lg={6} className="text-lg-end mt-3 mt-lg-0">
                                 <div>
-                                Copyright ©2025 All rights reserved | This template is made with {" "}
-                                    <FaHeart color="#ff4d6d" /><br/>by <a href='#'>Colorlib</a>
+                                    Copyright ©2025 All rights reserved | This template is made with {" "}
+                                    <FaHeart color="var(--main-color)" /><br />by <a href='#'>Colorlib</a>
                                 </div>
                             </Col>
                         </Row>

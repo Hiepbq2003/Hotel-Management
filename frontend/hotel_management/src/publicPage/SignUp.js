@@ -32,7 +32,7 @@ function SignUpForm() {
   return (
     <div className="form-container sign-up-container">
       <form onSubmit={handleOnSubmit}>
-        <h1　style={{ color: "#2c3e50",fontSize: "36px",fontWeight: "700",marginBottom: "20px"
+        <h1 style={{ color: "#2c3e50",fontSize: "36px",fontWeight: "700",marginBottom: "20px"
         }}>Create Account</h1>
         <div className="social-container">
           <a href="#" className="social">

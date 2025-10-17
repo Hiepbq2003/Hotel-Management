@@ -1,8 +1,10 @@
-<<<<<<< HEAD
+:root {
+  --main-color: #00554C; /* Màu mặc định - ví dụ: xanh lá */
+}
 body {
   overflow-x: hidden;
 }
-=======
+
 .App {
   text-align: center;
 }
@@ -37,4 +39,4 @@ body {
     transform: rotate(360deg);
   }
 }
->>>>>>> 454042bb458ced88a046b01520b7fb1df2691632
+

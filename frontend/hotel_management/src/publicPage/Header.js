@@ -8,9 +8,8 @@ const Header = () => {
         <header>
             {/* --- Top Bar --- */}
             <Row className='justify-content-center' style={{
-                            backgroundColor: "#f8f9fa",
-                            borderBottom: "1px solid #e0e0e0",
-                        }}>
+                borderBottom: "1px solid #e0e0e0",
+            }}>
                 <Col md={9} >
                     <div>
                         <Container>
@@ -23,7 +22,6 @@ const Header = () => {
                                             gap: "20px",
                                             listStyle: "none",
                                             margin: 0,
-                                            padding: 0,
                                             color: "#333",
                                             padding: "14px 0"
                                         }}
@@ -59,8 +57,8 @@ const Header = () => {
                                                         fontSize: "1.1rem",
                                                         transition: "color 0.3s",
                                                     }}
-                                                    onMouseEnter={(e) => (e.target.style.color = "#ff4d6d")}
-                                                    onMouseLeave={(e) => (e.target.style.color = "#333")}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--main-color)")}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
                                                 >
                                                     <Icon />
                                                 </a>
@@ -71,11 +69,13 @@ const Header = () => {
                                         <a
                                             href="#"
                                             style={{
-                                                backgroundColor: "#ff4d6d",
+                                                backgroundColor: "var(--main-color)",
                                                 color: "#fff",
                                                 padding: "14px 24px",
+                                                paddingTop:"16px",
                                                 fontWeight: 500,
-                                                textDecoration: "none"
+                                                textDecoration: "none",
+                                                height:"auto"
                                             }}
                                         >
                                             BOOKING NOW
@@ -109,11 +109,11 @@ const Header = () => {
             </Row>
             {/* --- Navigation Bar --- */}
             <Row className='justify-content-center' style={{ backgroundColor: "white", borderBottom: "1px solid #eee" }}>
-                <Col md={9} >
+                <Col lg={9} >
                     <Navbar expand="lg" >
                         <Container>
                             <Navbar.Brand href="#home" style={{ fontWeight: "bold", fontSize: "1.4rem", textTransform: "uppercase" }}>
-                                🌸 Flowerly
+                            ✨<span style={{ color: '#FFBF58' }}>Mr.</span >STELLAR
                             </Navbar.Brand>
                             <Navbar.Toggle aria-controls="basic-navbar-nav" />
                             <Navbar.Collapse id="basic-navbar-nav">
@@ -127,9 +127,10 @@ const Header = () => {
                                                 marginLeft: "20px",
                                                 fontWeight: 500,
                                                 transition: "color 0.3s",
+                                                paddingBottom:"2px"
                                             }}
-                                            onMouseEnter={(e) => (e.target.style.color = "#ff4d6d")}
-                                            onMouseLeave={(e) => (e.target.style.color = "#333")}
+                                            onMouseEnter={(e) => (e.target.style.borderBottom = "2px solid var(--main-color)")}
+                                            onMouseLeave={(e) => (e.target.style.borderBottom = "none")}
                                         >
                                             {item}
                                         </Nav.Link>
