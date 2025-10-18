@@ -27,7 +27,7 @@ const Footer = () => {
                                         marginBottom: "15px",
                                     }}
                                 >
-                                    ✨<span style={{ color: '#FFBF58' }}>Mr.</span >STELLAR
+                                    ✨<span style={{ color: '#FFBF58' }}>Stella</span > Horizon
                                 </div>
                                 <p style={{ color: "#ccc", lineHeight: "1.6" }}>
                                     We inspire and reach millions of travelers <br />

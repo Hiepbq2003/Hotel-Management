@@ -65,7 +65,7 @@ public class ReservationRoom {
     @Column(nullable = false, columnDefinition = "ENUM('booked','checked_in','checked_out','cancelled') DEFAULT 'booked'")
     private Status status = Status.booked;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public enum Status {

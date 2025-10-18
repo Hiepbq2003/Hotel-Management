@@ -1,0 +1,136 @@
+import React, { useEffect, useState } from "react";
+import { Container, Row, Col, Card, Button, Spinner } from "react-bootstrap";
+const Rooms = () => {
+    const [rooms, setRooms] = useState([]);
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        fetch("http://localhost:8083/api/room-type")
+          .then((res) => res.json()) // ✅ fetch cần chuyển response sang JSON
+          .then((data) => {
+            setRooms(data);
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error("Error fetching rooms:", err);
+            setLoading(false);
+          });
+      }, []);
+
+    if (loading) {
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100vh",
+                }}
+            >
+                <Spinner animation="border" variant="primary" />
+            </div>
+        );
+    }
+
+    const cardHoverStyle = {
+        transition: "all 0.3s ease",
+        cursor: "pointer",
+    };
+
+    return (
+        <Container style={{ paddingTop: "60px", paddingBottom: "60px" }}>
+            <div style={{ textAlign: "center", marginBottom: "40px" }}>
+                <h2 style={{ fontWeight: "bold" }}>Our Rooms</h2>
+                <p style={{ color: "#6c757d" }}>
+                    Discover the comfort and elegance of our hotel rooms
+                </p>
+            </div>
+
+            <Row className="g-4">
+                {rooms.map((room) => (
+                    <Col key={room.id} lg={4} md={6}>
+                        <Card
+                            className="h-100 shadow-sm border-0"
+                            style={{
+                                borderRadius: "16px",
+                                overflow: "hidden",
+                                ...cardHoverStyle,
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-5px)";
+                                e.currentTarget.style.boxShadow =
+                                    "0 6px 20px rgba(0,0,0,0.15)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow =
+                                    "0 3px 10px rgba(0,0,0,0.1)";
+                            }}
+                        >
+                            <Card.Img
+                                variant="top"
+                                src={
+                                    room.imageUrl ||
+                                    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=60"
+                                }
+                                alt={room.name}
+                                style={{
+                                    height: "240px",
+                                    objectFit: "cover",
+                                }}
+                            />
+
+                            <Card.Body style={{ padding: "20px" }}>
+                                <Card.Title style={{ fontWeight: "600" }}>
+                                    {room.name}
+                                </Card.Title>
+                                <h5 style={{ color: "#f4b400", fontWeight: "bold" }}>
+                                    ${room.basePrice}
+                                </h5>
+                                <p
+                                    style={{
+                                        color: "#6c757d",
+                                        fontSize: "14px",
+                                        minHeight: "60px",
+                                    }}
+                                >
+                                    {room.description}
+                                </p>
+
+                                <ul
+                                    style={{
+                                        listStyle: "none",
+                                        paddingLeft: 0,
+                                        fontSize: "14px",
+                                        color: "#555",
+                                        marginBottom: "16px",
+                                    }}
+                                >
+                                    <li>
+                                        <b>Capacity:</b> {room.capacity} person(s)
+                                    </li>
+                                    <li>
+                                        <b>Bed:</b> {room.bedInfo}
+                                    </li>
+                                </ul>
+
+                                <Button
+                                    variant="outline-dark"
+                                    style={{
+                                        width: "100%",
+                                        borderRadius: "8px",
+                                        fontWeight: "500",
+                                        padding: "8px 0",
+                                    }}
+                                >
+                                    More Details
+                                </Button>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                ))}
+            </Row>
+        </Container>
+    );
+};
+
+export default Rooms;

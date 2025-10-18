@@ -1,5 +1,7 @@
 package com.project.mhotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -23,6 +25,7 @@ public class RoomType {
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_roomtype_hotel"))
+    @JsonBackReference
     private Hotel hotel;
 
     @Column(nullable = false, length = 50)
@@ -48,9 +51,11 @@ public class RoomType {
 
     // Quan hệ với Room (1 loại phòng có nhiều phòng)
     @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Room> rooms;
 
     // Quan hệ với RoomRate (1 loại phòng có nhiều rate)
     @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<RoomRate> roomRates;
 }

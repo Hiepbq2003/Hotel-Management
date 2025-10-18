@@ -1,5 +1,6 @@
 package com.project.mhotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -58,6 +59,7 @@ public class Hotel {
 
     // Quan hệ với RoomType (1 hotel có nhiều loại phòng)
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<RoomType> roomTypes;
 
     // Quan hệ với UserAccount (1 hotel có nhiều user)
