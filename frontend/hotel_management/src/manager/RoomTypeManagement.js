@@ -57,23 +57,33 @@ const RoomTypeManagement = () => {
     setShowModal(true);
   };
 
-  // --- Gửi form thêm/sửa ---
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (isEditing) {
-        await api.put(`/room-type/${currentRoom.id}`, currentRoom);
-        alert("Cập nhật thành công!");
-      } else {
-        await api.post("/room-type", currentRoom);
-        alert("Thêm mới thành công!");
-      }
-      setShowModal(false);
-      fetchRoomTypes();
-    } catch (err) {
-      alert("Lỗi khi lưu: " + (err.message || "Vui lòng thử lại."));
-    }
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+     
+      if (isEditing) {
+        await api.put(`/room-type/${currentRoom.id}`, currentRoom);
+        alert("Cập nhật thành công!");
+      } else {
+        await api.post("/room-type", currentRoom);
+        alert("Thêm mới thành công!");
+      }
+      setShowModal(false);
+      fetchRoomTypes();
+    } catch (err) {
+      
+        console.error("Chi tiết lỗi API:", err); 
+        let errorMessage = "Vui lòng thử lại.";
+        
+        if (err.response && err.response.data && err.response.data.message) {
+            errorMessage = err.response.data.message; // Nếu Backend có gửi message lỗi
+        } else if (err.message) {
+            errorMessage = err.message;
+        }
+
+        alert("Lỗi khi lưu: " + errorMessage);
+    }
+  };
 
   // --- Xóa loại phòng ---
   const handleDelete = async (id) => {

@@ -29,9 +29,11 @@ public class RoomTypeController {
         return roomTypeService.getById(id);
     }
 
-    @PostMapping
-    public RoomType create(@RequestBody RoomType roomType) {
-        return roomTypeService.create(roomType);
+    @PostMapping("/create")
+    public String createRoomType(@ModelAttribute RoomType roomType,
+                                 @RequestParam("hotelId") Long hotelId) {
+        roomTypeService.create(roomType, hotelId);
+        return "redirect:/room-types?hotelId=" + hotelId;
     }
 
     @PutMapping("/{id}")
