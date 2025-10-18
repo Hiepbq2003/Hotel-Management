@@ -67,6 +67,10 @@ public class HotelService {
         return roomRepository.save(room);
     }
 
+    public Optional<Hotel> getHotelById(Long id) {
+        return hotelRepository.findById(id);
+    }
+
     //  Lấy danh sách phòng theo khách sạn
     public List<Room> getRoomsByHotel(Long hotelId) {
         return roomRepository.findByHotel_Id(hotelId);

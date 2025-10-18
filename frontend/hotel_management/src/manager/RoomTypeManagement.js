@@ -1,251 +1,311 @@
 import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form, Spinner, Alert } from "react-bootstrap";
-import api from "../api/apiConfig"; // chỉnh đường dẫn nếu khác
+import { ToastContainer, toast } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css';
+import api from "../api/apiConfig"; 
+
+// CHÚ Ý: ĐIỀN ID KHÁCH SẠN MẶC ĐỊNH
+const DEFAULT_HOTEL_ID = 1; 
 
 const RoomTypeManagement = () => {
-  const [roomTypes, setRoomTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const [showModal, setShowModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentRoom, setCurrentRoom] = useState({
-    id: null,
-    name: "",
-    basePrice: "",
-    capacity: "",
-    bedInfo: "",
-    description: "",
-    imageUrl: ""
-  });
+    const [roomTypes, setRoomTypes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  // --- Lấy danh sách loại phòng ---
-  const fetchRoomTypes = async () => {
-    setLoading(true);
-    try {
-      const data = await api.get("/room-type");
-      setRoomTypes(data || []);
-      setError(null);
-    } catch (err) {
-      setError(err.message || "Không thể tải danh sách loại phòng");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRoomTypes();
-  }, []);
-
-  // --- Mở modal thêm/sửa ---
-  const openModal = (room = null) => {
-    if (room) {
-      setIsEditing(true);
-      setCurrentRoom(room);
-    } else {
-      setIsEditing(false);
-      setCurrentRoom({
+    const [showModal, setShowModal] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentRoom, setCurrentRoom] = useState({
         id: null,
         name: "",
         basePrice: "",
         capacity: "",
         bedInfo: "",
         description: "",
-        imageUrl: ""
-      });
-    }
-    setShowModal(true);
-  };
+        imageUrl: "",
+        code: "" 
+    });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-     
-      if (isEditing) {
-        await api.put(`/room-type/${currentRoom.id}`, currentRoom);
-        alert("Cập nhật thành công!");
-      } else {
-        await api.post("/room-type", currentRoom);
-        alert("Thêm mới thành công!");
-      }
-      setShowModal(false);
-      fetchRoomTypes();
-    } catch (err) {
-      
-        console.error("Chi tiết lỗi API:", err); 
-        let errorMessage = "Vui lòng thử lại.";
+    const formatPrice = (price) => {
+        if (price === null || price === undefined) return '';
+        const numberPrice = parseFloat(price);
+        if (isNaN(numberPrice)) return price;
+        return numberPrice.toLocaleString("vi-VN") + " ₫";
+    };
+
+    const fetchRoomTypes = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await api.get("/room-type");
+            const data = response.data || response.content || response; 
+            setRoomTypes(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setError("Không thể tải danh sách loại phòng. Vui lòng kiểm tra API.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchRoomTypes();
+    }, []);
+
+    const openModal = (room = null) => {
+        if (room) {
+            setIsEditing(true);
+            setCurrentRoom({
+                ...room,
+             
+                basePrice: room.basePrice?.toString() || "",
+                capacity: room.capacity?.toString() || ""
+            });
+        } else {
+            setIsEditing(false);
+            setCurrentRoom({
+                id: null, name: "", basePrice: "", capacity: "",
+                bedInfo: "", description: "", imageUrl: "", code: "" 
+            });
+        }
+        setError(null);
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setError(null); 
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
         
-        if (err.response && err.response.data && err.response.data.message) {
-            errorMessage = err.response.data.message; // Nếu Backend có gửi message lỗi
-        } else if (err.message) {
-            errorMessage = err.message;
+        if (!currentRoom.code) {
+             setError("Mã loại phòng (Code) là bắt buộc!");
+             toast.error("Vui lòng nhập Mã loại phòng.");
+             return;
         }
 
-        alert("Lỗi khi lưu: " + errorMessage);
-    }
-  };
+        try {
+            const dataToSend = {
+                ...currentRoom,
+                basePrice: parseFloat(currentRoom.basePrice),
+                capacity: parseInt(currentRoom.capacity),
+            
+                hotel: { id: DEFAULT_HOTEL_ID } 
+            };
+            
+            if (!isEditing) delete dataToSend.id; 
 
-  // --- Xóa loại phòng ---
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa loại phòng này?")) return;
-    try {
-      await api.delete(`/room-type/${id}`);
-      alert("Đã xóa thành công!");
-      fetchRoomTypes();
-    } catch (err) {
-      alert("Lỗi khi xóa: " + (err.message || "Không thể xóa."));
+            if (isEditing) {
+                await api.put(`/room-type/${dataToSend.id}`, dataToSend);
+                toast.success("✅ Cập nhật thành công!");
+            } else {
+                await api.post("/room-type", dataToSend);
+                toast.success("➕ Thêm mới thành công!");
+            }
+            closeModal();
+            fetchRoomTypes();
+        } catch (err) {
+            console.error("Chi tiết lỗi API:", err); 
+            let errorMessage = "Lỗi không xác định. Vui lòng thử lại.";
+            
+            if (err.response?.data?.message) {
+                errorMessage = err.response.data.message; 
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            toast.error(`❌ Lỗi khi lưu: ${errorMessage}`);
+            setError(`Lỗi khi lưu: ${errorMessage}`);
+        }
+    };
+
+    const handleDelete = async (id, name) => {
+        if (!window.confirm(`Bạn có chắc muốn xóa loại phòng "${name}" này?`)) return;
+        try {
+            await api.delete(`/room-type/${id}`);
+            toast.info(`🗑️ Đã xóa loại phòng "${name}" thành công!`);
+            fetchRoomTypes();
+        } catch (err) {
+            const errorMessage = err.message || "Không thể xóa.";
+            toast.error(`❌ Lỗi khi xóa: ${errorMessage}`);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="text-center mt-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-2 text-primary">Đang tải dữ liệu...</p>
+            </div>
+        );
     }
-  };
 
-  // --- Loading ---
-  if (loading) {
     return (
-      <div className="text-center mt-5">
-        <Spinner animation="border" variant="primary" />
-      </div>
+        <div className="container mt-4">
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+
+            <h3 className="mb-4 text-center text-primary">Quản lý Loại phòng 🏨</h3>
+
+            {error && !showModal && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
+
+            <Button variant="success" className="mb-3 shadow-sm" onClick={() => openModal()}>
+                ➕ Thêm loại phòng mới
+            </Button>
+
+            <div className="shadow-sm rounded table-responsive">
+                <Table bordered hover className="bg-white" style={{ minWidth: '800px' }}> 
+                    <thead>
+                        <tr className="table-primary">
+                            <th className="text-center text-nowrap" style={{ width: '50px' }}>ID</th>
+                            <th className="text-nowrap" style={{ width: '150px' }}>Tên phòng</th>
+                            <th className="text-end text-nowrap" style={{ width: '100px' }}>Giá cơ bản</th>
+                            <th className="text-center text-nowrap" style={{ width: '80px' }}>Sức chứa</th>
+                            <th className="text-nowrap" style={{ width: '80px' }}>Mã phòng</th>
+                            <th className="text-nowrap" style={{ width: '120px' }}>Giường</th>
+                            <th>Mô tả</th>
+                            <th className="text-center text-nowrap" style={{ width: '100px' }}>Ảnh</th>
+                            <th className="text-center text-nowrap" style={{ width: '140px' }}>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {roomTypes.length > 0 ? (
+                            roomTypes.map((room) => (
+                                <tr key={room.id}>
+                                    <td className="text-center text-muted">{room.id}</td>
+                                    <td>{room.name}</td>
+                                    <td className="text-end fw-bold text-success">{formatPrice(room.basePrice)}</td>
+                                    <td className="text-center">{room.capacity} người</td>
+                                    <td className="fw-bold">{room.code}</td>
+                                    <td>{room.bedInfo}</td>
+                                    <td>{room.description?.substring(0, 50) + (room.description?.length > 50 ? '...' : '')}</td>
+                                    <td className="text-center">
+                                        <img
+                                            src={room.imageUrl || "https://via.placeholder.com/80x60?text=No+Image"}
+                                            alt={room.name}
+                                            width="80"
+                                            height="60"
+                                            style={{ objectFit: "cover", borderRadius: '4px' }}
+                                        />
+                                    </td>
+                                    <td className="text-center">
+                                        <Button
+                                            variant="outline-warning"
+                                            size="sm"
+                                            className="me-2"
+                                            onClick={() => openModal(room)}
+                                        >Sửa</Button>
+                                        <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            onClick={() => handleDelete(room.id, room.name)}
+                                        >Xóa</Button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="9" className="text-center py-4 text-muted">
+                                    Không có loại phòng nào được tìm thấy.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Table>
+            </div>
+
+            {/* Modal thêm/sửa */}
+            <Modal show={showModal} onHide={closeModal}>
+                <Modal.Header closeButton className={isEditing ? "bg-warning text-white" : "bg-primary text-white"}>
+                    <Modal.Title>{isEditing ? "Sửa loại phòng" : "Thêm loại phòng mới"}</Modal.Title>
+                </Modal.Header>
+                <Form onSubmit={handleSubmit}>
+                    <Modal.Body>
+                        {error && <Alert variant="danger">{error}</Alert>}
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Tên phòng</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={currentRoom.name}
+                                onChange={(e) => setCurrentRoom({ ...currentRoom, name: e.target.value })}
+                                required
+                            />
+                        </Form.Group>
+                        
+                        <Form.Group className="mb-3">
+                            <Form.Label>Mã loại phòng (Code) <span className="text-danger">*</span></Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={currentRoom.code}
+                                onChange={(e) => setCurrentRoom({ ...currentRoom, code: e.target.value })}
+                                required
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Giá cơ bản (VND)</Form.Label>
+                            <Form.Control
+                                type="number"
+                                value={currentRoom.basePrice}
+                                onChange={(e) => setCurrentRoom({ ...currentRoom, basePrice: e.target.value })}
+                                required
+                                min="0"
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Sức chứa (Người)</Form.Label>
+                            <Form.Control
+                                type="number"
+                                value={currentRoom.capacity}
+                                onChange={(e) => setCurrentRoom({ ...currentRoom, capacity: e.target.value })}
+                                min="1"
+                                required
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Thông tin giường</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={currentRoom.bedInfo}
+                                onChange={(e) => setCurrentRoom({ ...currentRoom, bedInfo: e.target.value })}
+                                placeholder="Ví dụ: 1 King Bed"
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Mô tả</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                value={currentRoom.description}
+                                onChange={(e) => setCurrentRoom({ ...currentRoom, description: e.target.value })}
+                            />
+                        </Form.Group>
+
+                        <Form.Group>
+                            <Form.Label>Ảnh (URL)</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={currentRoom.imageUrl}
+                                onChange={(e) => setCurrentRoom({ ...currentRoom, imageUrl: e.target.value })}
+                                placeholder="Nhập URL ảnh loại phòng"
+                            />
+                        </Form.Group>
+                    </Modal.Body>
+
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={closeModal}>Hủy</Button>
+                        <Button type="submit" variant={isEditing ? "warning" : "primary"}>
+                            {isEditing ? "Lưu thay đổi" : "Thêm mới"}
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
+        </div>
     );
-  }
-
-  return (
-    <div className="container mt-4">
-      <h3 className="mb-4 text-center">Quản lý loại phòng</h3>
-
-      {error && <Alert variant="danger">{error}</Alert>}
-
-      <Button variant="primary" className="mb-3" onClick={() => openModal()}>
-        + Thêm loại phòng
-      </Button>
-
-      <Table bordered hover responsive>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tên phòng</th>
-            <th>Giá cơ bản</th>
-            <th>Sức chứa</th>
-            <th>Giường</th>
-            <th>Mô tả</th>
-            <th>Ảnh</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {roomTypes.map((room) => (
-            <tr key={room.id}>
-              <td>{room.id}</td>
-              <td>{room.name}</td>
-              <td>${room.basePrice}</td>
-              <td>{room.capacity}</td>
-              <td>{room.bedInfo}</td>
-              <td>{room.description}</td>
-              <td>
-                <img
-                  src={room.imageUrl || "https://via.placeholder.com/80"}
-                  alt={room.name}
-                  width="80"
-                  height="60"
-                  style={{ objectFit: "cover" }}
-                />
-              </td>
-              <td>
-                <Button
-                  variant="warning"
-                  size="sm"
-                  className="me-2"
-                  onClick={() => openModal(room)}
-                >
-                  Sửa
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => handleDelete(room.id)}
-                >
-                  Xóa
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-
-      {/* Modal thêm/sửa */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{isEditing ? "Sửa loại phòng" : "Thêm loại phòng"}</Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleSubmit}>
-          <Modal.Body>
-            <Form.Group className="mb-3">
-              <Form.Label>Tên phòng</Form.Label>
-              <Form.Control
-                type="text"
-                value={currentRoom.name}
-                onChange={(e) => setCurrentRoom({ ...currentRoom, name: e.target.value })}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Giá cơ bản</Form.Label>
-              <Form.Control
-                type="number"
-                value={currentRoom.basePrice}
-                onChange={(e) => setCurrentRoom({ ...currentRoom, basePrice: e.target.value })}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Sức chứa</Form.Label>
-              <Form.Control
-                type="number"
-                value={currentRoom.capacity}
-                onChange={(e) => setCurrentRoom({ ...currentRoom, capacity: e.target.value })}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Thông tin giường</Form.Label>
-              <Form.Control
-                type="text"
-                value={currentRoom.bedInfo}
-                onChange={(e) => setCurrentRoom({ ...currentRoom, bedInfo: e.target.value })}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Mô tả</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={currentRoom.description}
-                onChange={(e) => setCurrentRoom({ ...currentRoom, description: e.target.value })}
-              />
-            </Form.Group>
-
-            <Form.Group>
-              <Form.Label>Ảnh (URL)</Form.Label>
-              <Form.Control
-                type="text"
-                value={currentRoom.imageUrl}
-                onChange={(e) => setCurrentRoom({ ...currentRoom, imageUrl: e.target.value })}
-              />
-            </Form.Group>
-          </Modal.Body>
-
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Hủy
-            </Button>
-            <Button type="submit" variant="primary">
-              {isEditing ? "Lưu thay đổi" : "Thêm mới"}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
-    </div>
-  );
 };
 
 export default RoomTypeManagement;

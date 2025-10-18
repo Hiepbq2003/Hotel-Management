@@ -2,6 +2,8 @@ package com.project.mhotel.controller;
 import com.project.mhotel.entity.RoomType;
 import com.project.mhotel.service.RoomTypeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,11 +31,17 @@ public class RoomTypeController {
         return roomTypeService.getById(id);
     }
 
-    @PostMapping("/create")
-    public String createRoomType(@ModelAttribute RoomType roomType,
-                                 @RequestParam("hotelId") Long hotelId) {
-        roomTypeService.create(roomType, hotelId);
-        return "redirect:/room-types?hotelId=" + hotelId;
+    @PostMapping
+    public ResponseEntity<RoomType> createRoomType(@RequestBody RoomType roomType) {
+        // LƯU Ý: Frontend PHẢI gửi 'hotel' Entity (chứa ít nhất 'id') bên trong body JSON.
+        // Spring sẽ cố gắng ánh xạ JSON vào RoomType Entity.
+
+        // Vì FE gửi JSON, chúng ta gọi service với logic đã được thay đổi.
+        // Giả định RoomTypeService.create đã được sửa đổi để chỉ nhận RoomType Entity.
+
+        RoomType createdRoomType = roomTypeService.create(roomType , 1L );
+
+        return new ResponseEntity<>(createdRoomType, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
