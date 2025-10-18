@@ -17,19 +17,16 @@ public class HouseKeepingTask {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Hotel
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_housekeeping_hotel"))
     private Hotel hotel;
 
-    // Quan hệ với Room
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_housekeeping_room"))
     private Room room;
 
-    // Người được giao (nullable)
     @ManyToOne
     @JoinColumn(name = "assigned_to",
             foreignKey = @ForeignKey(name = "fk_housekeeping_user"))
