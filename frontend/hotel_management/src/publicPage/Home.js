@@ -12,9 +12,9 @@ import {
 } from "react-icons/fa";
 const Home = () => {
     const images = [
-        "https://peridotgrandhotel.com/wp-content/uploads/2022/09/2.-Lobby-Area-2-2000.jpg",
-        "https://peridotgrandhotel.com/wp-content/uploads/2025/05/22th416454.jpg",
-        "https://peridotgrandhotel.com/wp-content/uploads/2022/09/Ignite-Sky-Bar-Birdeye.jpg"
+        // "https://peridotgrandhotel.com/wp-content/uploads/2022/09/2.-Lobby-Area-2-2000.jpg",
+        // "https://peridotgrandhotel.com/wp-content/uploads/2025/05/22th416454.jpg",
+        // "https://peridotgrandhotel.com/wp-content/uploads/2022/09/Ignite-Sky-Bar-Birdeye.jpg"
     ];
     const services = [
         { icon: <FaMapMarkerAlt />, title: "Travel Plan" },
@@ -64,29 +64,33 @@ const Home = () => {
     ];
     const rooms = [
         {
+            // https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=60
             image:
-                "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=60",
+                "",
             title: "Premium King Room",
             price: 159,
             desc: "Spacious room with modern design and city view.",
         },
         {
+            // https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=60
             image:
-                "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=60",
+                "",
             title: "Deluxe Queen Room",
             price: 189,
             desc: "Elegant comfort with a touch of luxury.",
         },
         {
+            // https://images.unsplash.com/photo-1618213837799-9ce22d43c4d2?auto=format&fit=crop&w=800&q=60
             image:
-                "https://images.unsplash.com/photo-1618213837799-9ce22d43c4d2?auto=format&fit=crop&w=800&q=60",
+                "",
             title: "Luxury Suite",
             price: 249,
             desc: "Enjoy full facilities and panoramic views.",
         },
         {
+            // https://images.unsplash.com/photo-1600585154205-8e8c6b7a5a59?auto=format&fit=crop&w=800&q=60
             image:
-                "https://images.unsplash.com/photo-1600585154205-8e8c6b7a5a59?auto=format&fit=crop&w=800&q=60",
+                "",
             title: "Family Room",
             price: 199,
             desc: "Perfect for family vacations, large space & cozy feel.",
@@ -316,8 +320,9 @@ const Home = () => {
                         }}
                     >
                         {/* Ảnh 1 */}
+                        {/* https://lh3.googleusercontent.com/proxy/Y16BeNVz6hzGj6N4RpNrn_92xEvPTKhWFPs3xU4j9RQeKks3Onmjv7kWd55WE-2KDUPLaiccX7ROsJqQ-2nYJ6UOVKZOuR4_pUR48pPa */}
                         <img
-                            src="https://lh3.googleusercontent.com/proxy/Y16BeNVz6hzGj6N4RpNrn_92xEvPTKhWFPs3xU4j9RQeKks3Onmjv7kWd55WE-2KDUPLaiccX7ROsJqQ-2nYJ6UOVKZOuR4_pUR48pPa"
+                            src=""
                             alt="Hotel exterior 1"
                             style={{
                                 width: "100%", // to hết cột
@@ -329,8 +334,9 @@ const Home = () => {
                         />
 
                         {/* Ảnh 2 */}
+                        {/* https://hoangthanhthanglong.vn/wp-content/uploads/2023/05/lythaito6.jpg */}
                         <img
-                            src="https://hoangthanhthanglong.vn/wp-content/uploads/2023/05/lythaito6.jpg"
+                            src=""
                             alt="Hotel exterior 2"
                             style={{
                                 width: "100%",
@@ -653,11 +659,11 @@ const Home = () => {
                                     - Alexander Vasquez
                                 </span>
                             </div>
-                            <img
+                            {/* <img
                                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Tripadvisor_Logo_circle-green_vertical-lockup_registered.svg/120px-Tripadvisor_Logo_circle-green_vertical-lockup_registered.svg.png"
                                 alt="Tripadvisor"
                                 style={{ width: "80px", marginTop: "20px" }}
-                            />
+                            /> */}
                         </Carousel.Item>
 
                         <Carousel.Item>
@@ -687,11 +693,11 @@ const Home = () => {
                                     - Maria Johnson
                                 </span>
                             </div>
-                            <img
+                            {/* <img
                                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Tripadvisor_Logo_circle-green_vertical-lockup_registered.svg/120px-Tripadvisor_Logo_circle-green_vertical-lockup_registered.svg.png"
                                 alt="Tripadvisor"
                                 style={{ width: "80px", marginTop: "20px" }}
-                            />
+                            /> */}
                         </Carousel.Item>
                     </Carousel>
                 </Container>
