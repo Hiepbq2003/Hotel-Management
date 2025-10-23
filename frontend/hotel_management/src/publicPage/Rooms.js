@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Button, Spinner, Alert } from "react-bootstrap";
 import api from "../api/apiConfig";
-
+import { useNavigate } from "react-router-dom";
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -137,6 +137,7 @@ const Rooms = () => {
                     fontWeight: "500",
                     padding: "8px 0",
                   }}
+                  onClick={() => navigate(`/rooms/${room.id}`)}  // 👈 thêm dòng này
                 >
                   More Details
                 </Button>

@@ -119,7 +119,7 @@ const Footer = () => {
                                             e.currentTarget.style.color = "light gray";
                                             e.currentTarget.style.borderColor = "#6d2b91";
                                         }}
-                                        onMouseLeave={(e) => {                                           
+                                        onMouseLeave={(e) => {
                                             e.currentTarget.style.backgroundColor = "var(--main-color)";
                                             e.currentTarget.style.color = "#fff";
                                             e.currentTarget.style.borderColor = "var(--main-color)";
@@ -166,7 +166,7 @@ const Footer = () => {
                             <Col lg={6} className="text-lg-end mt-3 mt-lg-0">
                                 <div>
                                     Copyright ©2025 All rights reserved | This template is made with {" "}
-                                    <FaHeart color="var(--main-color)" /><br />by <a href='#'>Colorlib</a>
+                                    <FaHeart color="var(--main-color)" /><br />by <span style={{ color: 'var(--main-color)' }}>Colorlib</span>
                                 </div>
                             </Col>
                         </Row>
