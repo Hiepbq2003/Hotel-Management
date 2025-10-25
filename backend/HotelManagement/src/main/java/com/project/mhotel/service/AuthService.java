@@ -1,5 +1,6 @@
 package com.project.mhotel.service;
 
+import com.project.mhotel.dto.ChangePasswordRequest;
 import com.project.mhotel.dto.RegisterRequest;
 import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.entity.CustomerAccount.Status;
@@ -51,5 +52,16 @@ public class AuthService {
                 .build();
 
         return customerAccountRepository.save(newCustomer);
+    }
+    public void changePassword(ChangePasswordRequest request) throws IllegalArgumentException {
+
+        CustomerAccount customer = customerAccountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
+        if (!isPasswordMatch(request.getCurrentPassword(), customer.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không đúng.");
+        }
+        customer.setPasswordHash(request.getNewPassword());
+        customer.setUpdatedAt(LocalDateTime.now());
+        customerAccountRepository.save(customer);
     }
 }

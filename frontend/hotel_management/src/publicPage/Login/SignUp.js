@@ -96,7 +96,7 @@ function SignUpForm({ onRegisterSuccess }) {
                     name="phone" 
                     value={state.phone} 
                     onChange={handleChange} 
-                    placeholder="Phone Number (Optional)" 
+                    placeholder="Phone Number" 
                 />
 
                 <button type="submit" className="sign">Sign Up</button>

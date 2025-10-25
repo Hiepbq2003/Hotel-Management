@@ -9,6 +9,7 @@ import Contact from "../publicPage/Contact";
 import RoomTypeManagement from "../manager/RoomTypeManagement";
 import ManagerDashBoard from "../manager/ManagerDashBoard";
 import Manager from "../manager/Manager";
+import Profile from "../publicPage/Profile";
 function Routers() {
   return (
     <Router>
@@ -21,6 +22,7 @@ function Routers() {
           <Route path="about-us" element={<AboutUs />} />
           <Route path="contact" element={<Contact />} />
           <Route path="rooms/:id" element={<RoomDetail />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
 
         {/* Các route riêng */}

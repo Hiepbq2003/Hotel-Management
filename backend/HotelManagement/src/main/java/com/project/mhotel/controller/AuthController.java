@@ -1,5 +1,6 @@
 package com.project.mhotel.controller;
 
+import com.project.mhotel.dto.ChangePasswordRequest;
 import com.project.mhotel.dto.LoginRequest; // Cần tạo DTO này
 import com.project.mhotel.dto.LoginResponse; // Cần tạo DTO này
 import com.project.mhotel.dto.RegisterRequest;
@@ -36,7 +37,8 @@ public class AuthController {
             LoginResponse response = new LoginResponse(
                     dummyToken,
                     customer.getEmail(),
-                    "CUSTOMER"
+                    "CUSTOMER",
+                    customer.getFullName()
             );
 
             return ResponseEntity.ok(response);
@@ -61,6 +63,22 @@ public class AuthController {
         } catch (Exception e) {
             // Lỗi server (500 Internal Server Error)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký thất bại: Đã xảy ra lỗi.");
+        }
+    }
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+
+        if (request.getEmail() == null || request.getEmail().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Thiếu thông tin email.");
+        }
+
+        try {
+            authService.changePassword(request);
+            return ResponseEntity.ok("Đổi mật khẩu thành công!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đổi mật khẩu thất bại: Lỗi hệ thống.");
         }
     }
 }

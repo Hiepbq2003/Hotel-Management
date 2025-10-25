@@ -17,17 +17,18 @@ function SignInForm({ onLoginSuccess }) {
     setError(null); // Xóa lỗi cũ
 
     try {
-      // Gửi yêu cầu Đăng nhập đến Backend
-      // api.post trả về body JSON (loginData) nếu thành công
+     
       const loginData = await api.post("/auth/login", {
         email: state.email,
         password: state.password,
       });
 
-      // Dữ liệu trả về mong đợi: { token, email, role }
       const { token, role } = loginData;
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
+      localStorage.setItem("email", loginData.email);
+      localStorage.setItem("fullName", loginData.fullName);
+      localStorage.setItem("phone", loginData.phone);
       if (onLoginSuccess) {
         onLoginSuccess(role);
       }

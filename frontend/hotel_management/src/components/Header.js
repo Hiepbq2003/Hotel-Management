@@ -1,9 +1,100 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Nav, Navbar, Dropdown, Row, Col } from "react-bootstrap";
 import { FaPhoneAlt, FaUser, FaFacebookF, FaTwitter, FaInstagram, FaTripadvisor } from "react-icons/fa";
 import { TbMailFilled } from "react-icons/tb";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+
 const Header = () => {
+    const navigate = useNavigate();
+    const [user, setUser] = useState({ 
+        isLoggedIn: false, 
+        fullName: '' 
+    });
+
+    const getUserInfo = () => {
+        const token = localStorage.getItem('token');
+        const storedFullName = localStorage.getItem('fullName') || 'Customer'; 
+        
+        setUser({
+            isLoggedIn: !!token,
+            fullName: storedFullName 
+        });
+    };
+
+    const handleLogout = () => {
+    
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('fullName');
+        
+        setUser({ isLoggedIn: false, fullName: '' });
+        
+        navigate('/login'); 
+    };
+
+    useEffect(() => {
+        getUserInfo();
+        window.addEventListener('storage', getUserInfo);
+
+        return () => {
+            window.removeEventListener('storage', getUserInfo);
+        };
+    }, []);
+
+    const renderUserSection = () => {
+        if (user.isLoggedIn) {
+            return (
+                <Dropdown align="end">
+                    <Dropdown.Toggle
+                        id="user-dropdown"
+                        style={{
+                            background: "none",
+                            border: "none",
+                            color: "#333",
+                            fontWeight: 500,
+                            padding: "14px 0",
+                            boxShadow: "none"
+                        }}
+                    >
+                        <FaUser style={{ marginBottom: "7px", marginRight: "5px" }} /> 
+                        {user.fullName}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                        <Dropdown.Item as={Link} to="/profile">
+                            Profile
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={handleLogout}>
+                            Logout
+                        </Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
+            );
+        } else {
+            // Chưa đăng nhập: Hiện link Login
+            return (
+                <Dropdown align="end">
+                    <Dropdown.Toggle
+                        id="user-dropdown"
+                        style={{
+                            background: "none",
+                            border: "none",
+                            color: "#333",
+                            fontWeight: 500,
+                            padding: "14px 0"
+                        }}
+                    >
+                        <FaUser style={{ marginBottom: "7px" }} /> User
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                        <Dropdown.Item as={Link} to="/login">
+                            Login
+                        </Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
+            );
+        }
+    };
+    
     return (
         <header>
             {/* --- Top Bar --- */}
@@ -81,24 +172,9 @@ const Header = () => {
                                                 BOOKING NOW
                                             </Link>
 
-                                            {/* User dropdown */}
-                                            <Dropdown align="end">
-                                                <Dropdown.Toggle
-                                                    id="user-dropdown"
-                                                    style={{
-                                                        background: "none",
-                                                        border: "none",
-                                                        color: "#333",
-                                                        fontWeight: 500,
-                                                        padding: "14px 0"
-                                                    }}
-                                                >
-                                                    <FaUser style={{ marginBottom: "7px" }} /> User
-                                                </Dropdown.Toggle>
-                                                <Dropdown.Menu>
-                                                    <Dropdown.Item as={Link} to="/login">Login</Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>
+                                            {/* User dropdown (Conditional Rendering) */}
+                                            {renderUserSection()}
+
                                         </div>
                                     </Col>
                                 </Row>
@@ -122,12 +198,12 @@ const Header = () => {
                                                 key={i}
                                                 to={
                                                     item === "Home" ? "/home" :
-                                                        item === "Rooms" ? "/rooms" :
-                                                            item === "News" ? "/news" :
-                                                                item === "About Us" ? "/about-us" :
-                                                                    item === "Shop" ? "/shop" :
-                                                                        item === "Contact" ? "/contact" :
-                                                                            "/"
+                                                    item === "Rooms" ? "/rooms" :
+                                                    item === "News" ? "/news" :
+                                                    item === "About Us" ? "/about-us" :
+                                                    item === "Shop" ? "/shop" :
+                                                    item === "Contact" ? "/contact" :
+                                                        "/"
                                                 }
                                                 className="nav-link"
                                                 style={({ isActive }) => ({
