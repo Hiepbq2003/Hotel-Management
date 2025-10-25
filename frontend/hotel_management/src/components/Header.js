@@ -28,7 +28,7 @@ const Header = () => {
                                             }}
                                         >
                                             <li style={{ display: "flex", alignItems: "center", gap: "6px", paddingRight: "30px" }}>
-                                                <FaPhoneAlt style={{ fontSize: "15px" }} /> (12) 345 67890
+                                                <FaPhoneAlt style={{ fontSize: "15px" }} /> (84) 345 67890
                                             </li>
 
                                             <li style={{ display: "flex", alignItems: "center", gap: "6px", paddingLeft: "0px" }}>
@@ -124,7 +124,7 @@ const Header = () => {
                                                     item === "Home" ? "/home" :
                                                         item === "Rooms" ? "/rooms" :
                                                             item === "News" ? "/news" :
-                                                                item === "About Us" ? "/about" :
+                                                                item === "About Us" ? "/about-us" :
                                                                     item === "Shop" ? "/shop" :
                                                                         item === "Contact" ? "/contact" :
                                                                             "/"

@@ -4,6 +4,8 @@ import Home from "../publicPage/Home";
 import Rooms from "../publicPage/Rooms";
 import RoomDetail from "../publicPage/RoomDetail";
 import Login from "../publicPage/Login/Login";
+import AboutUs from "../publicPage/AboutUs";
+import Contact from "../publicPage/Contact";
 import RoomTypeManagement from "../manager/RoomTypeManagement";
 import ManagerDashBoard from "../manager/ManagerDashBoard";
 import Manager from "../manager/Manager";
@@ -16,6 +18,8 @@ function Routers() {
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="rooms" element={<Rooms />} />
+          <Route path="about-us" element={<AboutUs />} />
+          <Route path="contact" element={<Contact />} />
           <Route path="rooms/:id" element={<RoomDetail />} />
         </Route>
 

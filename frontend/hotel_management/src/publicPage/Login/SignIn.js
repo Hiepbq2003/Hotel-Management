@@ -1,6 +1,9 @@
 import React from "react";
 import './Login.css';
 
+// 1. Import các React Icons cần thiết
+import { FaFacebookF, FaGooglePlusG, FaLinkedinIn } from "react-icons/fa";
+
 function SignInForm() {
   const [state, setState] = React.useState({ email: "", password: "" });
 
@@ -20,9 +23,10 @@ function SignInForm() {
         <h1>Sign in</h1>
 
         <div className="social-container">
-          <a href="#"><i className="fab fa-facebook-f" /></a>
-          <a href="#"><i className="fab fa-google-plus-g" /></a>
-          <a href="#"><i className="fab fa-linkedin-in" /></a>
+          {/* Đã thay thế các thẻ <i> bằng React Icon Components */}
+          <a href="#"><FaFacebookF /></a>
+          <a href="#"><FaGooglePlusG /></a>
+          <a href="#"><FaLinkedinIn /></a>
         </div>
 
         <span>or use your account</span>
