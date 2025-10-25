@@ -4,7 +4,6 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
 
-// CHÚ Ý: ĐIỀN ID KHÁCH SẠN MẶC ĐỊNH
 const DEFAULT_HOTEL_ID = 1; 
 
 const RoomTypeManagement = () => {

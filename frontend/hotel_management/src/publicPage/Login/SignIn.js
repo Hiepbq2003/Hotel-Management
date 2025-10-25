@@ -1,20 +1,48 @@
 import React from "react";
-import './Login.css';
-
-// 1. Import các React Icons cần thiết
+import "./Login.css";
 import { FaFacebookF, FaGooglePlusG, FaLinkedinIn } from "react-icons/fa";
+import api from "../../api/apiConfig";
 
-function SignInForm() {
+// Component nhận prop onLoginSuccess từ Login.js
+function SignInForm({ onLoginSuccess }) {
   const [state, setState] = React.useState({ email: "", password: "" });
+  const [error, setError] = React.useState(null); 
 
   const handleChange = (evt) => {
     setState({ ...state, [evt.target.name]: evt.target.value });
   };
 
-  const handleOnSubmit = (evt) => {
+  const handleOnSubmit = async (evt) => {
     evt.preventDefault();
-    alert(`You are login with email: ${state.email} and password: ${state.password}`);
-    setState({ email: "", password: "" });
+    setError(null); // Xóa lỗi cũ
+
+    try {
+      // Gửi yêu cầu Đăng nhập đến Backend
+      // api.post trả về body JSON (loginData) nếu thành công
+      const loginData = await api.post("/auth/login", {
+        email: state.email,
+        password: state.password,
+      });
+
+      // Dữ liệu trả về mong đợi: { token, email, role }
+      const { token, role } = loginData;
+      localStorage.setItem("token", token);
+      localStorage.setItem("userRole", role);
+      if (onLoginSuccess) {
+        onLoginSuccess(role);
+      }
+    } catch (err) {
+      console.error("Lỗi đăng nhập:", err);
+      if (err.message) {
+        setError(err.message);
+      } else {
+        setError(
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin và kết nối."
+        );
+      }
+    }
+
+    setState({ email: state.email, password: "" });
   };
 
   return (
@@ -23,19 +51,47 @@ function SignInForm() {
         <h1>Sign in</h1>
 
         <div className="social-container">
-          {/* Đã thay thế các thẻ <i> bằng React Icon Components */}
-          <a href="#"><FaFacebookF /></a>
-          <a href="#"><FaGooglePlusG /></a>
-          <a href="#"><FaLinkedinIn /></a>
+          <a href="#">
+            <FaFacebookF />
+          </a>
+          <a href="#">
+            <FaGooglePlusG />
+          </a>
+          <a href="#">
+            <FaLinkedinIn />
+          </a>
         </div>
 
         <span>or use your account</span>
 
-        <input type="email" name="email" placeholder="Email" value={state.email} onChange={handleChange} />
-        <input type="password" name="password" placeholder="Password" value={state.password} onChange={handleChange} />
+        {/* Hiển thị lỗi */}
+        {error && (
+          <p style={{ color: "red", margin: "10px 0", fontSize: "14px" }}>
+            {error}
+          </p>
+        )}
+
+        <input
+          type="email"
+          name="email"
+          value={state.email}
+          onChange={handleChange}
+          placeholder="Email"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          value={state.password}
+          onChange={handleChange}
+          placeholder="Password"
+          required
+        />
 
         <a href="#">Forgot your password?</a>
-        <button type="submit" className="sign">Sign In</button>
+        <button type="submit" className="sign">
+          Sign In
+        </button>
       </form>
     </div>
   );
