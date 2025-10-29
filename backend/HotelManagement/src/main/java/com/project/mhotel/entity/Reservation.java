@@ -50,10 +50,10 @@ public class Reservation {
     private Status status = Status.reserved;
 
     @Column(name = "arrival_date", nullable = false)
-    private LocalDate arrivalDate;
+    private LocalDateTime arrivalDate;
 
     @Column(name = "departure_date", nullable = false)
-    private LocalDate departureDate;
+    private LocalDateTime departureDate;
 
     @Column(name = "total_amount", precision = 14, scale = 2)
     private BigDecimal totalAmount = BigDecimal.ZERO;

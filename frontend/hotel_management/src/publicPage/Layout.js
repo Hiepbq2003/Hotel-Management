@@ -10,7 +10,6 @@ const Layout = () => {
     // Ẩn Breadcrumbs trên trang chủ (tùy bạn)
     const hideBreadcrumb =
         location.pathname === "/" || location.pathname === "/home";
-
     return (
         <>
             <Header />

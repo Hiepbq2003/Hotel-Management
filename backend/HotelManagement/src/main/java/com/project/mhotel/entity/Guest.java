@@ -22,11 +22,8 @@ public class Guest {
             foreignKey = @ForeignKey(name = "fk_guest_customer"))
     private CustomerAccount customer;
 
-    @Column(name = "first_name", nullable = false, length = 100)
-    private String firstName;
-
-    @Column(name = "last_name", length = 100)
-    private String lastName;
+    @Column(name = "full_name", nullable = false, length = 150)
+    private String fullName;
 
     @Column(length = 150)
     private String email;

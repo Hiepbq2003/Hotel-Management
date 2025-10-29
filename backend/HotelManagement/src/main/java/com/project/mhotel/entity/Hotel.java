@@ -59,7 +59,6 @@ public class Hotel {
 
     // Quan hệ với RoomType (1 hotel có nhiều loại phòng)
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
     private List<RoomType> roomTypes;
 
     // Quan hệ với UserAccount (1 hotel có nhiều user)

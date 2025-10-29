@@ -3,7 +3,6 @@ package com.project.mhotel.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -38,7 +37,7 @@ public class RoomRate {
     private RatePlan ratePlan;
 
     @Column(nullable = false)
-    private LocalDate date;
+    private LocalDateTime date;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;

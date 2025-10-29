@@ -3,7 +3,6 @@ package com.project.mhotel.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -50,10 +49,11 @@ public class ReservationRoom {
     private BigDecimal nightlyPrice;
 
     @Column(name = "checkin_date", nullable = false)
-    private LocalDate checkinDate;
+    private LocalDateTime checkinDate;
+
 
     @Column(name = "checkout_date", nullable = false)
-    private LocalDate checkoutDate;
+    private LocalDateTime checkoutDate;
 
     @Column(name = "adult_count", nullable = false)
     private Integer adultCount = 1;

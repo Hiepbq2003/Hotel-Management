@@ -51,11 +51,9 @@ public class RoomType {
 
     // Quan hệ với Room (1 loại phòng có nhiều phòng)
     @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
     private List<Room> rooms;
 
     // Quan hệ với RoomRate (1 loại phòng có nhiều rate)
     @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
     private List<RoomRate> roomRates;
 }
