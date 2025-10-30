@@ -50,7 +50,6 @@ public class AuthController {
         }
     }
 
-    // --- Phương thức Register: Giữ nguyên ---
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest registerRequest) {
         try {
@@ -59,15 +58,12 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CREATED).body("Đăng ký tài khoản " + newCustomer.getEmail() + " thành công!");
 
         } catch (IllegalArgumentException e) {
-            // Email đã tồn tại (400 Bad Request)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            // Lỗi server (500 Internal Server Error)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký thất bại: Đã xảy ra lỗi.");
         }
     }
 
-    // --- Phương thức Change Password: Giữ nguyên ---
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
 
@@ -82,6 +78,44 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đổi mật khẩu thất bại: Lỗi hệ thống.");
+        }
+    }
+
+    /**
+     * Endpoint xử lý yêu cầu gửi OTP đặt lại mật khẩu.
+     * Tương ứng với POST /api/auth/forgot-password từ frontend.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> sendPasswordResetOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.badRequest().body("Thiếu thông tin email.");
+        }
+
+        authService.sendPasswordResetOtp(email);
+
+        // Luôn trả về OK để tránh lỗ hổng bảo mật (timing attack), ngay cả khi email không tồn tại.
+        return ResponseEntity.ok("Yêu cầu gửi mã OTP đã được xử lý.");
+    }
+
+    /**
+     * Endpoint xử lý đặt lại mật khẩu bằng OTP.
+     * Tương ứng với POST /api/auth/reset-password từ frontend.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        if (request.getEmail() == null || request.getOtp() == null || request.getNewPassword() == null) {
+            return ResponseEntity.badRequest().body("Thiếu thông tin OTP, Email, hoặc Mật khẩu mới.");
+        }
+
+        try {
+            authService.resetPassword(request);
+            return ResponseEntity.ok("Đặt lại mật khẩu thành công!");
+        } catch (IllegalArgumentException e) {
+            // Lỗi OTP sai/hết hạn hoặc Email không tồn tại/đã bị khóa.
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đặt lại mật khẩu thất bại: Lỗi hệ thống.");
         }
     }
 
