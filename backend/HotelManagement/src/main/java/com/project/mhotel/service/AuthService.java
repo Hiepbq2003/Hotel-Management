@@ -2,6 +2,7 @@ package com.project.mhotel.service;
 
 import com.project.mhotel.dto.ChangePasswordRequest;
 import com.project.mhotel.dto.RegisterRequest;
+import com.project.mhotel.dto.UpdateProfileRequest; // IMPORT MỚI
 import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.entity.CustomerAccount.Status;
 import com.project.mhotel.repository.CustomerAccountRepository;
@@ -53,6 +54,7 @@ public class AuthService {
 
         return customerAccountRepository.save(newCustomer);
     }
+
     public void changePassword(ChangePasswordRequest request) throws IllegalArgumentException {
 
         CustomerAccount customer = customerAccountRepository.findByEmail(request.getEmail())
@@ -63,5 +65,32 @@ public class AuthService {
         customer.setPasswordHash(request.getNewPassword());
         customer.setUpdatedAt(LocalDateTime.now());
         customerAccountRepository.save(customer);
+    }
+
+    // *** PHƯƠNG THỨC MỚI: CẬP NHẬT PROFILE ***
+    public CustomerAccount updateCustomerProfile(String email, UpdateProfileRequest request) {
+
+        Optional<CustomerAccount> customerOptional = customerAccountRepository.findByEmail(email);
+
+        if (customerOptional.isEmpty()) {
+            throw new RuntimeException("Customer not found with email: " + email);
+        }
+
+        CustomerAccount customer = customerOptional.get();
+
+        // 1. Cập nhật FullName
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            customer.setFullName(request.getFullName());
+        }
+
+        // 2. Cập nhật Phone
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            customer.setPhone(request.getPhone());
+        }
+
+        customer.setUpdatedAt(LocalDateTime.now());
+
+        // 3. Lưu vào cơ sở dữ liệu
+        return customerAccountRepository.save(customer);
     }
 }

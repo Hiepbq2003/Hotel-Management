@@ -14,7 +14,7 @@ function SignInForm({ onLoginSuccess }) {
 
   const handleOnSubmit = async (evt) => {
     evt.preventDefault();
-    setError(null); // Xóa lỗi cũ
+    setError(null);
 
     try {
      

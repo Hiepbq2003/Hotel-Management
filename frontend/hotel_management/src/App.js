@@ -6,9 +6,9 @@ import TodayCheckIns from './staffPage/TodayCheckIns';
 function App() {
   return (
     <>
-      {/* <Routers /> */}
-      <CheckInPage />
-      <TodayCheckIns />
+      <Routers />
+      {/* <CheckInPage />
+      <TodayCheckIns /> */}
     </>
   );
 }

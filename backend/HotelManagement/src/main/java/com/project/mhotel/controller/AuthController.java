@@ -1,9 +1,10 @@
 package com.project.mhotel.controller;
 
 import com.project.mhotel.dto.ChangePasswordRequest;
-import com.project.mhotel.dto.LoginRequest; // Cần tạo DTO này
-import com.project.mhotel.dto.LoginResponse; // Cần tạo DTO này
+import com.project.mhotel.dto.LoginRequest;
+import com.project.mhotel.dto.LoginResponse;
 import com.project.mhotel.dto.RegisterRequest;
+import com.project.mhotel.dto.UpdateProfileRequest; // IMPORT MỚI
 import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Hoặc cấu hình CORS cụ thể hơn
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
@@ -38,7 +40,8 @@ public class AuthController {
                     dummyToken,
                     customer.getEmail(),
                     "CUSTOMER",
-                    customer.getFullName()
+                    customer.getFullName(),
+                    customer.getPhone()
             );
 
             return ResponseEntity.ok(response);
@@ -50,6 +53,8 @@ public class AuthController {
                     .body("Sai Email hoặc Mật khẩu.");
         }
     }
+
+    // --- Phương thức Register: Giữ nguyên ---
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest registerRequest) {
         try {
@@ -65,6 +70,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đăng ký thất bại: Đã xảy ra lỗi.");
         }
     }
+
+    // --- Phương thức Change Password: Giữ nguyên ---
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
 
@@ -79,6 +86,34 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đổi mật khẩu thất bại: Lỗi hệ thống.");
+        }
+    }
+
+    // *** PHƯƠNG THỨC MỚI: CẬP NHẬT PROFILE ***
+    @PutMapping("/user/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request) {
+
+        // LƯU Ý QUAN TRỌNG:
+        // Vì không có SecurityContext (JWT) đầy đủ, ta sẽ GIẢ ĐỊNH EMAIL.
+        // TRONG THỰC TẾ, DÒNG NÀY PHẢI ĐƯỢC THAY THẾ BẰNG CƠ CHẾ LẤY EMAIL TỪ TOKEN
+        String currentCustomerEmail = "user@example.com";
+
+        try {
+            // Thực hiện cập nhật trong Service
+            CustomerAccount updatedAccount = authService.updateCustomerProfile(currentCustomerEmail, request);
+
+            // Trả về dữ liệu đã được cập nhật
+            return ResponseEntity.ok(Map.of(
+                    "message", "Cập nhật thông tin thành công!",
+                    "fullName", updatedAccount.getFullName(),
+                    "phone", updatedAccount.getPhone(),
+                    "email", updatedAccount.getEmail()
+            ));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Lỗi server khi cập nhật profile."));
         }
     }
 }

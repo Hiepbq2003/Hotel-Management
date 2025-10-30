@@ -32,6 +32,7 @@ const Profile = () => {
         // Lấy thông tin từ localStorage
         const storedFullName = localStorage.getItem('fullName') || 'Guest User';
         const storedEmail = localStorage.getItem('email') || 'N/A';
+        // Lưu ý: Đảm bảo phone không phải null hoặc undefined trước khi gán
         const storedPhone = localStorage.getItem('phone') || 'Chưa cập nhật'; 
         
         setUserInfo({
@@ -44,7 +45,7 @@ const Profile = () => {
 
         // Bắt buộc đăng nhập
         if (!token) {
-             navigate('/login'); 
+            navigate('/login'); 
         }
     }, [navigate]);
 
@@ -60,6 +61,7 @@ const Profile = () => {
     const handleShowProfileModal = () => {
         setEditProfileForm({ 
             fullName: userInfo.fullName, 
+            // Gán giá trị rỗng nếu đang là "Chưa cập nhật" để người dùng dễ nhập hơn
             phone: userInfo.phone === 'Chưa cập nhật' ? '' : userInfo.phone 
         });
         setShowProfileModal(true);
@@ -76,16 +78,25 @@ const Profile = () => {
             return;
         }
 
-        // *** MOCK API CALL (Thay thế bằng api.put('/user/profile', { fullName, phone }) ) ***
+        // *** THAY THẾ BẰNG API CALL THỰC TẾ ***
+        // try {
+        //     await api.put('/user/profile', { fullName, phone });
+        //     // ... xử lý thành công
+        // } catch (error) {
+        //     // ... xử lý lỗi
+        // }
         
         // Cập nhật localStorage và state
-        localStorage.setItem('fullName', fullName.trim());
-        localStorage.setItem('phone', phone.trim());
+        const newPhone = phone.trim() || ''; // Lưu chuỗi rỗng nếu không nhập
+        const newFullName = fullName.trim();
+
+        localStorage.setItem('fullName', newFullName);
+        localStorage.setItem('phone', newPhone);
         
         setUserInfo(prev => ({ 
             ...prev, 
-            fullName: fullName.trim(),
-            phone: phone.trim() || 'Chưa cập nhật'
+            fullName: newFullName,
+            phone: newPhone || 'Chưa cập nhật' // Hiển thị "Chưa cập nhật" nếu là chuỗi rỗng
         }));
         
         setShowProfileModal(false);
@@ -107,8 +118,8 @@ const Profile = () => {
             return;
         }
         if (newPass === current) {
-             alert("Mật khẩu mới phải khác mật khẩu hiện tại.");
-             return;
+            alert("Mật khẩu mới phải khác mật khẩu hiện tại.");
+            return;
         }
         
         try {
@@ -122,14 +133,20 @@ const Profile = () => {
             setShowPasswordModal(false);
             alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
             
-            localStorage.clear();
+            // ⭐ GIẢI PHÁP: Chỉ xóa token và role, giữ lại thông tin cá nhân (email, fullName, phone)
+            localStorage.removeItem('token');
+            localStorage.removeItem('userRole'); 
+            
             navigate('/login'); 
 
         } catch (error) {
-            const errorMessage = error.message || "Đã xảy ra lỗi khi đổi mật khẩu.";
+            // Cố gắng lấy thông báo lỗi từ API
+            const apiError = error.response?.data?.message || error.message; 
+            const errorMessage = apiError || "Đã xảy ra lỗi khi đổi mật khẩu.";
             alert(`Lỗi: ${errorMessage}`);
         }
         
+        // Reset form mật khẩu
         setNewPassword({ current: '', new: '', confirm: '' });
     };
 
@@ -145,7 +162,7 @@ const Profile = () => {
                             <Card.Header 
                                 className="text-center text-white" 
                                 style={{ 
-                                    backgroundColor: 'var(--main-color)', 
+                                    backgroundColor: 'var(--main-color)', // Giả định CSS Variable
                                     padding: '20px', 
                                     fontSize: '1.5rem', 
                                     fontWeight: '600'
