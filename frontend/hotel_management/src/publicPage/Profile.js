@@ -32,7 +32,6 @@ const Profile = () => {
         // Lấy thông tin từ localStorage
         const storedFullName = localStorage.getItem('fullName') || 'Guest User';
         const storedEmail = localStorage.getItem('email') || 'N/A';
-        // Lưu ý: Đảm bảo phone không phải null hoặc undefined trước khi gán
         const storedPhone = localStorage.getItem('phone') || 'Chưa cập nhật'; 
         
         setUserInfo({
@@ -61,46 +60,65 @@ const Profile = () => {
     const handleShowProfileModal = () => {
         setEditProfileForm({ 
             fullName: userInfo.fullName, 
-            // Gán giá trị rỗng nếu đang là "Chưa cập nhật" để người dùng dễ nhập hơn
             phone: userInfo.phone === 'Chưa cập nhật' ? '' : userInfo.phone 
         });
         setShowProfileModal(true);
     };
-
-    // Xử lý đổi Tên và Số điện thoại (MOCK API)
-    const handleProfileUpdate = (e) => {
+    
+    // ⭐ ĐÃ SỬA LỖI READING 'phone'
+    const handleProfileUpdate = async (e) => { 
         e.preventDefault();
         
         const { fullName, phone } = editProfileForm;
+        const email = userInfo.email;
         
         if (!fullName.trim()) {
             alert("Tên không được để trống.");
             return;
         }
 
-        // *** THAY THẾ BẰNG API CALL THỰC TẾ ***
-        // try {
-        //     await api.put('/user/profile', { fullName, phone });
-        //     // ... xử lý thành công
-        // } catch (error) {
-        //     // ... xử lý lỗi
-        // }
+        const trimmedPhone = phone.trim();
+        const phoneRegex = /^\d{10,15}$/;
+        if (trimmedPhone && !phoneRegex.test(trimmedPhone)) {
+             alert("Số điện thoại không hợp lệ (phải là 10-15 chữ số).");
+             return;
+        }
         
-        // Cập nhật localStorage và state
-        const newPhone = phone.trim() || ''; // Lưu chuỗi rỗng nếu không nhập
-        const newFullName = fullName.trim();
+        try {
+            const requestBody = { 
+                email: email,             
+                fullName: fullName.trim(),
+                phone: trimmedPhone 
+            };
 
-        localStorage.setItem('fullName', newFullName);
-        localStorage.setItem('phone', newPhone);
-        
-        setUserInfo(prev => ({ 
-            ...prev, 
-            fullName: newFullName,
-            phone: newPhone || 'Chưa cập nhật' // Hiển thị "Chưa cập nhật" nếu là chuỗi rỗng
-        }));
-        
-        setShowProfileModal(false);
-        alert("Cập nhật thông tin thành công!");
+            const response = await api.put('/auth/user/profile', requestBody); 
+            
+            // ⭐ LOGIC FIX LỖI: Kiểm tra response.data có tồn tại không.
+            // Nếu có, dùng dữ liệu trả về từ server. Nếu không (lỗi backend không trả body), 
+            // dùng dữ liệu đã gửi đi (requestBody).
+            const updatedProfileData = response.data && response.data.email ? response.data : requestBody;
+            
+            const newPhone = updatedProfileData.phone || ''; 
+            const newFullName = updatedProfileData.fullName || '';
+
+            // Cập nhật localStorage chỉ khi API call thành công
+            localStorage.setItem('fullName', newFullName);
+            localStorage.setItem('phone', newPhone);
+            
+            setUserInfo(prev => ({ 
+                ...prev, 
+                fullName: newFullName,
+                phone: newPhone || 'Chưa cập nhật'
+            }));
+            
+            setShowProfileModal(false);
+            alert("Cập nhật thông tin thành công!");
+        } catch (error) {
+             // Xử lý lỗi API chi tiết hơn
+             const apiError = error.response?.data?.message || error.message; 
+             const errorMessage = apiError || "Đã xảy ra lỗi khi cập nhật profile.";
+             alert(`Lỗi cập nhật profile: ${errorMessage}`);
+        }
     };
 
     // Xử lý Đổi Mật khẩu (API Call)
@@ -129,24 +147,20 @@ const Profile = () => {
                 newPassword: newPass 
             });
 
-            // Xử lý thành công: Đăng xuất người dùng
             setShowPasswordModal(false);
             alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
             
-            // ⭐ GIẢI PHÁP: Chỉ xóa token và role, giữ lại thông tin cá nhân (email, fullName, phone)
             localStorage.removeItem('token');
             localStorage.removeItem('userRole'); 
             
             navigate('/login'); 
 
         } catch (error) {
-            // Cố gắng lấy thông báo lỗi từ API
             const apiError = error.response?.data?.message || error.message; 
             const errorMessage = apiError || "Đã xảy ra lỗi khi đổi mật khẩu.";
             alert(`Lỗi: ${errorMessage}`);
         }
         
-        // Reset form mật khẩu
         setNewPassword({ current: '', new: '', confirm: '' });
     };
 

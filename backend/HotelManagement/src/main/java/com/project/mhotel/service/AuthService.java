@@ -2,6 +2,7 @@ package com.project.mhotel.service;
 
 import com.project.mhotel.dto.ChangePasswordRequest;
 import com.project.mhotel.dto.RegisterRequest;
+import com.project.mhotel.dto.ResetPasswordRequest;
 import com.project.mhotel.dto.UpdateProfileRequest; // IMPORT MỚI
 import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.entity.CustomerAccount.Status;
@@ -10,13 +11,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthService {
 
     @Autowired
     private CustomerAccountRepository customerAccountRepository;
+
+    private final Map<String, OtpData> otpStorage = new ConcurrentHashMap<>();
+    private static final long OTP_VALIDITY_MINUTES = 5;
+    private static class OtpData {
+        final String otp;
+        final long expiryTime;
+
+        OtpData(String otp) {
+            this.otp = otp;
+            this.expiryTime = System.currentTimeMillis() + OTP_VALIDITY_MINUTES * 60 * 1000;
+        }
+
+        boolean isValid(String providedOtp) {
+            return this.otp.equals(providedOtp) && System.currentTimeMillis() < this.expiryTime;
+        }
+    }
 
     public Optional<CustomerAccount> authenticateCustomer(String email, String rawPassword) {
         Optional<CustomerAccount> account = customerAccountRepository.findByEmail(email);
@@ -32,7 +52,6 @@ public class AuthService {
     }
 
     private boolean isPasswordMatch(String rawPassword, String storedHash) {
-        // LƯU Ý: Đây là so sánh mật khẩu thô (string equals), cần dùng BCryptPasswordEncoder trong thực tế.
         return rawPassword.equals(storedHash);
     }
 
@@ -92,5 +111,53 @@ public class AuthService {
 
         // 3. Lưu vào cơ sở dữ liệu
         return customerAccountRepository.save(customer);
+    }
+
+    public boolean sendPasswordResetOtp(String email) {
+        CustomerAccount customer = customerAccountRepository.findByEmail(email)
+                .orElse(null);
+
+        if (customer == null) {
+            return true;
+        }
+
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        otpStorage.put(email, new OtpData(otp));
+
+        // 3. Gửi email (Sử dụng EmailUtil bạn đã có)
+        // Ví dụ sử dụng EmailUtil của bạn:
+        // EmailUtil emailUtil = new EmailUtil(); // Cần inject EmailUtil
+        // boolean success = emailUtil.sendOTP(email, otp, customer.getFullName());
+
+        System.out.println("DEBUG: Gửi OTP '" + otp + "' đến email: " + email);
+        boolean success = true;
+
+        return success;
+    }
+
+    public void resetPassword(ResetPasswordRequest request) throws IllegalArgumentException {
+        // 1. Kiểm tra OTP
+        OtpData otpData = otpStorage.get(request.getEmail());
+
+        if (otpData == null) {
+            throw new IllegalArgumentException("Email hoặc mã OTP không hợp lệ.");
+        }
+
+        if (!otpData.isValid(request.getOtp())) {
+            throw new IllegalArgumentException("Mã OTP không hợp lệ hoặc đã hết hạn (5 phút).");
+        }
+
+        // 2. Cập nhật mật khẩu mới (Cần Hash mật khẩu mới trong thực tế)
+        CustomerAccount customer = customerAccountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
+
+        // LƯU Ý QUAN TRỌNG: Bạn cần HASH (mã hóa) mật khẩu mới trước khi lưu.
+        // Ví dụ: customer.setPasswordHash(bCryptPasswordEncoder.encode(request.getNewPassword()));
+        customer.setPasswordHash(request.getNewPassword()); // Hiện tại lưu mật khẩu thô như code cũ của bạn
+        customer.setUpdatedAt(LocalDateTime.now());
+        customerAccountRepository.save(customer);
+
+        // 3. Xóa OTP sau khi sử dụng thành công
+        otpStorage.remove(request.getEmail());
     }
 }

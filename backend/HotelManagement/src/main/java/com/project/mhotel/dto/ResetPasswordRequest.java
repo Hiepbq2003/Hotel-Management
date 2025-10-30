@@ -1,17 +1,14 @@
 package com.project.mhotel.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateProfileRequest {
-
-    private String fullName;
-
-    private String phone;
-
+public class ResetPasswordRequest {
     private String email;
-    }
+    private String otp;
+    private String newPassword;
+}

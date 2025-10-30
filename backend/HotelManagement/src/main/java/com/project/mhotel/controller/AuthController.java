@@ -1,10 +1,6 @@
 package com.project.mhotel.controller;
 
-import com.project.mhotel.dto.ChangePasswordRequest;
-import com.project.mhotel.dto.LoginRequest;
-import com.project.mhotel.dto.LoginResponse;
-import com.project.mhotel.dto.RegisterRequest;
-import com.project.mhotel.dto.UpdateProfileRequest; // IMPORT MỚI
+import com.project.mhotel.dto.*;
 import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,31 +85,32 @@ public class AuthController {
         }
     }
 
-    // *** PHƯƠNG THỨC MỚI: CẬP NHẬT PROFILE ***
     @PutMapping("/user/profile")
-    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request) {
-
-        // LƯU Ý QUAN TRỌNG:
-        // Vì không có SecurityContext (JWT) đầy đủ, ta sẽ GIẢ ĐỊNH EMAIL.
-        // TRONG THỰC TẾ, DÒNG NÀY PHẢI ĐƯỢC THAY THẾ BẰNG CƠ CHẾ LẤY EMAIL TỪ TOKEN
-        String currentCustomerEmail = "user@example.com";
+    public ResponseEntity<UpdateProfileResponse> updateProfile(@RequestBody UpdateProfileRequest request) {
+        String currentCustomerEmail = request.getEmail();
+        if (currentCustomerEmail == null || currentCustomerEmail.isEmpty()) {
+            return ResponseEntity.badRequest().body(new UpdateProfileResponse("Email không được để trống.", null, null, null));
+        }
 
         try {
-            // Thực hiện cập nhật trong Service
             CustomerAccount updatedAccount = authService.updateCustomerProfile(currentCustomerEmail, request);
 
-            // Trả về dữ liệu đã được cập nhật
-            return ResponseEntity.ok(Map.of(
-                    "message", "Cập nhật thông tin thành công!",
-                    "fullName", updatedAccount.getFullName(),
-                    "phone", updatedAccount.getPhone(),
-                    "email", updatedAccount.getEmail()
-            ));
+            UpdateProfileResponse response = new UpdateProfileResponse();
+            response.setMessage("Cập nhật thông tin thành công!");
+            response.setFullName(updatedAccount.getFullName());
+            response.setPhone(updatedAccount.getPhone());
+            response.setEmail(updatedAccount.getEmail());
+
+            return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+
+            UpdateProfileResponse errorResponse = new UpdateProfileResponse(e.getMessage(), null, null, null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Lỗi server khi cập nhật profile."));
+
+            UpdateProfileResponse errorResponse = new UpdateProfileResponse("Lỗi server khi cập nhật profile.", null, null, null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 }

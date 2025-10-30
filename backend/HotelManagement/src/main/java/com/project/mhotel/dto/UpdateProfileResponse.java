@@ -7,11 +7,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateProfileRequest {
-
+public class UpdateProfileResponse {
+    private String message;
     private String fullName;
-
     private String phone;
-
     private String email;
-    }
+
+
+}
