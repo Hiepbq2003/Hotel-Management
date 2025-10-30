@@ -15,15 +15,21 @@ public class EmailUtil {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    private static final String APP_PASSWORD = "yqxf ubko usty uzqc";
+    @Value("${spring.mail.password}")
+    private String APP_PASSWORD;
+
     private static final String FROM_NAME = "Hệ Thống Quản Lý Khách Sạn";
+
     private Properties getMailProperties() {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
+
         props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.starttls.enable", "true");
+
         props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+
         return props;
     }
 
@@ -45,7 +51,8 @@ public class EmailUtil {
             });
 
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(fromEmail, FROM_NAME));
+            // Đảm bảo mã hóa UTF-8 cho tên người gửi
+            message.setFrom(new InternetAddress(fromEmail, FROM_NAME, "UTF-8"));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject(subject);
             message.setSentDate(new Date());
