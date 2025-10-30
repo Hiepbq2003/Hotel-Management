@@ -1,38 +1,61 @@
 import React, { useState } from "react";
-// Bắt buộc phải import useNavigate để xử lý chuyển hướng (redirect)
 import { useNavigate } from "react-router-dom"; 
 import SignInForm from "./SignIn";
 import SignUpForm from "./SignUp";
+import ForgotPassword from "./ForgotPassword"; // Đảm bảo bạn đã tạo file này
 import './Login.css'; 
 
 export default function Login() {
+    // Khởi tạo trạng thái mới, có thể là "signIn", "signUp", hoặc "forgotPassword"
     const [type, setType] = useState("signIn");
-    const navigate = useNavigate(); // Khởi tạo hook useNavigate
+    const navigate = useNavigate();
 
     const handleOnClick = (text) => {
         if (text !== type) setType(text);
     };
 
-    // 1. Hàm xử lý khi Đăng nhập thành công
-    // Hàm này sẽ nhận vai trò (role) từ SignIn.js
     const handleLoginSuccess = (role) => {
-        // Tùy chỉnh logic chuyển hướng dựa trên vai trò
+        
         if (role === 'MANAGER') {
             navigate('/manager/dashboard');
         } else {
-            navigate('/home'); // Chuyển hướng khách hàng về trang chủ
+            navigate('/home');
         }
     };
 
-    // 2. Hàm xử lý khi Đăng ký thành công
-    // Hàm này sẽ được gọi từ SignUp.js
     const handleRegisterSuccess = () => {
-        // Hiển thị thông báo đăng ký thành công
+      
         alert("Đăng ký thành công! Vui lòng Đăng nhập."); 
-        // Chuyển đổi trạng thái container sang form Đăng nhập
+        
         setType("signIn"); 
     };
+    
+    // Hàm chuyển về form Đăng nhập (dùng cho ForgotPassword)
+    const handleSwitchToSignIn = () => {
+        setType("signIn");
+    };
 
+    // Hàm chuyển sang form Quên mật khẩu (dùng cho SignInForm)
+    const handleSwitchToForgotPassword = () => {
+        setType("forgotPassword");
+    };
+    
+    // Hàm quyết định nội dung hiển thị trong panel Sign-In
+    const renderLoginPanelContent = () => {
+        if (type === "forgotPassword") {
+            // Hiển thị form Quên mật khẩu. Truyền hàm để quay lại SignIn
+            return <ForgotPassword onSwitchToSignIn={handleSwitchToSignIn} />;
+        }
+        
+        // Hiển thị form Đăng nhập. Truyền hàm để chuyển sang ForgotPassword
+        return <SignInForm 
+                    onLoginSuccess={handleLoginSuccess}
+                    onForgotPasswordClick={handleSwitchToForgotPassword} 
+                />;
+    };
+
+
+    // Class container chỉ cần xử lý cho SignUp vì ForgotPassword nằm chung panel với SignIn
     const containerClass =
         "container " + (type === "signUp" ? "right-panel-active" : "");
 
@@ -53,11 +76,11 @@ export default function Login() {
             </h1>
 
             <div className={containerClass} id="container">
-                {/* Truyền hàm xử lý vào SignUpForm */}
+                {/* 1. Panel Đăng ký (Giữ nguyên) */}
                 <SignUpForm onRegisterSuccess={handleRegisterSuccess} />
                 
-                {/* Truyền hàm xử lý vào SignInForm */}
-                <SignInForm onLoginSuccess={handleLoginSuccess} />
+                {/* 2. Panel Đăng nhập / Quên Mật khẩu (Dùng hàm Render mới) */}
+                {renderLoginPanelContent()}
                 
                 <div className="overlay-container">
                     <div className="overlay">

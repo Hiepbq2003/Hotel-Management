@@ -4,7 +4,7 @@ import { FaFacebookF, FaGooglePlusG, FaLinkedinIn } from "react-icons/fa";
 import api from "../../api/apiConfig";
 
 // Component nhận prop onLoginSuccess từ Login.js
-function SignInForm({ onLoginSuccess }) {
+function SignInForm({ onLoginSuccess , onForgotPasswordClick }) {
   const [state, setState] = React.useState({ email: "", password: "" });
   const [error, setError] = React.useState(null); 
 
@@ -18,7 +18,7 @@ function SignInForm({ onLoginSuccess }) {
 
     try {
      
-      const loginData = await api.post("/auth/login", {
+      const loginData = await api.post("/auth/login", { 
         email: state.email,
         password: state.password,
       });
@@ -89,7 +89,17 @@ function SignInForm({ onLoginSuccess }) {
           required
         />
 
-        <a href="#">Forgot your password?</a>
+        <a 
+                    href="#" 
+                    onClick={(e) => { 
+                        e.preventDefault(); 
+                        if (onForgotPasswordClick) onForgotPasswordClick(); 
+                    }}
+                    style={{cursor: 'pointer', color: '#333'}} // Thêm style để trông giống nút bấm hơn
+                >
+                Forgot your password?</a>
+
+
         <button type="submit" className="sign">
           Sign In
         </button>
