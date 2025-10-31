@@ -6,7 +6,9 @@ import com.project.mhotel.dto.ResetPasswordRequest;
 import com.project.mhotel.dto.UpdateProfileRequest;
 import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.entity.CustomerAccount.Status;
+import com.project.mhotel.entity.UserAccount;
 import com.project.mhotel.repository.CustomerAccountRepository;
+import com.project.mhotel.repository.UserAccountRepository;
 import com.project.mhotel.utils.EmailUtil; // <--- Cần IMPORT EmailUtil
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,10 @@ public class AuthService {
 
     @Autowired
     private CustomerAccountRepository customerAccountRepository;
+    @Autowired
+    private UserAccountRepository userAccountRepository;
 
-    @Autowired // <--- THÊM AUTOWIRED để sử dụng EmailUtil
+    @Autowired
     private EmailUtil emailUtil;
 
     private final Map<String, OtpData> otpStorage = new ConcurrentHashMap<>();
@@ -101,19 +105,16 @@ public class AuthService {
 
         CustomerAccount customer = customerOptional.get();
 
-        // 1. Cập nhật FullName
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
             customer.setFullName(request.getFullName());
         }
 
-        // 2. Cập nhật Phone
         if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
             customer.setPhone(request.getPhone());
         }
 
         customer.setUpdatedAt(LocalDateTime.now());
 
-        // 3. Lưu vào cơ sở dữ liệu
         return customerAccountRepository.save(customer);
     }
 
@@ -130,7 +131,7 @@ public class AuthService {
         otpStorage.put(email, new OtpData(otp));
 
         System.out.println("DEBUG: Gửi OTP '" + otp + "' đến email: " + email);
-        boolean success = emailUtil.sendOTP(email, otp, customer.getFullName()); // <--- ĐÃ SỬA LỖI TẠI ĐÂY!
+        boolean success = emailUtil.sendOTP(email, otp, customer.getFullName());
 
         return success;
     }
@@ -155,5 +156,18 @@ public class AuthService {
         customerAccountRepository.save(customer);
 
         otpStorage.remove(request.getEmail());
+    }
+    public Optional<UserAccount> authenticateUser(String email, String rawPassword) {
+        Optional<UserAccount> account = userAccountRepository.findByEmail(email);
+
+        if (account.isPresent()) {
+            UserAccount user = account.get();
+            // Sử dụng isPasswordMatch (dùng chung logic) và kiểm tra trạng thái active
+            if (isPasswordMatch(rawPassword, user.getPasswordHash()) && user.getStatus() == UserAccount.Status.active) {
+                return account;
+            }
+        }
+
+        return Optional.empty();
     }
 }

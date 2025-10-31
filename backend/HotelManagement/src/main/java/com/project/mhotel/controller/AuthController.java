@@ -2,6 +2,7 @@ package com.project.mhotel.controller;
 
 import com.project.mhotel.dto.*;
 import com.project.mhotel.entity.CustomerAccount;
+import com.project.mhotel.entity.UserAccount;
 import com.project.mhotel.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,6 +50,35 @@ public class AuthController {
                     .body("Sai Email hoặc Mật khẩu.");
         }
     }
+    @PostMapping("/staff/login")
+    public ResponseEntity<?> authenticateStaff(@RequestBody LoginRequest loginRequest) {
+
+        Optional<UserAccount> authenticatedAccount = authService.authenticateUser(
+                loginRequest.getEmail(),
+                loginRequest.getPassword()
+        );
+
+        if (authenticatedAccount.isPresent()) {
+            UserAccount user = authenticatedAccount.get();
+
+            String dummyToken = "staff_token_" + user.getId();
+
+            LoginResponse response = new LoginResponse(
+                    dummyToken,
+                    user.getEmail(),
+                    user.getRole().name().toUpperCase(),
+                    user.getFullName(),
+                    user.getPhone()
+            );
+
+            return ResponseEntity.ok(response);
+
+        } else {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Sai Email hoặc Mật khẩu, hoặc tài khoản chưa được kích hoạt.");
+        }
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest registerRequest) {
@@ -81,10 +111,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Endpoint xử lý yêu cầu gửi OTP đặt lại mật khẩu.
-     * Tương ứng với POST /api/auth/forgot-password từ frontend.
-     */
     @PostMapping("/forgot-password")
     public ResponseEntity<?> sendPasswordResetOtp(@RequestBody Map<String, String> request) {
         String email = request.get("email");
@@ -94,14 +120,9 @@ public class AuthController {
 
         authService.sendPasswordResetOtp(email);
 
-        // Luôn trả về OK để tránh lỗ hổng bảo mật (timing attack), ngay cả khi email không tồn tại.
         return ResponseEntity.ok("Yêu cầu gửi mã OTP đã được xử lý.");
     }
 
-    /**
-     * Endpoint xử lý đặt lại mật khẩu bằng OTP.
-     * Tương ứng với POST /api/auth/reset-password từ frontend.
-     */
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
         if (request.getEmail() == null || request.getOtp() == null || request.getNewPassword() == null) {
@@ -112,7 +133,6 @@ public class AuthController {
             authService.resetPassword(request);
             return ResponseEntity.ok("Đặt lại mật khẩu thành công!");
         } catch (IllegalArgumentException e) {
-            // Lỗi OTP sai/hết hạn hoặc Email không tồn tại/đã bị khóa.
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đặt lại mật khẩu thất bại: Lỗi hệ thống.");
