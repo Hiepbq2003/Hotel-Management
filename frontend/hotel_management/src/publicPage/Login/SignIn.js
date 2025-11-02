@@ -4,48 +4,73 @@ import { FaFacebookF, FaGooglePlusG, FaLinkedinIn } from "react-icons/fa";
 import api from "../../api/apiConfig";
 
 // Component nhận prop onLoginSuccess từ Login.js
-function SignInForm({ onLoginSuccess , onForgotPasswordClick }) {
+function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
   const [state, setState] = React.useState({ email: "", password: "" });
-  const [error, setError] = React.useState(null); 
+  const [error, setError] = React.useState(null);
 
   const handleChange = (evt) => {
     setState({ ...state, [evt.target.name]: evt.target.value });
+  };
+
+  // Hàm xử lý logic lưu thông tin đăng nhập thành công
+  const handleLoginSuccess = (loginData) => {
+    const { token, role, email, fullName, phone } = loginData;
+    
+    // Lưu thông tin vào Local Storage
+    localStorage.setItem("token", token);
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("email", email);
+    localStorage.setItem("fullName", fullName);
+    localStorage.setItem("phone", phone);
+
+    // Gọi hàm callback thành công
+    if (onLoginSuccess) {
+      onLoginSuccess(role);
+    }
   };
 
   const handleOnSubmit = async (evt) => {
     evt.preventDefault();
     setError(null);
 
-    try {
-     
-      // *** ĐÃ SỬA: Thay đổi endpoint sang /auth/staff/login để đăng nhập nhân viên ***
-      const loginData = await api.post("/auth/staff/login", { 
-        email: state.email,
-        password: state.password,
-      });
+    const loginPayload = {
+      email: state.email,
+      password: state.password,
+    };
+    
 
-      const { token, role } = loginData;
-      localStorage.setItem("token", token);
-      localStorage.setItem("userRole", role);
-      localStorage.setItem("email", loginData.email);
-      localStorage.setItem("fullName", loginData.fullName);
-      localStorage.setItem("phone", loginData.phone);
-      if (onLoginSuccess) {
-        onLoginSuccess(role);
-      }
-    } catch (err) {
-      console.error("Lỗi đăng nhập:", err);
-      if (err.message) {
-        setError(err.message);
-      } else {
+    let loginSuccessful = false;
+    let loginData = null;
+
+    try {
+      const response = await api.post("/auth/staff/login", loginPayload);
+      loginData = response.data || response;
+      loginSuccessful = true;
+ 
+      console.log("Đăng nhập Staff thành công.");
+    } catch (errStaff) {
+    
+      console.log("Đăng nhập Staff thất bại, thử sang User...");
+      
+      try {
+        const response = await api.post("/auth/login", loginPayload);
+        loginData = response.data || response;
+        loginSuccessful = true;
+        console.log("Đăng nhập User thành công.");
+      } catch (errUser) {
+      
+        console.error("Lỗi đăng nhập cả Staff và User:", errUser);
         setError(
-          // Thông báo lỗi chung được tùy chỉnh cho nhân viên
           "Đăng nhập thất bại. Vui lòng kiểm tra lại Email/Mật khẩu hoặc tài khoản đã kích hoạt."
         );
       }
     }
 
-    setState({ email: state.email, password: "" });
+    if (loginSuccessful && loginData) {
+      handleLoginSuccess(loginData);
+    }
+    
+    setState({ ...state, password: "" });
   };
 
   return (
@@ -67,7 +92,6 @@ function SignInForm({ onLoginSuccess , onForgotPasswordClick }) {
 
         <span>or use your account</span>
 
-        {/* Hiển thị lỗi */}
         {error && (
           <p style={{ color: "red", margin: "10px 0", fontSize: "14px" }}>
             {error}
@@ -91,16 +115,16 @@ function SignInForm({ onLoginSuccess , onForgotPasswordClick }) {
           required
         />
 
-        <a 
-                    href="#" 
-                    onClick={(e) => { 
-                        e.preventDefault(); 
-                        if (onForgotPasswordClick) onForgotPasswordClick(); 
-                    }}
-                    style={{cursor: 'pointer', color: '#333'}} 
-                >
-                Forgot your password?</a>
-
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            if (onForgotPasswordClick) onForgotPasswordClick();
+          }}
+          style={{ cursor: "pointer", color: "#333" }}
+        >
+          Forgot your password?
+        </a>
 
         <button type="submit" className="sign">
           Sign In

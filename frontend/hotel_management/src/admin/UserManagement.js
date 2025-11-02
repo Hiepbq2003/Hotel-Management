@@ -19,7 +19,7 @@ const ALLOWED_ACCESS_ROLES = ['ADMIN'];
 const ALL_STAFF_ROLES = ['ADMIN', 'MANAGER', 'RECEPTION', 'HOUSEKEEPING'];
 
 // Hàm chuyển đổi vai trò/trạng thái (Role/Status) từ chữ hoa sang chữ thường cho API
-const toSnakeCaseRole = (role) => role ? role.toLowerCase() : null;
+// **Đã bỏ hàm toSnakeCaseRole để gửi role/status dưới dạng UPPERCASE**
 
 // --- Helper Functions for UI ---
 
@@ -110,12 +110,13 @@ function CreateUserModal({ show, handleClose, handleCreate, editableRoles }) {
         // Tạo username từ email (giả định)
         const username = email.split('@')[0];
 
+        // Gửi vai trò dưới dạng UPPERCASE (role)
         handleCreate({ 
             fullName, 
             email, 
             username, 
             password, 
-            role: toSnakeCaseRole(role), // Chuyển sang chữ thường cho backend
+            role: role, // role đã là UPPERCASE (e.g., 'MANAGER') từ Form.Select
             phone 
         });
         
@@ -252,14 +253,15 @@ function EditUserModal({ show, handleClose, user, handleSave, editableRoles }) {
             return;
         }
 
-        // Chuyển đổi role về chữ thường cho API
-        const dataToSend = {
+        // Payload chỉ chứa các trường được chỉnh sửa, nhưng sẽ được truyền cùng user gốc
+        const updatedFields = {
             fullName: formData.fullName,
             phone: formData.phone,
-            role: toSnakeCaseRole(formData.role)
+            role: formData.role // role đã là UPPERCASE (e.g., 'MANAGER')
         };
         
-        handleSave(user.id, dataToSend);
+        // Truyền updatedFields và user gốc vào handleSave
+        handleSave(user.id, updatedFields, user); 
     };
     
     // Nếu user chưa được chọn hoặc đang loading
@@ -344,8 +346,8 @@ function UpdateStatusModal({ show, handleClose, user, handleSave }) {
             return;
         }
 
-        // Chuyển đổi status về chữ thường cho API
-        const statusToSend = toSnakeCaseRole(newStatus); 
+        // Gửi trạng thái dưới dạng UPPERCASE (newStatus) để khớp với Java Enum.
+        const statusToSend = newStatus; 
         handleSave(user.id, statusToSend);
     };
 
@@ -400,6 +402,8 @@ function UserManagement() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Lấy giá trị ban đầu cho hiển thị và kiểm tra quyền
     const currentUserRole = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
     const currentUserId = localStorage.getItem('userId');
 
@@ -452,7 +456,6 @@ function UserManagement() {
         if (!isCurrentUserAdmin) return false;
         
         // ADMIN không thể chỉnh sửa tài khoản của chính mình.
-        // Lưu ý: currentUserId cần được lấy đúng (ví dụ: từ token hoặc state)
         return targetUserId !== currentUserId; 
     };
     
@@ -464,15 +467,22 @@ function UserManagement() {
         return [];
     };
 
-    // --- CRUD Handlers ---
+    // --- CRUD Handlers (Đã được FIX DTO) ---
 
     // CREATE Logic
     const handleCreateUser = async (formData) => {
+        // 1. Lấy vai trò người dùng hiện tại từ localStorage
+        const role = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
+        if (!role) {
+            alert("Lỗi xác thực: Không tìm thấy vai trò người dùng. Vui lòng đăng nhập lại.");
+            return;
+        }
+
         try {
-            // Yêu cầu Backend kiểm tra quyền Admin
+            // formData đã là DTO đầy đủ (fullName, email, username, password, role, phone)
             await api.post('/user', formData, {
                  headers: {
-                    'X-User-Role': currentUserRole 
+                    'X-User-Role': role 
                  }
             });
             
@@ -487,11 +497,33 @@ function UserManagement() {
     };
     
     // EDIT Details (Tên/SĐT/Vai trò) Logic
-    const handleEditDetails = async (userId, dataToSend) => {
+    const handleEditDetails = async (userId, updatedFields, originalUser) => {
+        // 1. Lấy vai trò người dùng hiện tại từ localStorage
+        const role = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
+        if (!role) {
+            alert("Lỗi xác thực: Không tìm thấy vai trò người dùng. Vui lòng đăng nhập lại.");
+            setShowEditModal(false);
+            return;
+        }
+        
+        // 2. FIX LỖI 400: Tái tạo DTO đầy đủ NHƯNG LOẠI BỎ TRƯỜNG PASSWORD
+        // BE dùng chung DTO, nên cần username, email. Bỏ password để tránh lỗi validation.
+        const fullDataToSend = {
+            // Dữ liệu BẮT BUỘC (lấy từ user gốc)
+            username: originalUser.username,
+            email: originalUser.email,
+            // KHÔNG GỬI TRƯỜNG 'password'
+            
+            // Dữ liệu đang được cập nhật từ modal
+            fullName: updatedFields.fullName,
+            phone: updatedFields.phone,
+            role: updatedFields.role 
+        };
+
         try {
-            await api.put(`/user/${userId}/details`, dataToSend, {
+            await api.put(`/user/${userId}/details`, fullDataToSend, {
                 headers: {
-                    'X-User-Role': currentUserRole 
+                    'X-User-Role': role // Gửi vai trò người gọi dưới dạng UPPERCASE
                 }
             });
             alert(`Cập nhật thông tin người dùng ID ${userId} thành công!`);
@@ -508,10 +540,19 @@ function UserManagement() {
     
     // UPDATE Status (Inactive/Blocked) Logic
     const handleUpdateStatus = async (userId, newStatus) => {
+        // 1. Lấy vai trò người dùng hiện tại từ localStorage
+        const role = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
+        if (!role) {
+            alert("Lỗi xác thực: Không tìm thấy vai trò người dùng. Vui lòng đăng nhập lại.");
+            setShowStatusModal(false);
+            return;
+        }
+
         try {
+            // newStatus (string) đã là UPPERCASE (e.g., 'ACTIVE')
             await api.put(`/user/${userId}/status`, { newStatus }, {
                 headers: {
-                    'X-User-Role': currentUserRole 
+                    'X-User-Role': role // Gửi vai trò người gọi dưới dạng UPPERCASE
                 }
             });
             alert(`Cập nhật trạng thái người dùng ID ${userId} thành ${newStatus} thành công!`);
