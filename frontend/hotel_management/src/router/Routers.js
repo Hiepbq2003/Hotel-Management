@@ -12,6 +12,7 @@ import Manager from "../manager/Manager";
 import Profile from "../publicPage/Profile";
 import Admin from "../admin/Admin"; 
 import UserManagement from "../adminArea/UserManagement";
+import CustomerManagement from "../adminArea/CustomerManagement";
 // import Reception from "../reception/Reception"; 
 // import ReceptionDashBoard from "../reception/ReceptionDashBoard"; 
 
@@ -39,6 +40,7 @@ function Routers() {
           <Route path="dashboard" element={<DashBoard />} />
           <Route path="user-management" element={<UserManagement />} />
           <Route path="room-types" element={<RoomTypeManagement />} />
+          <Route path="customer-management" element={<CustomerManagement />} />
         </Route>
        
         {/* *** ROUTE DÀNH CHO ADMIN *** */}

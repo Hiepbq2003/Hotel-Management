@@ -94,7 +94,6 @@ public class AuthService {
         customerAccountRepository.save(customer);
     }
 
-    // *** PHƯƠNG THỨC MỚI: CẬP NHẬT PROFILE ***
     public CustomerAccount updateCustomerProfile(String email, UpdateProfileRequest request) {
 
         Optional<CustomerAccount> customerOptional = customerAccountRepository.findByEmail(email);

@@ -53,7 +53,7 @@ const Sidebar = ({ role }) => {
                 {canManageRoomTypes && (
                     <Nav.Link 
                         as={Link} 
-                        to={`${basePath}/room-types`} // <-- Dùng basePath
+                        to={`${basePath}/room-types`} 
                         className={`text-white ${location.pathname === `${basePath}/room-types` ? 'bg-primary rounded' : ''}`}
                     >
                         <FaBed className="me-2" /> Quản lý Loại phòng
@@ -64,10 +64,19 @@ const Sidebar = ({ role }) => {
                 {canManageUsers && (
                     <Nav.Link 
                         as={Link} 
-                        to={`${basePath}/user-management`} // <-- Dùng basePath
+                        to={`${basePath}/user-management`} 
                         className={`text-white ${location.pathname === `${basePath}/user-management` ? 'bg-primary rounded' : ''}`} // <-- Đã sửa logic active
                     >
                         <FaUsers className="me-2" /> Quản lý Người dùng
+                    </Nav.Link>
+                )}
+                  {canManageUsers && (
+                    <Nav.Link 
+                        as={Link} 
+                        to={`${basePath}/customer-management`}
+                        className={`text-white ${location.pathname === `${basePath}/customer-management` ? 'bg-primary rounded' : ''}`} // <-- Đã sửa logic active
+                    >
+                        <FaUsers className="me-2" /> Quản lý Khách hàng
                     </Nav.Link>
                 )}
 

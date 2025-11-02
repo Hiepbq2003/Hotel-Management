@@ -17,7 +17,6 @@ public class RoomTypeService {
     private final RoomTypeRepository roomTypeRepository;
     private final HotelService hotelService;
 
-    // ================== ENTITY CRUD ==================
 
     public List<RoomType> getAll() {
         return roomTypeRepository.findAll();
@@ -60,7 +59,6 @@ public class RoomTypeService {
     }
 
 
-    // ================== DTO CRUD ==================
 
     public List<RoomTypeResponse> getAllDto() {
         return roomTypeRepository.findAll()
@@ -105,7 +103,6 @@ public class RoomTypeService {
         return toResponse(updated);
     }
 
-    // ================== Chuyển đổi thủ công ==================
 
     private RoomType toEntity(RoomTypeRequest dto, Hotel hotel) {
         RoomType roomType = new RoomType();

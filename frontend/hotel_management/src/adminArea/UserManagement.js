@@ -63,8 +63,8 @@ function UserManagement() {
     // Gửi yêu cầu cập nhật Role lên Backend
     const handleUpdateRole = async (userToUpdate) => {
         const userId = userToUpdate.id;
-        const newRole = userToUpdate.role; // Lấy role đã chọn từ state
-        // Cần kiểm tra users tồn tại trước khi dùng find
+        const newRole = userToUpdate.role;
+    
         const targetUserRole = users?.find(u => u.id === userId)?.role; 
 
         if (!canEdit(targetUserRole)) {
@@ -73,21 +73,21 @@ function UserManagement() {
         }
         
         try {
-            // Backend sẽ thực hiện kiểm tra bảo mật (Admin/Manager logic) một lần nữa
+   
             await api.put(`/user/${userId}/role`, { role: newRole }, {
                 headers: {
-                    // Truyền Role của người gọi để Backend kiểm tra quyền
+   
                     'X-User-Role': currentUserRole 
                 }
             });
             alert(`Cập nhật vai trò cho ${userToUpdate.fullName} thành ${newRole} thành công!`);
-            fetchUsers(); // Tải lại danh sách
+            fetchUsers();
         } catch (err) {
             const errorMessage = err.response && err.response.data 
                                ? err.response.data 
                                : "Lỗi server hoặc không có quyền truy cập.";
             alert(`Lỗi khi cập nhật vai trò: ${errorMessage}`);
-            fetchUsers(); // Tải lại để khôi phục trạng thái cũ
+            fetchUsers();
         }
     };
 
@@ -110,8 +110,8 @@ function UserManagement() {
                     </tr>
                 </thead>
                 <tbody>
-                    {users?.map((user) => { // Đã thêm Optional Chaining (?)
-                        // Xác định khả năng chỉnh sửa dựa trên logic Admin/Manager
+                    {users?.map((user) => {
+                
                         const editable = canEdit(user.role); 
                         const rolesToDisplay = getEditableRoles(user.role);
 
