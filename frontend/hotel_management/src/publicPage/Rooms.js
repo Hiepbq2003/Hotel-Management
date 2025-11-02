@@ -117,7 +117,7 @@ const Rooms = () => {
                     listStyle: "none",
                     paddingLeft: 0,
                     fontSize: "14px",
-                    color: "#555",
+                    color: "#var(--main-color)",
                     marginBottom: "16px",
                   }}
                 >

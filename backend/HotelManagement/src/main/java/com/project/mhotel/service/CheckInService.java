@@ -1,8 +1,6 @@
 package com.project.mhotel.service;
 
-import com.project.mhotel.dto.AssignedRoomResponse;
-import com.project.mhotel.dto.CheckInRequest;
-import com.project.mhotel.dto.CheckInTodayResponse;
+import com.project.mhotel.dto.*;
 import com.project.mhotel.entity.*;
 import com.project.mhotel.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -43,10 +41,8 @@ public class CheckInService {
         if (availableRooms.isEmpty()) {
             throw new RuntimeException("No available rooms for this type");
         }
-
         Room room = availableRooms.get(0);
-        room.setStatus(Room.Status.occupied);
-        roomRepository.save(room);
+        roomRepository.updateRoomStatus(room.getId(), Room.Status.occupied);
 
         // 3️⃣ Lưu Guest
         Guest guest = Guest.builder()
@@ -55,7 +51,7 @@ public class CheckInService {
                 .phone(req.getPhone())
                 .nationality(req.getNationality())
                 .documentType(req.getDocumentType())
-                .documentNumber(req.getIdNumber())
+                .documentNumber(req.getDocumentNumber())
                 .build();
         guestRepository.save(guest);
 
@@ -111,16 +107,68 @@ public class CheckInService {
                 .toList();
 
         return todayRooms.stream()
-                .map(rr -> new CheckInTodayResponse(
-                        rr.getReservation().getGuest().getFullName(),
-                        rr.getReservation().getGuest().getPhone(),
-                        rr.getReservation().getGuest().getEmail(),
-                        rr.getRoom().getRoomNumber(),
-                        rr.getRoomType().getName(),
-                        rr.getCheckinDate(),
-                        rr.getCheckoutDate(),
-                        rr.getStatus().name()
-                ))
+                .map(rr -> CheckInTodayResponse.builder()
+                        .guestName(rr.getReservation().getGuest().getFullName())
+                        .phone(rr.getReservation().getGuest().getPhone())
+                        .email(rr.getReservation().getGuest().getEmail())
+                        .roomNumber(rr.getRoom().getRoomNumber())
+                        .roomType(rr.getRoomType().getName())
+                        .checkInDate(rr.getCheckinDate())
+                        .checkOutDate(rr.getCheckoutDate())
+                        .status(rr.getStatus().name())
+                        .documentType(rr.getReservation().getGuest().getDocumentType())
+                        .documentNumber(rr.getReservation().getGuest().getDocumentNumber())
+                        .build()
+                )
                 .collect(Collectors.toList());
+
     }
+    @Transactional(readOnly = true)
+    public CheckAvailabilityResponse checkAvailability(CheckAvailabilityRequest req) {
+        RoomType type = roomTypeRepository
+                .findByHotelIdAndCode(DEFAULT_HOTEL_ID, req.getRoomType())
+                .orElseThrow(() -> new RuntimeException("Room type not found"));
+
+        // Lọc phòng trống theo loại
+        List<Room> availableRooms = roomRepository.findByHotel_Id(DEFAULT_HOTEL_ID)
+                .stream()
+                .filter(r -> r.getRoomType().equals(type) && r.getStatus() == Room.Status.available)
+                .toList();
+
+        int count = availableRooms.size();
+
+        return CheckAvailabilityResponse.builder()
+                .roomType(type.getName())
+                .availableRooms(count)
+                .message(count > 0
+                        ? "✅ Có " + count + " phòng trống cho loại " + type.getName()
+                        : "❌ Không còn phòng trống cho loại " + type.getName())
+                .build();
+    }
+    @Transactional
+    public void checkOut(String roomNumber) {
+        Room room = roomRepository.findByRoomNumber(roomNumber)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        // Tìm reservationRoom đang active
+        ReservationRoom rr = reservationRoomRepository.findAll().stream()
+                .filter(r -> r.getRoom().equals(room)
+                        && r.getStatus() == ReservationRoom.Status.checked_in)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng đang được check-in"));
+
+        rr.setStatus(ReservationRoom.Status.checked_out);
+        reservationRoomRepository.save(rr);
+
+        // Cập nhật reservation status
+        Reservation reservation = rr.getReservation();
+        reservation.setStatus(Reservation.Status.checked_out);
+        reservationRepository.save(reservation);
+
+        // Cập nhật trạng thái phòng
+        roomRepository.updateRoomStatus(room.getId(), Room.Status.available);
+
+        System.out.println("✅ Guest checked out from room " + roomNumber);
+    }
+
 }

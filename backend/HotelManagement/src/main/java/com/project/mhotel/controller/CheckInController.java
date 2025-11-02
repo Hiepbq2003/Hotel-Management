@@ -7,9 +7,12 @@ import com.project.mhotel.entity.RoomType;
 import com.project.mhotel.repository.RoomTypeRepository;
 import com.project.mhotel.service.CheckInService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -25,7 +28,31 @@ public class CheckInController {
         return checkInService.getTodayCheckIns();
     }
     @PostMapping("/assign")
-    public AssignedRoomResponse assignRoom(@RequestBody CheckInRequest request) {
-        return checkInService.assignRoom(request);
+    public ResponseEntity<?> assignRoom(@RequestBody CheckInRequest req) {
+        try {
+            AssignedRoomResponse res = checkInService.assignRoom(req);
+            return ResponseEntity.ok(res);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Server error: " + e.getMessage()));
+        }
     }
+    @PostMapping("/checkout")
+    public ResponseEntity<?> checkout(@RequestBody Map<String, String> payload) {
+        try {
+            String roomNumber = payload.get("roomNumber");
+            checkInService.checkOut(roomNumber);
+            return ResponseEntity.ok(Map.of("message", "Checkout thành công"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+
 }

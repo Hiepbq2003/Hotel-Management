@@ -4,18 +4,20 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class CheckInTodayResponse {
+public class BookingRequest {
     private String guestName;
-    private String phone;
     private String email;
-    private String roomNumber;
+    private String phone;
+    private String nationality;
+    private String documentType;
+    private String documentNumber;
     private String roomType;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
-    private String documentType;
-    private String documentNumber;
-    private String status;
+    private Integer adultCount;
+    private Integer childCount;
+    private String notes;
 }

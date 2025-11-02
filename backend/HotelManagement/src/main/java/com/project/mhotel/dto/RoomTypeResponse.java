@@ -17,8 +17,6 @@ public class RoomTypeResponse {
     private String bedInfo;
     private BigDecimal basePrice;
     private LocalDateTime createdAt;
-
-    // Thông tin khách sạn (rút gọn)
     private Long hotelId;
     private String hotelName;
 }
