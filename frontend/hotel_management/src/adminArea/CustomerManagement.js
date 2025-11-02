@@ -17,38 +17,238 @@ import api from '../api/apiConfig';
 const ALLOWED_ROLES = ['ADMIN', 'MANAGER']; 
 const STATUS_OPTIONS = ['active', 'inactive', 'blocked'];
 
-// --- Modal Component cho chức năng Thêm/Sửa ---
-// Để đơn giản hóa, ta chỉ tập trung vào việc hiển thị Modal cho chức năng Sửa Trạng thái.
-function EditCustomerModal({ show, handleClose, customer, statusOptions, handleSave }) {
-    const [currentStatus, setCurrentStatus] = useState(customer?.status || '');
+// =================================================================================
+// 1. CREATE CUSTOMER MODAL (Thêm mới khách hàng)
+// Cập nhật validation: Mật khẩu chỉ cần 6 ký tự số
+// =================================================================================
+
+function CreateCustomerModal({ show, handleClose, handleCreate }) {
+    const [formData, setFormData] = useState({
+        fullName: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: ''
+    });
+    const [validationError, setValidationError] = useState('');
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setValidationError('');
+    };
+
+    const handleInternalCreate = (e) => {
+        e.preventDefault();
+        
+        const { fullName, email, phone, password, confirmPassword } = formData;
+
+        // 1. Check required fields
+        if (!fullName || !email || !password || !confirmPassword) {
+            setValidationError('Vui lòng điền đầy đủ Tên, Email, Mật khẩu và Xác nhận Mật khẩu.');
+            return;
+        }
+
+        // 2. Password match check
+        if (password !== confirmPassword) {
+            setValidationError('Mật khẩu và Xác nhận Mật khẩu không khớp.');
+            return;
+        }
+        
+        // 3. Email format check
+        if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+            setValidationError('Email không hợp lệ.');
+            return;
+        }
+
+        // 4. Password format check (chỉ cần 6 ký tự số)
+        if (!/^\d{6}$/.test(password)) {
+             setValidationError('Mật khẩu phải là 6 ký tự số.');
+             return;
+        }
+
+        handleCreate({ fullName, email, phone, password });
+
+        // Reset form và validation sau khi gọi API
+        setFormData({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
+        setValidationError('');
+    };
+    
+    useEffect(() => {
+        if (!show) {
+            setFormData({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
+            setValidationError('');
+        }
+    }, [show]);
+
+    return (
+        <Modal show={show} onHide={handleClose}>
+            <Modal.Header closeButton>
+                <Modal.Title>➕ Thêm Khách hàng Mới</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Form onSubmit={handleInternalCreate}>
+                    {validationError && <Alert variant="danger">{validationError}</Alert>}
+                    
+                    <Form.Group className="mb-3">
+                        <Form.Label>Họ và Tên (*)</Form.Label>
+                        <Form.Control 
+                            type="text" 
+                            name="fullName"
+                            value={formData.fullName}
+                            onChange={handleChange}
+                            placeholder="Nhập họ và tên"
+                            required
+                        />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Email (*)</Form.Label>
+                        <Form.Control 
+                            type="email" 
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="Nhập email"
+                            required
+                        />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Số điện thoại</Form.Label>
+                        <Form.Control 
+                            type="tel" 
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            placeholder="Nhập số điện thoại (tùy chọn)"
+                        />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Mật khẩu (6 ký tự số) (*)</Form.Label>
+                        <Form.Control 
+                            type="password" 
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Nhập mật khẩu (6 số)"
+                            maxLength={6}
+                            required
+                        />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Xác nhận Mật khẩu (*)</Form.Label>
+                        <Form.Control 
+                            type="password" 
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            placeholder="Xác nhận mật khẩu (6 số)"
+                            maxLength={6}
+                            required
+                        />
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={handleClose}>
+                    Đóng
+                </Button>
+                <Button variant="primary" onClick={handleInternalCreate}>
+                    Tạo Tài Khoản
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    );
+}
+
+// =================================================================================
+// 2. EDIT CUSTOMER MODAL (Gộp Sửa TT + Sửa Status)
+// =================================================================================
+
+function EditCustomerModal({ show, handleClose, customer, statusOptions, handleSaveDetailsAndStatus }) {
+    const [formData, setFormData] = useState({
+        fullName: customer?.fullName || '',
+        phone: customer?.phone || '',
+        status: customer?.status || STATUS_OPTIONS[0]
+    });
+    const [validationError, setValidationError] = useState('');
 
     useEffect(() => {
-        setCurrentStatus(customer?.status || statusOptions[0]);
-    }, [customer, statusOptions]);
-
-    const handleInternalSave = () => {
         if (customer) {
-            handleSave(customer.id, currentStatus);
+            setFormData({
+                fullName: customer.fullName || '',
+                phone: customer.phone || '',
+                status: customer.status || STATUS_OPTIONS[0]
+            });
+        }
+        setValidationError('');
+    }, [customer]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setValidationError('');
+    };
+
+    const handleInternalSave = (e) => {
+        e.preventDefault();
+        
+        if (!formData.fullName.trim()) {
+            setValidationError('Tên đầy đủ không được để trống.');
+            return;
+        }
+
+        if (customer) {
+            // Chỉ gửi những gì cần thiết: customerId, fullName, phone, status
+            handleSaveDetailsAndStatus(customer.id, formData.fullName, formData.phone, formData.status);
         }
     };
 
     return (
         <Modal show={show} onHide={handleClose}>
             <Modal.Header closeButton>
-                <Modal.Title>Chỉnh sửa Khách hàng: {customer?.fullName}</Modal.Title>
+                <Modal.Title>✍️ Chỉnh sửa Khách hàng: {customer?.fullName}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {customer && (
-                    <Form>
+                    <Form onSubmit={handleInternalSave}>
+                        {validationError && <Alert variant="danger">{validationError}</Alert>}
+                        
+                        <Form.Group className="mb-3">
+                            <Form.Label>ID</Form.Label>
+                            <Form.Control type="text" value={customer.id} disabled />
+                        </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Email</Form.Label>
                             <Form.Control type="text" value={customer.email} disabled />
                         </Form.Group>
+                        
+                        <Form.Group className="mb-3">
+                            <Form.Label>Họ và Tên (*)</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                name="fullName"
+                                value={formData.fullName}
+                                onChange={handleChange}
+                                placeholder="Nhập họ và tên"
+                                required
+                            />
+                        </Form.Group>
+                        
+                        <Form.Group className="mb-3">
+                            <Form.Label>Số điện thoại</Form.Label>
+                            <Form.Control 
+                                type="tel" 
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                placeholder="Nhập số điện thoại"
+                            />
+                        </Form.Group>
+
                         <Form.Group className="mb-3">
                             <Form.Label>Trạng thái (Status)</Form.Label>
                             <Form.Select 
-                                value={currentStatus}
-                                onChange={(e) => setCurrentStatus(e.target.value)}
+                                name="status"
+                                value={formData.status}
+                                onChange={handleChange}
                             >
                                 {statusOptions.map(status => (
                                     <option key={status} value={status}>{status.toUpperCase()}</option>
@@ -63,13 +263,17 @@ function EditCustomerModal({ show, handleClose, customer, statusOptions, handleS
                     Đóng
                 </Button>
                 <Button variant="primary" onClick={handleInternalSave}>
-                    Lưu Thay Đổi
+                    Lưu Tất Cả Thay Đổi
                 </Button>
             </Modal.Footer>
         </Modal>
     );
 }
-// --- Hết Modal Component ---
+
+
+// =================================================================================
+// MAIN COMPONENT: CustomerManagement
+// =================================================================================
 
 function CustomerManagement() {
     const [customers, setCustomers] = useState([]);
@@ -77,8 +281,10 @@ function CustomerManagement() {
     const [error, setError] = useState(null);
     const currentUserRole = localStorage.getItem('userRole'); 
     
-    // State cho Modal
-    const [showEditModal, setShowEditModal] = useState(false);
+    // States cho Modals
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    // Chỉ cần 1 Modal Edit duy nhất
+    const [showEditModal, setShowEditModal] = useState(false); 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
 
     useEffect(() => {
@@ -94,7 +300,8 @@ function CustomerManagement() {
         try {
             setLoading(true);
             const response = await api.get('/customer'); 
-            setCustomers(response || []); 
+            // Đảm bảo response là mảng, sử dụng response.data nếu dùng axios, hoặc response nếu apiConfig đã handle
+            setCustomers(response?.data || response || []); 
             setError(null);
         } catch (err) {
             console.error("Lỗi khi tải danh sách khách hàng:", err);
@@ -104,61 +311,92 @@ function CustomerManagement() {
         }
     };
 
-    const canEditStatus = () => {
+    const canPerformAction = () => {
         return ALLOWED_ROLES.includes(currentUserRole);
     };
 
     // --- Modal Handlers ---
     const handleShowEditModal = (customer) => {
-        if (canEditStatus()) {
+        if (canPerformAction()) {
             setSelectedCustomer(customer);
             setShowEditModal(true);
         } else {
-            alert("Bạn không có quyền sửa trạng thái.");
+            alert("Bạn không có quyền chỉnh sửa.");
         }
     };
 
-    const handleCloseEditModal = () => {
+    const handleShowCreateModal = () => {
+        if (canPerformAction()) {
+            setShowCreateModal(true);
+        } else {
+            alert("Bạn không có quyền thêm mới.");
+        }
+    };
+
+    const handleCloseAllModals = () => {
+        setShowCreateModal(false);
         setShowEditModal(false);
         setSelectedCustomer(null);
     };
     
-    // --- CRUD Logic (UPDATE) ---
-    const handleSaveStatus = async (customerId, newStatus) => {
-        const customerToUpdate = customers.find(c => c.id === customerId);
-
+    // --- CRUD Logic (CREATE) ---
+    const handleCreateCustomer = async ({ fullName, email, phone, password }) => {
         try {
-            await api.put(`/customer/${customerId}/status`, { newStatus: newStatus });
+            // API call: POST /api/customer
+            await api.post('/customer', { fullName, email, phone, password });
             
-            alert(`Cập nhật trạng thái cho ${customerToUpdate.fullName} thành ${newStatus} thành công!`);
-            handleCloseEditModal();
+            alert(`Tạo tài khoản ${fullName} thành công!`);
+            handleCloseAllModals();
             fetchCustomers(); 
         } catch (err) {
             const errorMessage = err.response && err.response.data 
-                                ? err.response.data.message || "Lỗi server hoặc không có quyền truy cập."
-                                : "Lỗi không xác định khi cập nhật trạng thái.";
-            alert(`Lỗi khi cập nhật trạng thái: ${errorMessage}`);
+                                ? typeof err.response.data === 'string' ? err.response.data : "Lỗi server hoặc email đã tồn tại."
+                                : "Lỗi không xác định khi tạo khách hàng.";
+            alert(`Lỗi khi tạo khách hàng: ${errorMessage}`);
+            // Không fetchCustomers ở đây nếu chỉ là lỗi validate/conflict để người dùng xem lại form
+        }
+    };
+
+    // --- CRUD Logic (EDIT Details + Status) ---
+    const handleSaveDetailsAndStatus = async (customerId, fullName, phone, status) => {
+        // 1. Cập nhật Tên và SĐT (PUT /api/customer/{id})
+        try {
+            await api.put(`/customer/${customerId}`, { fullName, phone });
+            
+            // 2. Cập nhật Trạng thái (PUT /api/customer/{id}/status)
+            if (selectedCustomer.status !== status) {
+                 await api.put(`/customer/${customerId}/status`, { newStatus: status });
+            }
+            
+            alert(`Cập nhật thông tin và trạng thái cho ID ${customerId} thành công!`);
+            handleCloseAllModals();
+            fetchCustomers(); 
+        } catch (err) {
+            const errorMessage = err.response && err.response.data 
+                                ? typeof err.response.data === 'string' ? err.response.data : "Lỗi server hoặc không có quyền truy cập."
+                                : "Lỗi không xác định khi cập nhật.";
+            alert(`Lỗi khi cập nhật: ${errorMessage}`);
             fetchCustomers(); 
         }
     };
 
     // --- CRUD Logic (DELETE) ---
     const handleDeleteCustomer = async (customerId, fullName) => {
-        if (!canEditStatus()) {
+        if (!canPerformAction()) {
             alert("Bạn không có quyền xóa khách hàng.");
             return;
         }
 
         if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản khách hàng: ${fullName} (ID: ${customerId})?`)) {
             try {
-                // Giả định API cho xóa là DELETE /customer/:id
+                // API call: DELETE /api/customer/{id}
                 await api.delete(`/customer/${customerId}`); 
                 alert(`Xóa khách hàng ${fullName} thành công!`);
                 fetchCustomers();
             } catch (err) {
                 const errorMessage = err.response && err.response.data 
-                                    ? err.response.data.message || "Lỗi server hoặc không có quyền truy cập."
-                                    : "Lỗi không xác định khi xóa khách hàng.";
+                                        ? typeof err.response.data === 'string' ? err.response.data : "Lỗi server hoặc không có quyền truy cập."
+                                        : "Lỗi không xác định khi xóa khách hàng.";
                 alert(`Lỗi khi xóa khách hàng: ${errorMessage}`);
             }
         }
@@ -189,7 +427,7 @@ function CustomerManagement() {
     return (
         <Container className="my-5">
             <Row className="mb-4 justify-content-center"> 
-                <Col md={8} className="text-center"> 
+                <Col md={10} className="text-center"> 
                     <h2 className="text-info display-6 fw-bold">🧑‍🤝‍🧑 Quản lý Tài khoản Khách hàng</h2>
                     <p className="lead">
                         Quyền hạn hiện tại của bạn: <Badge bg="dark" className="fs-6">{currentUserRole}</Badge>
@@ -207,8 +445,12 @@ function CustomerManagement() {
             {!error && (
                 <Row className="mb-3">
                     <Col className="d-flex justify-content-between">
-                        {/* Nút Thêm Mới - Hiện tại không có Modal tương ứng, chỉ là nút placeholder */}
-                        <Button variant="primary" /* onClick={handleShowCreateModal} */ disabled={!canEditStatus()}>
+                        {/* Nút Thêm Mới */}
+                        <Button 
+                            variant="primary" 
+                            onClick={handleShowCreateModal} 
+                            disabled={!canPerformAction()}
+                        >
                             <i className="bi bi-person-plus-fill me-2"></i> Thêm Khách hàng Mới
                         </Button>
                         <Button variant="outline-primary" onClick={fetchCustomers}>
@@ -226,30 +468,33 @@ function CustomerManagement() {
 
             {!error && customers.length > 0 && (
                 <div className="table-responsive">
-                    <Table striped bordered hover className="align-middle">
-                        <thead>
+                    <Table striped bordered hover className="align-middle shadow-sm">
+                        <thead className="table-dark">
                             <tr>
                                 <th>ID</th>
                                 <th>Họ và Tên</th>
                                 <th>Email</th>
                                 <th>SĐT</th>
-                                <th style={{width: '150px'}}>Trạng thái</th>
+                                <th style={{width: '120px'}}>Trạng thái</th>
                                 <th>Ngày tạo</th>
-                                <th style={{width: '180px'}} className="text-center">Hành động</th>
+                                <th style={{width: '150px'}} className="text-center">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                             {customers?.map((customer) => { 
-                                const editable = canEditStatus(); 
+                                const editable = canPerformAction(); 
 
                                 return (
                                     <tr key={customer.id}>
                                         <td>{customer.id}</td>
                                         <td>{customer.fullName}</td>
                                         <td>{customer.email}</td>
-                                        <td>{customer.phone}</td>
+                                        <td>{customer.phone || '(Chưa có SĐT)'}</td>
                                         <td>
-                                            <Badge bg={getStatusVariant(customer.status)} className="py-2 px-3">
+                                            <Badge 
+                                                bg={getStatusVariant(customer.status)} 
+                                                className="py-2 px-3"
+                                            >
                                                 {customer.status?.toUpperCase()}
                                             </Badge>
                                         </td>
@@ -257,20 +502,25 @@ function CustomerManagement() {
                                         <td className="text-center">
                                             {editable && (
                                                 <>
+                                                    {/* Nút Sửa Gộp (TT + Status) */}
                                                     <Button 
                                                         variant="warning" 
                                                         size="sm"
                                                         className="me-2"
                                                         onClick={() => handleShowEditModal(customer)}
+                                                        title="Sửa thông tin và trạng thái"
                                                     >
-                                                        Sửa
+                                                        <i className="bi bi-pencil-fill"></i> Sửa
                                                     </Button>
+                                                    
+                                                    {/* Nút Xóa */}
                                                     <Button 
                                                         variant="danger" 
                                                         size="sm"
                                                         onClick={() => handleDeleteCustomer(customer.id, customer.fullName)}
+                                                        title="Xóa Khách hàng"
                                                     >
-                                                        Xóa
+                                                        <i className="bi bi-trash-fill"></i> Xóa
                                                     </Button>
                                                 </>
                                             )}
@@ -286,14 +536,21 @@ function CustomerManagement() {
                 </div>
             )}
             
-            {/* Modal Sửa trạng thái khách hàng */}
+            {/* 1. Modal Thêm Khách hàng Mới */}
+            <CreateCustomerModal 
+                show={showCreateModal}
+                handleClose={handleCloseAllModals}
+                handleCreate={handleCreateCustomer}
+            />
+
+            {/* 2. Modal Sửa thông tin (Tên, SĐT và Trạng thái) */}
             {selectedCustomer && (
                 <EditCustomerModal 
                     show={showEditModal}
-                    handleClose={handleCloseEditModal}
+                    handleClose={handleCloseAllModals}
                     customer={selectedCustomer}
                     statusOptions={STATUS_OPTIONS}
-                    handleSave={handleSaveStatus}
+                    handleSaveDetailsAndStatus={handleSaveDetailsAndStatus}
                 />
             )}
         </Container>

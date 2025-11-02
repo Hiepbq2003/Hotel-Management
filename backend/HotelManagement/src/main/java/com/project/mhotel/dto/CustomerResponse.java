@@ -1,13 +1,12 @@
 package com.project.mhotel.dto;
 
 import com.project.mhotel.entity.CustomerAccount.Status;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
 public class CustomerResponse {
     private Long id;

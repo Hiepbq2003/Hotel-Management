@@ -4,11 +4,7 @@ import lombok.Data;
 import lombok.NonNull;
 
 @Data
-public class RegisterRequest {
-    @NonNull
-    private String email;
-    @NonNull
-    private String password;
+public class CustomerUpdateRequest {
     @NonNull
     private String fullName;
     private String phone;
