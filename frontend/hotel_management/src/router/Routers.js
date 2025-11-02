@@ -15,7 +15,7 @@ import Reception from "../staffPage/Reception";
 import CheckOutPage from "../staffPage/CheckOutPage";
 import CheckRoom from "../staffPage/CheckRoom";
 import Admin from "../admin/Admin";
-import UserManagement from "../adminArea/UserManagement";
+import UserManagement from "../admin/UserManagement";
 import CustomerManagement from "../adminArea/CustomerManagement";
 
 function Routers() {
@@ -39,10 +39,10 @@ function Routers() {
         <Route path="/manager" element={<Manager />}>
           <Route index element={<DashBoard />} />
           <Route path="dashboard" element={<DashBoard />} />
-          <Route path="user-management" element={<UserManagement />} />
           <Route path="room-types" element={<RoomTypeManagement />} />
           <Route path="customer-management" element={<CustomerManagement />} />
         </Route>
+
         {/* *** ROUTE DÀNH CHO ADMIN *** */}
         <Route path="/admin" element={<Admin />}>
           <Route index element={<DashBoard />} />

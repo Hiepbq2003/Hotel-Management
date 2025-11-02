@@ -22,48 +22,63 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    // Endpoint: Thêm/Tạo mới người dùng (Admin-Only)
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody UserRequest request) {
+    public ResponseEntity<?> createUser(@RequestBody UserRequest request, @RequestHeader("X-User-Role") String callerRoleStr) {
         try {
-            UserResponse newUser = userService.createUser(request);
+            Role callerRole = Role.valueOf(callerRoleStr.toUpperCase());
+            UserResponse newUser = userService.createUser(request, callerRole);
             return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
         } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("No enum constant")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Vai trò không hợp lệ.");
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Tạo tài khoản thất bại: Lỗi hệ thống.");
         }
     }
 
+    // Endpoint: Xem tất cả nhân viên
     @GetMapping("/staff")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
+        // Trong môi trường Production, nên thêm kiểm tra quyền Admin tại đây nếu không dùng Spring Security
+        // Ví dụ: if (callerRole != Role.admin) return FORBIDDEN
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
+    // Endpoint: Chỉnh sửa Trạng thái (Admin-Only)
     @PutMapping("/{userId}/status")
-    public ResponseEntity<?> updateStatus(@PathVariable Long userId, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updateStatus(@PathVariable Long userId, @RequestBody Map<String, String> request, @RequestHeader("X-User-Role") String callerRoleStr) {
         String statusString = request.get("newStatus");
         if (statusString == null || statusString.isEmpty()) {
             return ResponseEntity.badRequest().body("Thiếu thông tin trạng thái mới (newStatus).");
         }
 
         try {
+            Role callerRole = Role.valueOf(callerRoleStr.toUpperCase());
+            Status newStatus = Status.valueOf(statusString.toUpperCase()); // Chuyển toUpperCase để khớp với Enum
 
-            Status newStatus = Status.valueOf(statusString.toLowerCase());
-            UserResponse updatedUser = userService.updateStatus(userId, newStatus);
+            UserResponse updatedUser = userService.updateStatus(userId, newStatus, callerRole);
             return ResponseEntity.ok(updatedUser);
         } catch (IllegalArgumentException e) {
             if (e.getMessage().contains("No enum constant")) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Trạng thái không hợp lệ. Phải là 'active', 'inactive', hoặc 'blocked'.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Trạng thái không hợp lệ. Phải là 'ACTIVE', 'INACTIVE', hoặc 'BLOCKED'.");
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cập nhật trạng thái thất bại: Lỗi hệ thống.");
         }
     }
 
-    @PutMapping("/{id}/role")
-    public ResponseEntity<?> updateStaffRole(
+    // NEW Endpoint: Chỉnh sửa Chi tiết (Tên/SĐT và Vai trò) (Admin-Only)
+    @PutMapping("/{id}/details")
+    public ResponseEntity<?> updateStaffDetails(
             @PathVariable Long id,
             @RequestBody UserRequest request,
             @RequestHeader("X-User-Role") String callerRoleStr) {
@@ -71,22 +86,11 @@ public class UserController {
         try {
 
             Role callerRole = Role.valueOf(callerRoleStr.toUpperCase());
-            Role newRole = Role.valueOf(request.getRole().name().toUpperCase());
 
-            UserAccount updatedUser = userService.updateUserRole(id, newRole, callerRole);
+            // Cập nhật chi tiết qua Service
+            UserResponse updatedUser = userService.updateStaffDetails(id, request, callerRole);
 
-            String hotelName = updatedUser.getHotel() != null ? updatedUser.getHotel().getName() : null;
-
-            return ResponseEntity.ok(new UserResponse(
-                    updatedUser.getId(),
-                    updatedUser.getUsername(),
-                    updatedUser.getEmail(),
-                    updatedUser.getFullName(),
-                    updatedUser.getPhone(),
-                    updatedUser.getRole(),
-                    updatedUser.getStatus(),
-                    hotelName
-            ));
+            return ResponseEntity.ok(updatedUser);
 
         } catch (IllegalArgumentException e) {
             if (e.getMessage().contains("No enum constant")) {
@@ -96,7 +100,8 @@ public class UserController {
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống khi cập nhật vai trò: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống khi cập nhật chi tiết người dùng: " + e.getMessage());
         }
     }
+
 }
