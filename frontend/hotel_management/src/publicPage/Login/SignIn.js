@@ -18,7 +18,8 @@ function SignInForm({ onLoginSuccess , onForgotPasswordClick }) {
 
     try {
      
-      const loginData = await api.post("/auth/login", { 
+      // *** ĐÃ SỬA: Thay đổi endpoint sang /auth/staff/login để đăng nhập nhân viên ***
+      const loginData = await api.post("/auth/staff/login", { 
         email: state.email,
         password: state.password,
       });
@@ -38,7 +39,8 @@ function SignInForm({ onLoginSuccess , onForgotPasswordClick }) {
         setError(err.message);
       } else {
         setError(
-          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin và kết nối."
+          // Thông báo lỗi chung được tùy chỉnh cho nhân viên
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại Email/Mật khẩu hoặc tài khoản đã kích hoạt."
         );
       }
     }
@@ -95,7 +97,7 @@ function SignInForm({ onLoginSuccess , onForgotPasswordClick }) {
                         e.preventDefault(); 
                         if (onForgotPasswordClick) onForgotPasswordClick(); 
                     }}
-                    style={{cursor: 'pointer', color: '#333'}} // Thêm style để trông giống nút bấm hơn
+                    style={{cursor: 'pointer', color: '#333'}} 
                 >
                 Forgot your password?</a>
 

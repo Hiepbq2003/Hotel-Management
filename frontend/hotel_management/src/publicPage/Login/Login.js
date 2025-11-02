@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
 import SignInForm from "./SignIn";
 import SignUpForm from "./SignUp";
-import ForgotPassword from "./ForgotPassword"; // Đảm bảo bạn đã tạo file này
+import ForgotPassword from "./ForgotPassword"; 
 import './Login.css'; 
 
 export default function Login() {
@@ -15,11 +15,18 @@ export default function Login() {
     };
 
     const handleLoginSuccess = (role) => {
-        
-        if (role === 'MANAGER') {
+        const userRole = role.toUpperCase();
+
+        // *** ĐÃ SỬA: Logic phân biệt và điều hướng theo Role ***
+        if (userRole === 'ADMIN') {
+            navigate('/admin/dashboard');
+        } else if (userRole === 'MANAGER') {
             navigate('/manager/dashboard');
+        } else if (userRole === 'RECEPTION') {
+            navigate('/reception/dashboard');
         } else {
-            navigate('/home');
+            // Dành cho CUSTOMER hoặc các role không xác định khác
+            navigate('/home'); 
         }
     };
 

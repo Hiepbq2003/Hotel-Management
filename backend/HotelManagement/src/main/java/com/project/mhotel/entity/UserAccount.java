@@ -49,12 +49,10 @@ public class UserAccount {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Enum cho role
     public enum Role {
         admin, manager, reception, housekeeping
     }
 
-    // Enum cho status
     public enum Status {
         active, inactive, blocked
     }

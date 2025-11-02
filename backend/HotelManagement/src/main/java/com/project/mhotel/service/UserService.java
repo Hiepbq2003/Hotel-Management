@@ -1,5 +1,6 @@
 package com.project.mhotel.service;
 
+import com.project.mhotel.entity.UserAccount.Role;
 import com.project.mhotel.dto.UserRequest;
 import com.project.mhotel.dto.UserResponse;
 import com.project.mhotel.entity.Hotel;
@@ -23,6 +24,39 @@ public class UserService {
     @Autowired
     private HotelRepository hotelRepository;
 
+    public List<UserAccount> getAllStaff() {
+        return userAccountRepository.findAll();
+    }
+    public UserAccount updateUserRole(Long targetUserId, Role newRole, Role callerRole) throws Exception {
+
+        UserAccount targetUser = userAccountRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Tài khoản người dùng không tồn tại."));
+
+        Role targetUserCurrentRole = targetUser.getRole();
+
+
+        if (callerRole == Role.admin) {
+
+
+        } else if (callerRole == Role.manager) {
+
+            if (targetUserCurrentRole == Role.admin || targetUserCurrentRole == Role.manager) {
+                throw new SecurityException("Quản lý không có quyền sửa đổi tài khoản Admin hoặc Manager khác.");
+            }
+
+            if (newRole == Role.admin || newRole == Role.manager) {
+                throw new SecurityException("Quản lý chỉ được gán role Reception hoặc Housekeeping.");
+            }
+
+        } else {
+
+            throw new SecurityException("Bạn không có quyền thực hiện chức năng này.");
+        }
+
+        targetUser.setRole(newRole);
+        return userAccountRepository.save(targetUser);
+    }
+
     private UserResponse toUserResponse(UserAccount user) {
         return new UserResponse(
                 user.getId(),
@@ -37,12 +71,10 @@ public class UserService {
     }
     public UserResponse createUser(UserRequest request) {
 
-        // 1. Kiểm tra Email đã tồn tại
         if (userAccountRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email đã được sử dụng.");
         }
 
-        // 2. Kiểm tra Username đã tồn tại
         if (userAccountRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new IllegalArgumentException("Username đã được sử dụng.");
         }
@@ -52,7 +84,6 @@ public class UserService {
                     .orElseThrow(() -> new IllegalArgumentException("Hotel không tồn tại với ID: " + request.getHotelId()));
         }
 
-        // 4. Tạo Entity (Bỏ updatedAt)
         UserAccount newUser = UserAccount.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())

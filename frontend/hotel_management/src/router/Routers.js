@@ -7,9 +7,14 @@ import Login from "../publicPage/Login/Login";
 import AboutUs from "../publicPage/AboutUs";
 import Contact from "../publicPage/Contact";
 import RoomTypeManagement from "../manager/RoomTypeManagement";
-import ManagerDashBoard from "../manager/ManagerDashBoard";
+import DashBoard from "../adminArea/DashBoard";
 import Manager from "../manager/Manager";
 import Profile from "../publicPage/Profile";
+import Admin from "../admin/Admin"; 
+import UserManagement from "../adminArea/UserManagement";
+// import Reception from "../reception/Reception"; 
+// import ReceptionDashBoard from "../reception/ReceptionDashBoard"; 
+
 function Routers() {
   return (
     <Router>
@@ -27,12 +32,28 @@ function Routers() {
 
         {/* Các route riêng */}
         <Route path="/login" element={<Login />} />
+        
+        {/* ROUTE DÀNH CHO MANAGER */}
         <Route path="/manager" element={<Manager/>}>
-          <Route index element={<ManagerDashBoard />} />
-          <Route path="dashboard" element={<ManagerDashBoard />} />
+          <Route index element={<DashBoard />} />
+          <Route path="dashboard" element={<DashBoard />} />
+          <Route path="user-management" element={<UserManagement />} />
           <Route path="room-types" element={<RoomTypeManagement />} />
         </Route>
        
+        {/* *** ROUTE DÀNH CHO ADMIN *** */}
+        <Route path="/admin" element={<Admin/>}>
+          <Route index element={<DashBoard />} />
+          <Route path="dashboard" element={<DashBoard />} />
+        </Route> 
+       
+
+        {/* *** ROUTE BỔ SUNG: DÀNH CHO RECEPTION *** */}
+        {/* <Route path="/reception" element={<Reception/>}>
+          <Route index element={<ReceptionDashBoard />} />
+          <Route path="dashboard" element={<ReceptionDashBoard />} />
+        </Route>
+        */}
 
         {/* Route 404 để debug */}
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
@@ -42,4 +63,3 @@ function Routers() {
 }
 
 export default Routers;
-

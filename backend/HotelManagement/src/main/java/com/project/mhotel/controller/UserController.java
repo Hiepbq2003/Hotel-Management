@@ -2,6 +2,8 @@ package com.project.mhotel.controller;
 
 import com.project.mhotel.dto.UserRequest;
 import com.project.mhotel.dto.UserResponse;
+import com.project.mhotel.entity.UserAccount;
+import com.project.mhotel.entity.UserAccount.Role;
 import com.project.mhotel.entity.UserAccount.Status;
 import com.project.mhotel.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/users") // Endpoint dành cho Admin/Manager
+@RequestMapping("/api/manager/user-management")
 @CrossOrigin(origins = "*")
 public class UserController {
 
@@ -46,6 +48,7 @@ public class UserController {
         }
 
         try {
+
             Status newStatus = Status.valueOf(statusString.toLowerCase());
             UserResponse updatedUser = userService.updateStatus(userId, newStatus);
             return ResponseEntity.ok(updatedUser);
@@ -59,4 +62,41 @@ public class UserController {
         }
     }
 
+    @PutMapping("/{id}/role")
+    public ResponseEntity<?> updateStaffRole(
+            @PathVariable Long id,
+            @RequestBody UserRequest request,
+            @RequestHeader("X-User-Role") String callerRoleStr) {
+
+        try {
+
+            Role callerRole = Role.valueOf(callerRoleStr.toUpperCase());
+            Role newRole = Role.valueOf(request.getRole().name().toUpperCase());
+
+            UserAccount updatedUser = userService.updateUserRole(id, newRole, callerRole);
+
+            String hotelName = updatedUser.getHotel() != null ? updatedUser.getHotel().getName() : null;
+
+            return ResponseEntity.ok(new UserResponse(
+                    updatedUser.getId(),
+                    updatedUser.getUsername(),
+                    updatedUser.getEmail(),
+                    updatedUser.getFullName(),
+                    updatedUser.getPhone(),
+                    updatedUser.getRole(),
+                    updatedUser.getStatus(),
+                    hotelName
+            ));
+
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("No enum constant")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Vai trò không hợp lệ.");
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống khi cập nhật vai trò: " + e.getMessage());
+        }
+    }
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { Row, Col } from 'react-bootstrap'
 import {Outlet} from "react-router-dom";
 import Sidebar from '../adminArea/Sidebar';
-const Manager = () => {
+const Admin = () => {
     return (
         <div>
             <Row className="d-flex">
@@ -17,4 +17,4 @@ const Manager = () => {
     );
 };
 
-export default Manager;
+export default Admin;

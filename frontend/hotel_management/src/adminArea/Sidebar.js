@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { FaTachometerAlt, FaHotel, FaUsers, FaBed, FaSignOutAlt } from 'react-icons/fa'; // Cần cài đặt react-icons
 
 
-const ManagerSidebar = () => {
+const Sidebar = () => {
     const location = useLocation(); 
 
     return (
@@ -49,7 +49,7 @@ const ManagerSidebar = () => {
                 {/* Quản lý Người dùng */}
                 <Nav.Link 
                     as={Link} 
-                    to="/manager/users" 
+                    to="/manager/user-management" 
                     className={`text-white ${location.pathname === '/manager/users' ? 'bg-primary rounded' : ''}`}
                 >
                     <FaUsers className="me-2" /> Quản lý Người dùng
@@ -59,7 +59,7 @@ const ManagerSidebar = () => {
 
                 {/* Logout */}
                 <Nav.Link 
-                    onClick={() => { console.log('Đăng xuất...'); }} // Thay bằng logic logout thực tế
+                    onClick={() => { console.log('Đăng xuất...'); }}
                     className="text-danger mt-3"
                 >
                     <FaSignOutAlt className="me-2" /> Đăng xuất
@@ -70,4 +70,4 @@ const ManagerSidebar = () => {
     );
 };
 
-export default ManagerSidebar;
+export default Sidebar;
