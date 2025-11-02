@@ -17,7 +17,6 @@ public class UserAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Hotel (nullable)
     @ManyToOne
     @JoinColumn(name = "hotel_id",
             foreignKey = @ForeignKey(name = "fk_user_hotel"))

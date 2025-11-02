@@ -5,8 +5,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
 
 const DEFAULT_HOTEL_ID = 1; 
+// Khai báo hằng số cho quyền truy cập, chỉ cho phép 'MANAGER'
+const ALLOWED_ROLES = ['MANAGER']; 
 
 const RoomTypeManagement = () => {
+    
+    const currentUserRole = localStorage.getItem('userRole');
 
     const [roomTypes, setRoomTypes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,6 +37,9 @@ const RoomTypeManagement = () => {
     };
 
     const fetchRoomTypes = async () => {
+      
+        if (error && error.includes('không có quyền truy cập')) return;
+        
         setLoading(true);
         setError(null);
         try {
@@ -40,22 +47,35 @@ const RoomTypeManagement = () => {
             const data = response.data || response.content || response; 
             setRoomTypes(Array.isArray(data) ? data : []);
         } catch (err) {
-            setError("Không thể tải danh sách loại phòng. Vui lòng kiểm tra API.");
+            setError("Không thể tải danh sách loại phòng. Lỗi API hoặc quyền truy cập.");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
+        // 1. Kiểm tra quyền truy cập
+        if (!ALLOWED_ROLES.includes(currentUserRole)) {
+            setError('Bạn không có quyền truy cập trang Quản lý Loại phòng. Yêu cầu vai trò MANAGER.');
+            setLoading(false);
+            return;
+        }
         fetchRoomTypes();
-    }, []);
+    }, [currentUserRole]); 
+
+    const canManageRoomTypes = ALLOWED_ROLES.includes(currentUserRole);
 
     const openModal = (room = null) => {
+        
+        if (!ALLOWED_ROLES.includes(currentUserRole)) {
+            toast.error("Bạn không có quyền thực hiện thao tác này.");
+            return;
+        }
+        
         if (room) {
             setIsEditing(true);
             setCurrentRoom({
                 ...room,
-             
                 basePrice: room.basePrice?.toString() || "",
                 capacity: room.capacity?.toString() || ""
             });
@@ -75,14 +95,20 @@ const RoomTypeManagement = () => {
         setError(null); 
     };
 
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
         
+        if (!canManageRoomTypes) {
+            toast.error("Bạn không có quyền thực hiện thao tác này.");
+            return;
+        }
+        
         if (!currentRoom.code) {
-             setError("Mã loại phòng (Code) là bắt buộc!");
-             toast.error("Vui lòng nhập Mã loại phòng.");
-             return;
+            setError("Mã loại phòng (Code) là bắt buộc!");
+            toast.error("Vui lòng nhập Mã loại phòng.");
+            return;
         }
 
         try {
@@ -120,6 +146,11 @@ const RoomTypeManagement = () => {
     };
 
     const handleDelete = async (id, name) => {
+        if (!canManageRoomTypes) {
+            toast.error("Bạn không có quyền thực hiện thao tác này.");
+            return;
+        }
+
         if (!window.confirm(`Bạn có chắc muốn xóa loại phòng "${name}" này?`)) return;
         try {
             await api.delete(`/room-type/${id}`);
@@ -130,6 +161,12 @@ const RoomTypeManagement = () => {
             toast.error(`❌ Lỗi khi xóa: ${errorMessage}`);
         }
     };
+
+    // Hiển thị lỗi quyền truy cập
+    if (error && error.includes('không có quyền truy cập')) {
+        return <p className="text-danger text-center mt-5" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>Lỗi: {error}</p>;
+    }
+
 
     if (loading) {
         return (
@@ -148,9 +185,13 @@ const RoomTypeManagement = () => {
 
             {error && !showModal && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
 
-            <Button variant="success" className="mb-3 shadow-sm" onClick={() => openModal()}>
-                ➕ Thêm loại phòng mới
-            </Button>
+            {/* Chỉ hiển thị nút Thêm loại phòng mới nếu có quyền */}
+            {canManageRoomTypes && (
+                <Button variant="success" className="mb-3 shadow-sm" onClick={() => openModal()}>
+                    ➕ Thêm loại phòng mới
+                </Button>
+            )}
+
 
             <div className="shadow-sm rounded table-responsive">
                 <Table bordered hover className="bg-white" style={{ minWidth: '800px' }}> 
@@ -188,121 +229,130 @@ const RoomTypeManagement = () => {
                                         />
                                     </td>
                                     <td className="text-center">
-                                        <Button
-                                            variant="outline-warning"
-                                            size="sm"
-                                            className="me-2"
-                                            onClick={() => openModal(room)}
-                                        >Sửa</Button>
-                                        <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            onClick={() => handleDelete(room.id, room.name)}
-                                        >Xóa</Button>
-                                    </td>
+                                         {/* Chỉ hiển thị nút Sửa/Xóa nếu có quyền */}
+                                         {canManageRoomTypes ? (
+                                             <>
+                                                 <Button
+                                                     variant="outline-warning"
+                                                     size="sm"
+                                                     className="me-2"
+                                                     onClick={() => openModal(room)}
+                                                 >Sửa</Button>
+                                                 <Button
+                                                     variant="outline-danger"
+                                                     size="sm"
+                                                     onClick={() => handleDelete(room.id, room.name)}
+                                                 >Xóa</Button>
+                                             </>
+                                         ) : (
+                                            <span className="text-muted">Không có quyền</span>
+                                         )}
+                                        </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
                                 <td colSpan="9" className="text-center py-4 text-muted">
-                                    Không có loại phòng nào được tìm thấy.
-                                </td>
+                                        Không có loại phòng nào được tìm thấy.
+                                    </td>
                             </tr>
                         )}
                     </tbody>
                 </Table>
             </div>
 
-            {/* Modal thêm/sửa */}
-            <Modal show={showModal} onHide={closeModal}>
-                <Modal.Header closeButton className={isEditing ? "bg-warning text-white" : "bg-primary text-white"}>
-                    <Modal.Title>{isEditing ? "Sửa loại phòng" : "Thêm loại phòng mới"}</Modal.Title>
-                </Modal.Header>
-                <Form onSubmit={handleSubmit}>
-                    <Modal.Body>
-                        {error && <Alert variant="danger">{error}</Alert>}
+            {canManageRoomTypes && (
+                <Modal show={showModal} onHide={closeModal}>
+                    <Modal.Header closeButton className={isEditing ? "bg-warning text-white" : "bg-primary text-white"}>
+                        <Modal.Title>{isEditing ? "Sửa loại phòng" : "Thêm loại phòng mới"}</Modal.Title>
+                    </Modal.Header>
+                    <Form onSubmit={handleSubmit}>
+                        <Modal.Body>
+                            {error && <Alert variant="danger">{error}</Alert>}
 
-                        <Form.Group className="mb-3">
-                            <Form.Label>Tên phòng</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={currentRoom.name}
-                                onChange={(e) => setCurrentRoom({ ...currentRoom, name: e.target.value })}
-                                required
-                            />
-                        </Form.Group>
-                        
-                        <Form.Group className="mb-3">
-                            <Form.Label>Mã loại phòng (Code) <span className="text-danger">*</span></Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={currentRoom.code}
-                                onChange={(e) => setCurrentRoom({ ...currentRoom, code: e.target.value })}
-                                required
-                            />
-                        </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Tên phòng</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={currentRoom.name}
+                                    onChange={(e) => setCurrentRoom({ ...currentRoom, name: e.target.value })}
+                                    required
+                                />
+                            </Form.Group>
+                            
+                            <Form.Group className="mb-3">
+                                <Form.Label>Mã loại phòng (Code) <span className="text-danger">*</span></Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={currentRoom.code}
+                                    onChange={(e) => setCurrentRoom({ ...currentRoom, code: e.target.value })}
+                                    required
+                                />
+                            </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label>Giá cơ bản (VND)</Form.Label>
-                            <Form.Control
-                                type="number"
-                                value={currentRoom.basePrice}
-                                onChange={(e) => setCurrentRoom({ ...currentRoom, basePrice: e.target.value })}
-                                required
-                                min="0"
-                            />
-                        </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Giá cơ bản (VND)</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    value={currentRoom.basePrice}
+                                    onChange={(e) => setCurrentRoom({ ...currentRoom, basePrice: e.target.value })}
+                                    required
+                                    min="0"
+                                />
+                            </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label>Sức chứa (Người)</Form.Label>
-                            <Form.Control
-                                type="number"
-                                value={currentRoom.capacity}
-                                onChange={(e) => setCurrentRoom({ ...currentRoom, capacity: e.target.value })}
-                                min="1"
-                                required
-                            />
-                        </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Sức chứa (Người)</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    value={currentRoom.capacity}
+                                    onChange={(e) => setCurrentRoom({ ...currentRoom, capacity: e.target.value })}
+                                    min="1"
+                                    required
+                                />
+                            </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label>Thông tin giường</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={currentRoom.bedInfo}
-                                onChange={(e) => setCurrentRoom({ ...currentRoom, bedInfo: e.target.value })}
-                                placeholder="Ví dụ: 1 King Bed"
-                            />
-                        </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Thông tin giường</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={currentRoom.bedInfo}
+                                    onChange={(e) => setCurrentRoom({ ...currentRoom, bedInfo: e.target.value })}
+                                    placeholder="Ví dụ: 1 King Bed"
+                                />
+                            </Form.Group>
 
-                        <Form.Group className="mb-3">
-                            <Form.Label>Mô tả</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                value={currentRoom.description}
-                                onChange={(e) => setCurrentRoom({ ...currentRoom, description: e.target.value })}
-                            />
-                        </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Mô tả</Form.Label>
+                                <Form.Control
+                                    as="textarea"
+                                    rows={3}
+                                    value={currentRoom.description}
+                                    onChange={(e) => setCurrentRoom({ ...currentRoom, description: e.target.value })}
+                                />
+                            </Form.Group>
 
-                        <Form.Group>
-                            <Form.Label>Ảnh (URL)</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={currentRoom.imageUrl}
-                                onChange={(e) => setCurrentRoom({ ...currentRoom, imageUrl: e.target.value })}
-                                placeholder="Nhập URL ảnh loại phòng"
-                            />
-                        </Form.Group>
-                    </Modal.Body>
+                            <Form.Group>
+                                <Form.Label>Ảnh (URL)</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={currentRoom.imageUrl}
+                                    onChange={(e) => setCurrentRoom({ ...currentRoom, imageUrl: e.target.value })}
+                                    placeholder="Nhập URL ảnh loại phòng"
+                                />
+                            </Form.Group>
+                        </Modal.Body>
 
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={closeModal}>Hủy</Button>
-                        <Button type="submit" variant={isEditing ? "warning" : "primary"}>
-                            {isEditing ? "Lưu thay đổi" : "Thêm mới"}
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={closeModal}>Hủy</Button>
+                            <Button type="submit" variant={isEditing ? "warning" : "primary"}>
+                                {isEditing ? "Lưu thay đổi" : "Thêm mới"}
+                            </Button>
+                        </Modal.Footer>
+                    </Form>
+                </Modal>
+            )}
+
         </div>
     );
 };

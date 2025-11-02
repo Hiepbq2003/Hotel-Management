@@ -14,6 +14,10 @@ import CheckInPage from "../staffPage/CheckInPage";
 import Reception from "../staffPage/Reception";
 import CheckOutPage from "../staffPage/CheckOutPage";
 import CheckRoom from "../staffPage/CheckRoom";
+import Admin from "../admin/Admin";
+import UserManagement from "../adminArea/UserManagement";
+import CustomerManagement from "../adminArea/CustomerManagement";
+
 function Routers() {
   return (
     <Router>
