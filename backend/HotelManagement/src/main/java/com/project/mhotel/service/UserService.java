@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,9 +25,14 @@ public class UserService {
     @Autowired
     private HotelRepository hotelRepository;
 
-    public List<UserAccount> getAllStaff() {
-        return userAccountRepository.findAll();
-    }
+    private static final Set<Role> STAFF_ROLES = Set.of(
+            Role.admin,
+            Role.manager,
+            Role.reception,
+            Role.housekeeping
+    );
+
+
     public UserAccount updateUserRole(Long targetUserId, Role newRole, Role callerRole) throws Exception {
 
         UserAccount targetUser = userAccountRepository.findById(targetUserId)
@@ -34,9 +40,7 @@ public class UserService {
 
         Role targetUserCurrentRole = targetUser.getRole();
 
-
         if (callerRole == Role.admin) {
-
 
         } else if (callerRole == Role.manager) {
 
@@ -49,7 +53,7 @@ public class UserService {
             }
 
         } else {
-
+            // Các role khác (như Reception, Housekeeping, Customer) không có quyền cập nhật role
             throw new SecurityException("Bạn không có quyền thực hiện chức năng này.");
         }
 
@@ -69,6 +73,7 @@ public class UserService {
                 user.getHotel() != null ? user.getHotel().getName() : null
         );
     }
+
     public UserResponse createUser(UserRequest request) {
 
         if (userAccountRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -101,6 +106,7 @@ public class UserService {
 
     public List<UserResponse> getAllUsers() {
         return userAccountRepository.findAll().stream()
+                .filter(user -> STAFF_ROLES.contains(user.getRole()))
                 .map(this::toUserResponse)
                 .collect(Collectors.toList());
     }

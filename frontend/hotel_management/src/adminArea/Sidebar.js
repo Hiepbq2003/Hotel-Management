@@ -1,18 +1,27 @@
+// Giả định: File này đã được đổi tên thành Sidebar.js
 import React from 'react';
 import { Nav } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTachometerAlt, FaHotel, FaUsers, FaBed, FaSignOutAlt } from 'react-icons/fa'; // Cần cài đặt react-icons
+import { FaTachometerAlt, FaHotel, FaUsers, FaBed, FaSignOutAlt } from 'react-icons/fa';
 
-
-const Sidebar = () => {
+// Nhận role qua props
+const Sidebar = ({ role }) => { 
     const location = useLocation(); 
+    
+    // 1. Xác định basePath dựa trên role
+    const basePath = role === 'ADMIN' ? '/admin' : '/manager';
+    // 2. Xác định các role có quyền thấy link quản lý người dùng
+    const canManageUsers = role === 'ADMIN' || role === 'MANAGER';
+    // 3. Xác định các role có quyền thấy link quản lý loại phòng
+    const canManageRoomTypes = role === 'ADMIN' || role === 'MANAGER'; 
+    // Nếu bạn muốn giới hạn RoomType chỉ cho Manager như route cũ: 
+    // const canManageRoomTypes = role === 'MANAGER'; 
 
     return (
-      
         <div style={{ width: '250px', height: '100vh', position: 'fixed', zIndex: 1000 }} className="bg-dark text-white shadow">
             
             <h4 className="p-3 text-center border-bottom border-secondary text-warning">
-                Quản lý Hệ thống
+                {role} Dashboard
             </h4>
 
             <Nav className="flex-column p-2">
@@ -20,40 +29,47 @@ const Sidebar = () => {
                 {/* Dashboard */}
                 <Nav.Link 
                     as={Link} 
-                    to="/manager/dashboard" 
-                    className={`text-white ${location.pathname === '/manager/dashboard' ? 'bg-primary rounded' : ''}`}
+                    to={`${basePath}/dashboard`} // <-- Dùng basePath
+                    className={`text-white ${location.pathname === `${basePath}/dashboard` ? 'bg-primary rounded' : ''}`}
                 >
                     <FaTachometerAlt className="me-2" /> Dashboard
                 </Nav.Link>
 
                 <hr className="bg-secondary my-2" />
                 
-                {/* Quản lý Khách sạn */}
-                <Nav.Link 
-                    as={Link} 
-                    to="/manager/hotels" 
-                    className={`text-white ${location.pathname === '/manager/hotels' ? 'bg-primary rounded' : ''}`}
-                >
-                    <FaHotel className="me-2" /> Quản lý Khách sạn
-                </Nav.Link>
+                {/* Quản lý Khách sạn (Giả định chỉ Admin/Manager) */}
+                {(role === 'ADMIN' || role === 'MANAGER') && (
+                    <Nav.Link 
+                        as={Link} 
+                        to={`${basePath}/hotels`} // <-- Dùng basePath
+                        className={`text-white ${location.pathname === `${basePath}/hotels` ? 'bg-primary rounded' : ''}`}
+                    >
+                        <FaHotel className="me-2" /> Quản lý Khách sạn
+                    </Nav.Link>
+                )}
 
-                {/* Quản lý Loại phòng (Ví dụ: dùng endpoint của bạn) */}
-                <Nav.Link 
-                    as={Link} 
-                    to="/manager/room-types" 
-                    className={`text-white ${location.pathname === '/manager/room-types' ? 'bg-primary rounded' : ''}`}
-                >
-                    <FaBed className="me-2" /> Quản lý Loại phòng
-                </Nav.Link>
+
+                {/* Quản lý Loại phòng */}
+                {canManageRoomTypes && (
+                    <Nav.Link 
+                        as={Link} 
+                        to={`${basePath}/room-types`} // <-- Dùng basePath
+                        className={`text-white ${location.pathname === `${basePath}/room-types` ? 'bg-primary rounded' : ''}`}
+                    >
+                        <FaBed className="me-2" /> Quản lý Loại phòng
+                    </Nav.Link>
+                )}
 
                 {/* Quản lý Người dùng */}
-                <Nav.Link 
-                    as={Link} 
-                    to="/manager/user-management" 
-                    className={`text-white ${location.pathname === '/manager/users' ? 'bg-primary rounded' : ''}`}
-                >
-                    <FaUsers className="me-2" /> Quản lý Người dùng
-                </Nav.Link>
+                {canManageUsers && (
+                    <Nav.Link 
+                        as={Link} 
+                        to={`${basePath}/user-management`} // <-- Dùng basePath
+                        className={`text-white ${location.pathname === `${basePath}/user-management` ? 'bg-primary rounded' : ''}`} // <-- Đã sửa logic active
+                    >
+                        <FaUsers className="me-2" /> Quản lý Người dùng
+                    </Nav.Link>
+                )}
 
                 <hr className="bg-secondary my-2" />
 

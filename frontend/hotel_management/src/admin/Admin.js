@@ -7,7 +7,7 @@ const Admin = () => {
         <div>
             <Row className="d-flex">
                 <Col lg={2}>
-                    <Sidebar />
+                <Sidebar role="ADMIN" />
                 </Col>
                 <Col lg={10}>
                     <Outlet />

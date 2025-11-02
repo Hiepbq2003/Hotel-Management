@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/manager/user-management")
+@RequestMapping("/api/user")
 @CrossOrigin(origins = "*")
 public class UserController {
 
@@ -34,7 +34,7 @@ public class UserController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/staff")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);

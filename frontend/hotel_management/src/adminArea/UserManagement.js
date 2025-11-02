@@ -22,7 +22,8 @@ function UserManagement() {
     const fetchUsers = async () => {
         try {
             const response = await api.get('/user/staff'); 
-            setUsers(response.data);
+            // Cẩn thận hơn, đảm bảo data là mảng, hoặc bạn sẽ cần optional chaining ở phần render
+            setUsers(response.data); 
             setLoading(false);
         } catch (err) {
             setError('Không thể tải danh sách người dùng. Lỗi API hoặc quyền truy cập.');
@@ -63,7 +64,8 @@ function UserManagement() {
     const handleUpdateRole = async (userToUpdate) => {
         const userId = userToUpdate.id;
         const newRole = userToUpdate.role; // Lấy role đã chọn từ state
-        const targetUserRole = users.find(u => u.id === userId).role;
+        // Cần kiểm tra users tồn tại trước khi dùng find
+        const targetUserRole = users?.find(u => u.id === userId)?.role; 
 
         if (!canEdit(targetUserRole)) {
             alert("Lỗi: Bạn không có quyền thay đổi vai trò này.");
@@ -108,7 +110,7 @@ function UserManagement() {
                     </tr>
                 </thead>
                 <tbody>
-                    {users.map((user) => {
+                    {users?.map((user) => { // Đã thêm Optional Chaining (?)
                         // Xác định khả năng chỉnh sửa dựa trên logic Admin/Manager
                         const editable = canEdit(user.role); 
                         const rolesToDisplay = getEditableRoles(user.role);

@@ -45,6 +45,7 @@ function Routers() {
         <Route path="/admin" element={<Admin/>}>
           <Route index element={<DashBoard />} />
           <Route path="dashboard" element={<DashBoard />} />
+          <Route path="user-management" element={<UserManagement />} />
         </Route> 
        
 
