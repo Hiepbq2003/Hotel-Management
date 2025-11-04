@@ -60,6 +60,16 @@ const Sidebar = ({ role }) => {
                     </Nav.Link>
                 )}
 
+                     {canSeeManagerLinks && (
+                    <Nav.Link 
+                        as={Link} 
+                        to={`${basePath}/service-management`} 
+                        className={`text-white ${location.pathname === `${basePath}/service-management` ? 'bg-primary rounded' : ''}`}
+                    >
+                        <FaHotel className="me-2" /> Quản lý Tiện ích
+                    </Nav.Link>
+                )}
+
                 {canSeeManagerLinks && (
                     <Nav.Link 
                         as={Link} 
@@ -70,7 +80,7 @@ const Sidebar = ({ role }) => {
                     </Nav.Link>
                 )}
 
-                {canSeeManagerLinks && (
+                {isManagerOrAdmin &&(
                     <Nav.Link 
                         as={Link} 
                         to={`${basePath}/customer-management`}
@@ -86,7 +96,7 @@ const Sidebar = ({ role }) => {
                         to={`${basePath}/user-management`} 
                         className={`text-white ${location.pathname === `${basePath}/user-management` ? 'bg-primary rounded' : ''}`} 
                     >
-                        <FaUsers className="me-2" /> Quản lý Người dùng
+                        <FaUsers className="me-2" /> Quản lý Nhân viên
                     </Nav.Link>
                 )}
 

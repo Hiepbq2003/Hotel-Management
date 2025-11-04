@@ -17,6 +17,7 @@ import CheckRoom from "../staffPage/CheckRoom";
 import Admin from "../admin/Admin";
 import UserManagement from "../admin/UserManagement";
 import CustomerManagement from "../adminArea/CustomerManagement";
+import ServiceManagement from "../manager/ServiceManagement";
 
 function Routers() {
   return (
@@ -40,6 +41,7 @@ function Routers() {
           <Route index element={<DashBoard />} />
           <Route path="dashboard" element={<DashBoard />} />
           <Route path="room-types" element={<RoomTypeManagement />} />
+          <Route path="service-management" element={<ServiceManagement />} />
           <Route path="customer-management" element={<CustomerManagement />} />
         </Route>
 
@@ -48,6 +50,8 @@ function Routers() {
           <Route index element={<DashBoard />} />
           <Route path="dashboard" element={<DashBoard />} />
           <Route path="user-management" element={<UserManagement />} />
+          <Route path="customer-management" element={<CustomerManagement />} />
+
         </Route>
         <Route path="/reception" element={<Reception />}>
           <Route index element={<CheckInPage />} />

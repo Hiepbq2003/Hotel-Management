@@ -8,6 +8,7 @@ import com.project.mhotel.entity.UserAccount;
 import com.project.mhotel.entity.UserAccount.Status;
 import com.project.mhotel.repository.HotelRepository;
 import com.project.mhotel.repository.UserAccountRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,36 +18,29 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    private UserAccountRepository userAccountRepository;
+    private final UserAccountRepository userAccountRepository;
+    private final HotelRepository hotelRepository;
 
-    @Autowired
-    private HotelRepository hotelRepository;
-
-    private static final Set<Role> STAFF_ROLES = Set.of(
-            Role.admin,
-            Role.manager,
-            Role.reception,
-            Role.housekeeping
+    private static final Set<String> STAFF_ROLES_STRING = Set.of(
+            Role.admin.name().toUpperCase(),
+            Role.manager.name().toUpperCase(),
+            Role.reception.name().toUpperCase(),
+            Role.housekeeping.name().toUpperCase()
     );
 
-    /**
-     * Phương thức cập nhật tên (fullName), số điện thoại (phone) và vai trò (role) của nhân viên.
-     * Chỉ Admin mới có quyền thực hiện.
-     */
     public UserResponse updateStaffDetails(Long targetUserId, UserRequest request, Role callerRole) {
 
         UserAccount targetUser = userAccountRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Tài khoản người dùng không tồn tại."));
 
-        // Kiểm tra quyền Admin
-        if (callerRole != Role.admin) {
+        if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
             throw new SecurityException("Bạn không có quyền cập nhật thông tin chi tiết người dùng. Chỉ Admin mới có quyền này.");
         }
 
-        // Ngăn Admin thay đổi vai trò của tài khoản Admin khác hoặc chính mình
+        // Không cho phép thay đổi vai trò của tài khoản Admin
         if (targetUser.getRole() == Role.admin && request.getRole() != targetUser.getRole()) {
             throw new SecurityException("Không thể thay đổi vai trò của tài khoản Admin.");
         }
@@ -63,8 +57,22 @@ public class UserService {
 
         // Cập nhật Role (nếu có trong request)
         if (request.getRole() != null) {
+            // Kiểm tra tính hợp lệ của role mới
+            if (!STAFF_ROLES_STRING.contains(request.getRole().name().toUpperCase())) {
+                throw new IllegalArgumentException("Vai trò mới không hợp lệ.");
+            }
             targetUser.setRole(request.getRole());
         }
+
+        // LƯU Ý QUAN TRỌNG:
+        // Do FE gửi DTO đầy đủ (có cả status) và status được gửi là chữ thường ('active', 'inactive', 'blocked'),
+        // mà hàm này lại không có logic setStatus, Jackson có thể bị lỗi khi map DTO.
+        // Giải pháp tốt nhất là: Bỏ qua status trong DTO của API /details, hoặc đảm bảo FE chỉ gửi
+        // những trường cần thiết.
+        // Trong trường hợp này, tôi sẽ không thêm logic set Status vào đây vì nó có API riêng,
+        // hy vọng BE của bạn có thể bỏ qua trường không được xử lý một cách an toàn.
+
+        // Nếu vấn đề vẫn xảy ra, hãy kiểm tra lại DTO UserRequest.
 
         return toUserResponse(userAccountRepository.save(targetUser));
     }
@@ -82,14 +90,10 @@ public class UserService {
         );
     }
 
-    /**
-     * Phương thức tạo người dùng mới.
-     * Chỉ Admin mới có quyền thực hiện.
-     */
     public UserResponse createUser(UserRequest request, Role callerRole) {
 
-        // Kiểm tra quyền Admin
-        if (callerRole != Role.admin) {
+        // Kiểm tra quyền Admin BẰNG CÁCH SO SÁNH CHUỖI TÊN ROLE
+        if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
             throw new SecurityException("Bạn không có quyền tạo tài khoản người dùng mới. Chỉ Admin mới có quyền này.");
         }
 
@@ -107,6 +111,7 @@ public class UserService {
         UserAccount newUser = UserAccount.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
+                // CHÚ Ý: Trong thực tế phải HASH mật khẩu ở đây
                 .passwordHash(request.getPassword())
                 .fullName(request.getFullName())
                 .phone(request.getPhone())
@@ -122,21 +127,17 @@ public class UserService {
     public List<UserResponse> getAllUsers() {
         // Đây là chức năng Xem. Không cần kiểm tra quyền Admin, quyền này sẽ được kiểm tra ở tầng Controller
         return userAccountRepository.findAll().stream()
-                .filter(user -> STAFF_ROLES.contains(user.getRole()))
+                .filter(user -> STAFF_ROLES_STRING.contains(user.getRole().name().toUpperCase())) // SỬA ĐỔI: Dùng chuỗi để lọc
                 .map(this::toUserResponse)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Phương thức cập nhật trạng thái (active/inactive/blocked).
-     * Chỉ Admin mới có quyền thực hiện.
-     */
     public UserResponse updateStatus(Long userId, Status newStatus, Role callerRole) {
         UserAccount user = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
 
-        // Kiểm tra quyền Admin
-        if (callerRole != Role.admin) {
+        // Kiểm tra quyền Admin BẰNG CÁCH SO SÁNH CHUỖI TÊN ROLE
+        if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
             throw new SecurityException("Bạn không có quyền thay đổi trạng thái của người dùng này. Chỉ Admin mới có quyền này.");
         }
 

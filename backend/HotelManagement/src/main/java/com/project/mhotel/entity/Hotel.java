@@ -71,5 +71,5 @@ public class Hotel {
 
     // Quan hệ với Service (1 hotel có nhiều dịch vụ)
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Service> services;
+    private List<Services> services;
 }

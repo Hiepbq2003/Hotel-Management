@@ -27,7 +27,7 @@ public class ReservationService {
     @ManyToOne
     @JoinColumn(name = "service_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_reservationservice_service"))
-    private Service service;
+    private Services service;
 
     @Column(nullable = false)
     private Integer quantity = 1;
