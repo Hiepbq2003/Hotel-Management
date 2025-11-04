@@ -1,5 +1,6 @@
 package com.project.mhotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -17,19 +18,19 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Hotel
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_room_hotel"))
+    @JsonIgnore
     private Hotel hotel;
 
     @Column(name = "room_number", nullable = false, length = 50)
     private String roomNumber;
 
-    // Quan hệ với RoomType
     @ManyToOne
     @JoinColumn(name = "room_type_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_room_room_type"))
+    @JsonIgnore
     private RoomType roomType;
 
     @Column
@@ -45,7 +46,6 @@ public class Room {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Enum cho trạng thái phòng
     public enum Status {
         available, occupied, maintenance, out_of_service
     }
