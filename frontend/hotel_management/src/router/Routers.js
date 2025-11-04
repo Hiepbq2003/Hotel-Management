@@ -18,6 +18,7 @@ import Admin from "../admin/Admin";
 import UserManagement from "../admin/UserManagement";
 import CustomerManagement from "../adminArea/CustomerManagement";
 import ServiceManagement from "../manager/ServiceManagement";
+import RoomManagement from "../manager/RoomManagement";
 
 function Routers() {
   return (
@@ -42,6 +43,7 @@ function Routers() {
           <Route path="dashboard" element={<DashBoard />} />
           <Route path="room-types" element={<RoomTypeManagement />} />
           <Route path="service-management" element={<ServiceManagement />} />
+          <Route path="room-management" element={<RoomManagement />} />
           <Route path="customer-management" element={<CustomerManagement />} />
         </Route>
 

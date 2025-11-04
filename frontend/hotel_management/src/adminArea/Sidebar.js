@@ -24,11 +24,6 @@ const Sidebar = ({ role }) => {
         // 1. Xóa token hoặc thông tin user lưu trong localStorage/sessionStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');  
-
-        // 2. (Nếu backend dùng cookie/session) có thể gọi API /logout ở đây
-        // await api.post('/auth/logout');
-
-        // 3. Điều hướng về trang login
         navigate('/login');
     };
 
@@ -48,8 +43,6 @@ const Sidebar = ({ role }) => {
                     <FaTachometerAlt className="me-2" /> Dashboard
                 </Nav.Link>
 
-                <hr className="bg-secondary my-2" />
-
                 {canSeeManagerLinks && (
                     <Nav.Link 
                         as={Link} 
@@ -60,6 +53,17 @@ const Sidebar = ({ role }) => {
                     </Nav.Link>
                 )}
 
+                    <hr className="bg-secondary my-2" />
+                    
+                   {canSeeManagerLinks && (
+                    <Nav.Link 
+                        as={Link} 
+                        to={`${basePath}/room-management`} 
+                        className={`text-white ${location.pathname === `${basePath}/room-management` ? 'bg-primary rounded' : ''}`}
+                    >
+                        <FaBed className="me-2" /> Quản lý Phòng
+                    </Nav.Link>
+                )}
                      {canSeeManagerLinks && (
                     <Nav.Link 
                         as={Link} 

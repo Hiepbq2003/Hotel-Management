@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Spinner, Alert } from "react-bootstrap";
+// Thêm Pagination cho chức năng phân trang
+import { Table, Button, Modal, Form, Spinner, Alert, Pagination } from "react-bootstrap"; 
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
@@ -21,6 +22,12 @@ const ServiceManagement = () => {
 
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    
+    // START: New states for Search and Pagination
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [servicesPerPage] = useState(10); // Số lượng dịch vụ trên mỗi trang
+    // END: New states for Search and Pagination
     
     // State cho Service
     const [currentService, setCurrentService] = useState({
@@ -179,6 +186,32 @@ const ServiceManagement = () => {
             toast.error(`❌ Lỗi khi xóa: ${errorMessage}`);
         }
     };
+    
+    // START: Logic for Search and Pagination
+    // 1. Logic cho Tìm kiếm (Lọc Services)
+    const filteredServices = services.filter(service =>
+        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // 2. Logic cho Phân trang (Tính toán dịch vụ trên trang hiện tại)
+    const indexOfLastService = currentPage * servicesPerPage;
+    const indexOfFirstService = indexOfLastService - servicesPerPage;
+    const currentServices = filteredServices.slice(indexOfFirstService, indexOfLastService);
+
+    // Tính toán tổng số trang
+    const totalPages = Math.ceil(filteredServices.length / servicesPerPage);
+
+    // Hàm chuyển trang
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+    
+    // Xử lý thay đổi Search Term (Đồng thời reset trang về 1)
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1); // Reset về trang đầu tiên khi tìm kiếm
+    };
+    // END: Logic for Search and Pagination
 
     // Hiển thị lỗi quyền truy cập cấp trang
     if (!canManageServices) {
@@ -208,15 +241,30 @@ const ServiceManagement = () => {
 
             {error && !showModal && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
 
-            {canManageServices && (
-                <Button variant="success" 
-                        className="mb-3 shadow-lg btn-lg" // Nút lớn hơn, nổi bật hơn
-                        onClick={() => openModal()}
-                        style={{ background: '#28a745', borderColor: '#28a745', fontWeight: 600 }}
-                >
-                    ➕ THÊM DỊCH VỤ MỚI
-                </Button>
-            )}
+            {/* START: Nút Thêm mới và Ô Tìm kiếm */}
+            <div className="d-flex justify-content-between align-items-center mb-3"> 
+                {canManageServices && (
+                    <Button variant="success" 
+                            className="shadow-lg btn-lg" 
+                            onClick={() => openModal()}
+                            style={{ background: '#28a745', borderColor: '#28a745', fontWeight: 600 }}
+                    >
+                        ➕ THÊM DỊCH VỤ MỚI
+                    </Button>
+                )}
+                
+                <Form className="d-flex w-50"> 
+                    <Form.Control
+                        type="search"
+                        placeholder="Tìm kiếm theo Mã/Tên/Mô tả..."
+                        className="me-2"
+                        aria-label="Search"
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                    />
+                </Form>
+            </div>
+            {/* END: Nút Thêm mới và Ô Tìm kiếm */}
 
 
             {/* Bảng dữ liệu được thiết kế lại */}
@@ -237,8 +285,9 @@ const ServiceManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {services.length > 0 ? (
-                            services.map((service, index) => (
+                        {/* SỬ DỤNG currentServices THAY VÌ services */}
+                        {currentServices.length > 0 ? (
+                            currentServices.map((service, index) => (
                                 <tr key={service.id} className={index % 2 === 0 ? 'bg-light' : 'bg-white'}>
                                     <td className="text-center text-muted fw-light">{service.id}</td>
                                     <td className="fw-bold text-uppercase text-primary">{service.code}</td>
@@ -278,13 +327,38 @@ const ServiceManagement = () => {
                         ) : (
                             <tr>
                                 <td colSpan={canManageServices ? "7" : "6"} className="text-center py-5 text-secondary">
-                                        📋 Hiện chưa có dịch vụ nào được thêm vào Khách sạn ID: {DEFAULT_HOTEL_ID}.
+                                        📋 Hiện chưa có dịch vụ nào được tìm thấy.
                                     </td>
                             </tr>
                         )}
                     </tbody>
                 </Table>
             </div>
+
+            {/* START: Pagination Component */}
+            {filteredServices.length > servicesPerPage && (
+                <div className="d-flex justify-content-center mt-3">
+                    <Pagination>
+                        <Pagination.First onClick={() => paginate(1)} disabled={currentPage === 1} />
+                        <Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
+
+                        {/* Tạo các nút số trang */}
+                        {[...Array(totalPages).keys()].map(number => (
+                            <Pagination.Item 
+                                key={number + 1} 
+                                active={number + 1 === currentPage} 
+                                onClick={() => paginate(number + 1)}
+                            >
+                                {number + 1}
+                            </Pagination.Item>
+                        ))}
+
+                        <Pagination.Next onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} />
+                        <Pagination.Last onClick={() => paginate(totalPages)} disabled={currentPage === totalPages} />
+                    </Pagination>
+                </div>
+            )}
+            {/* END: Pagination Component */}
 
             {/* Modal Thêm/Sửa Dịch vụ */}
             <Modal show={showModal} onHide={closeModal} centered>
