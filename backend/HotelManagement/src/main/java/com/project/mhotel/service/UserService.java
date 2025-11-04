@@ -100,11 +100,9 @@ public class UserService {
         if (userAccountRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new IllegalArgumentException("Username đã được sử dụng.");
         }
+
+        // 🌟 Chỉnh sửa theo yêu cầu: Bỏ qua logic Hotel và gán luôn là null
         Hotel hotel = null;
-        if (request.getHotelId() != null) {
-            hotel = hotelRepository.findById(request.getHotelId())
-                    .orElseThrow(() -> new IllegalArgumentException("Hotel không tồn tại với ID: " + request.getHotelId()));
-        }
 
         UserAccount newUser = UserAccount.builder()
                 .username(request.getUsername())
@@ -114,7 +112,7 @@ public class UserService {
                 .phone(request.getPhone())
                 .role(request.getRole() != null ? request.getRole() : Role.reception) // Đảm bảo role có giá trị
                 .status(Status.active)
-                .hotel(hotel)
+                .hotel(hotel) // hotel giờ là null
                 .createdAt(LocalDateTime.now())
                 .build();
 

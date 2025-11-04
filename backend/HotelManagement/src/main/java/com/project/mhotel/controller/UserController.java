@@ -41,16 +41,13 @@ public class UserController {
         }
     }
 
-    // Endpoint: Xem tất cả nhân viên
     @GetMapping("/staff")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
-        // Trong môi trường Production, nên thêm kiểm tra quyền Admin tại đây nếu không dùng Spring Security
-        // Ví dụ: if (callerRole != Role.admin) return FORBIDDEN
+
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    // Endpoint: Chỉnh sửa Trạng thái (Admin-Only)
     @PutMapping("/{userId}/status")
     public ResponseEntity<?> updateStatus(@PathVariable Long userId, @RequestBody Map<String, String> request, @RequestHeader("X-User-Role") String callerRoleStr) {
         String statusString = request.get("newStatus");
@@ -87,7 +84,6 @@ public class UserController {
 
             Role callerRole = Role.valueOf(callerRoleStr.toUpperCase());
 
-            // Cập nhật chi tiết qua Service
             UserResponse updatedUser = userService.updateStaffDetails(id, request, callerRole);
 
             return ResponseEntity.ok(updatedUser);

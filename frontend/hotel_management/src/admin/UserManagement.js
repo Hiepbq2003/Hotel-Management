@@ -14,12 +14,8 @@ import {
 import api from '../api/apiConfig'; 
 
 // --- Constants ---
-// Cập nhật để chỉ cho phép ADMIN truy cập và quản lý
 const ALLOWED_ACCESS_ROLES = ['ADMIN']; 
 const ALL_STAFF_ROLES = ['ADMIN', 'MANAGER', 'RECEPTION', 'HOUSEKEEPING'];
-
-// Hàm chuyển đổi vai trò/trạng thái (Role/Status) từ chữ hoa sang chữ thường cho API
-// **Đã bỏ hàm toSnakeCaseRole để gửi role/status dưới dạng UPPERCASE**
 
 // --- Helper Functions for UI ---
 
@@ -41,6 +37,22 @@ const getStatusVariant = (status) => {
         default: return 'secondary';
     }
 }
+
+// Hàm trích xuất lỗi chi tiết
+const getErrorMessage = (err) => {
+    if (err.response && err.response.data) {
+        // Kiểm tra nếu body là string (lỗi SecurityException/IllegalArgumentException)
+        if (typeof err.response.data === 'string') {
+            return err.response.data;
+        }
+        // Nếu là JSON (thường là lỗi validation 400)
+        if (err.response.data.message) {
+             return err.response.data.message;
+        }
+    }
+    return "Lỗi không xác định hoặc lỗi kết nối mạng.";
+};
+
 
 // =================================================================================
 // 1. CREATE USER MODAL (Thêm mới nhân viên)
@@ -110,14 +122,15 @@ function CreateUserModal({ show, handleClose, handleCreate, editableRoles }) {
         // Tạo username từ email (giả định)
         const username = email.split('@')[0];
 
-        // Gửi vai trò dưới dạng UPPERCASE (role)
+        // Gửi UserRequest DTO (bao gồm hotelId: null để khớp BE)
         handleCreate({ 
             fullName, 
             email, 
             username, 
             password, 
-            role: role, // role đã là UPPERCASE (e.g., 'MANAGER') từ Form.Select
-            phone 
+            role: role, 
+            phone,
+            hotelId: null // Bắt buộc phải có để khớp DTO tạo mới ở BE
         });
         
         // Đóng modal sau khi gửi thành công
@@ -253,15 +266,15 @@ function EditUserModal({ show, handleClose, user, handleSave, editableRoles }) {
             return;
         }
 
-        // Payload chỉ chứa các trường được chỉnh sửa, nhưng sẽ được truyền cùng user gốc
+        // Payload chỉ chứa các trường thuộc StaffUpdateRequest
         const updatedFields = {
             fullName: formData.fullName,
             phone: formData.phone,
-            role: formData.role // role đã là UPPERCASE (e.g., 'MANAGER')
+            role: formData.role 
         };
         
-        // Truyền updatedFields và user gốc vào handleSave
-        handleSave(user.id, updatedFields, user); 
+        // Truyền updatedFields vào handleSave.
+        handleSave(user.id, updatedFields); 
     };
     
     // Nếu user chưa được chọn hoặc đang loading
@@ -305,11 +318,14 @@ function EditUserModal({ show, handleClose, user, handleSave, editableRoles }) {
                             name="role"
                             value={formData.role}
                             onChange={handleChange}
+                            // Không cho phép thay đổi vai trò của Admin
+                            disabled={user.role === 'ADMIN'}
                         >
                             {editableRoles.map(role => (
                                 <option key={role} value={role}>{role}</option>
                             ))}
                         </Form.Select>
+                        {user.role === 'ADMIN' && <Form.Text className="text-muted">Không thể thay đổi vai trò của tài khoản Admin.</Form.Text>}
                     </Form.Group>
                 </Form>
             </Modal.Body>
@@ -345,6 +361,12 @@ function UpdateStatusModal({ show, handleClose, user, handleSave }) {
             setError('Trạng thái mới phải khác trạng thái hiện tại.');
             return;
         }
+        
+        // Kiểm tra quyền hạn ở FE trước khi gửi
+        if (user.role === 'ADMIN') {
+            setError('Không thể thay đổi trạng thái của tài khoản Admin.');
+            return;
+        }
 
         // Gửi trạng thái dưới dạng UPPERCASE (newStatus) để khớp với Java Enum.
         const statusToSend = newStatus; 
@@ -374,18 +396,20 @@ function UpdateStatusModal({ show, handleClose, user, handleSave }) {
                             setNewStatus(e.target.value);
                             setError('');
                         }}
+                        disabled={user.role === 'ADMIN'}
                     >
                         {statusOptions.map(status => (
                             <option key={status} value={status}>{status}</option>
                         ))}
                     </Form.Select>
+                    {user.role === 'ADMIN' && <Form.Text className="text-danger">Không thể thay đổi trạng thái của tài khoản Admin.</Form.Text>}
                 </Form.Group>
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={handleClose}>
                     Hủy
                 </Button>
-                <Button variant="primary" onClick={handleInternalSave}>
+                <Button variant="primary" onClick={handleInternalSave} disabled={user.role === 'ADMIN'}>
                     Cập nhật Trạng thái
                 </Button>
             </Modal.Footer>
@@ -405,7 +429,8 @@ function UserManagement() {
     
     // Lấy giá trị ban đầu cho hiển thị và kiểm tra quyền
     const currentUserRole = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
-    const currentUserId = localStorage.getItem('userId');
+    // Đảm bảo currentUserId là số nếu cần so sánh.
+    const currentUserId = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null; 
 
     // States cho Modals
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -427,11 +452,11 @@ function UserManagement() {
     const fetchUsers = async () => {
         try {
             setLoading(true);
-            // Giả định API /user/staff trả về danh sách nhân viên
             const response = await api.get('/user/staff'); 
-            // Đảm bảo role và status là UPPERCASE để hiển thị thống nhất trong FE
             const processedUsers = (response || []).map(user => ({
                 ...user,
+                // Đảm bảo ID là số nguyên để so sánh sau này
+                id: parseInt(user.id), 
                 role: user.role.toUpperCase(),
                 status: user.status.toUpperCase()
             }));
@@ -439,39 +464,34 @@ function UserManagement() {
             setError(null);
         } catch (err) {
             console.error("Lỗi tải người dùng:", err);
-            const errorMessage = err.response && err.response.data 
-                                 ? typeof err.response.data === 'string' ? err.response.data : "Lỗi API khi tải danh sách."
-                                 : "Không thể tải danh sách người dùng. Lỗi kết nối.";
-            setError(errorMessage);
+            const errorMessage = getErrorMessage(err);
+            setError(`Không thể tải danh sách người dùng. ${errorMessage}`);
         } finally {
             setLoading(false);
         }
     };
     
-    // --- Permission & Role Logic ---
+    // --- Permission & Role Logic (Fixed to block ALL Admin edits) ---
     const isCurrentUserAdmin = currentUserRole === 'ADMIN';
 
     const canEdit = (targetUserRole, targetUserId) => {
-        // Chỉ ADMIN mới có quyền thực hiện edit trên trang này.
         if (!isCurrentUserAdmin) return false;
-        
-        // ADMIN không thể chỉnh sửa tài khoản của chính mình.
-        return targetUserId !== currentUserId; 
+        // Chặn hoàn toàn việc chỉnh sửa/vô hiệu hóa bất kỳ tài khoản Admin nào.
+        if (targetUserRole === 'ADMIN') return false; 
+        return true; 
     };
     
     const getEditableRoles = () => {
-        // Admin có thể tạo/chuyển đổi sang bất kỳ role nào trừ ADMIN
         if (isCurrentUserAdmin) {
             return ALL_STAFF_ROLES.filter(role => role !== 'ADMIN');
         }
         return [];
     };
 
-    // --- CRUD Handlers (Đã được FIX DTO) ---
+    // --- CRUD Handlers (Finalized for new DTOs) ---
 
     // CREATE Logic
     const handleCreateUser = async (formData) => {
-        // 1. Lấy vai trò người dùng hiện tại từ localStorage
         const role = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
         if (!role) {
             alert("Lỗi xác thực: Không tìm thấy vai trò người dùng. Vui lòng đăng nhập lại.");
@@ -479,7 +499,7 @@ function UserManagement() {
         }
 
         try {
-            // formData đã là DTO đầy đủ (fullName, email, username, password, role, phone)
+            // Dùng UserRequest DTO (bao gồm username, email, password, hotelId: null)
             await api.post('/user', formData, {
                  headers: {
                     'X-User-Role': role 
@@ -489,16 +509,13 @@ function UserManagement() {
             alert(`Tạo tài khoản nhân viên ${formData.fullName} thành công!`);
             fetchUsers(); 
         } catch (err) {
-            const errorMessage = err.response && err.response.data 
-                                 ? typeof err.response.data === 'string' ? err.response.data : "Lỗi server hoặc dữ liệu không hợp lệ."
-                                 : "Lỗi không xác định khi tạo người dùng.";
+            const errorMessage = getErrorMessage(err);
             alert(`Lỗi khi tạo người dùng: ${errorMessage}`);
         }
     };
     
     // EDIT Details (Tên/SĐT/Vai trò) Logic
-    const handleEditDetails = async (userId, updatedFields, originalUser) => {
-        // 1. Lấy vai trò người dùng hiện tại từ localStorage
+    const handleEditDetails = async (userId, updatedFields) => {
         const role = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
         if (!role) {
             alert("Lỗi xác thực: Không tìm thấy vai trò người dùng. Vui lòng đăng nhập lại.");
@@ -506,33 +523,25 @@ function UserManagement() {
             return;
         }
         
-        // 2. FIX LỖI 400: Tái tạo DTO đầy đủ NHƯNG LOẠI BỎ TRƯỜNG PASSWORD
-        // BE dùng chung DTO, nên cần username, email. Bỏ password để tránh lỗi validation.
-        const fullDataToSend = {
-            // Dữ liệu BẮT BUỘC (lấy từ user gốc)
-            username: originalUser.username,
-            email: originalUser.email,
-            // KHÔNG GỬI TRƯỜNG 'password'
-            
-            // Dữ liệu đang được cập nhật từ modal
+        // **FIXED: CHỈ GỬI StaffUpdateRequest DTO (fullName, phone, role)**
+        const staffUpdatePayload = {
             fullName: updatedFields.fullName,
             phone: updatedFields.phone,
-            role: updatedFields.role 
+            role: updatedFields.role,
         };
 
         try {
-            await api.put(`/user/${userId}/details`, fullDataToSend, {
+            // API call sử dụng StaffUpdateRequest
+            await api.put(`/user/${userId}/details`, staffUpdatePayload, {
                 headers: {
-                    'X-User-Role': role // Gửi vai trò người gọi dưới dạng UPPERCASE
+                    'X-User-Role': role
                 }
             });
             alert(`Cập nhật thông tin người dùng ID ${userId} thành công!`);
             setShowEditModal(false);
             fetchUsers();
         } catch (err) {
-            const errorMessage = err.response && err.response.data 
-                                 ? typeof err.response.data === 'string' ? err.response.data : "Lỗi server hoặc không có quyền truy cập."
-                                 : "Lỗi không xác định khi cập nhật chi tiết.";
+            const errorMessage = getErrorMessage(err);
             alert(`Lỗi khi cập nhật chi tiết: ${errorMessage}`);
             setShowEditModal(false);
         }
@@ -540,7 +549,6 @@ function UserManagement() {
     
     // UPDATE Status (Inactive/Blocked) Logic
     const handleUpdateStatus = async (userId, newStatus) => {
-        // 1. Lấy vai trò người dùng hiện tại từ localStorage
         const role = localStorage.getItem('userRole') ? localStorage.getItem('userRole').toUpperCase() : '';
         if (!role) {
             alert("Lỗi xác thực: Không tìm thấy vai trò người dùng. Vui lòng đăng nhập lại.");
@@ -549,19 +557,17 @@ function UserManagement() {
         }
 
         try {
-            // newStatus (string) đã là UPPERCASE (e.g., 'ACTIVE')
+            // Payload cho API /status chỉ cần { newStatus }
             await api.put(`/user/${userId}/status`, { newStatus }, {
                 headers: {
-                    'X-User-Role': role // Gửi vai trò người gọi dưới dạng UPPERCASE
+                    'X-User-Role': role 
                 }
             });
             alert(`Cập nhật trạng thái người dùng ID ${userId} thành ${newStatus} thành công!`);
             setShowStatusModal(false);
             fetchUsers();
         } catch (err) {
-            const errorMessage = err.response && err.response.data 
-                                 ? typeof err.response.data === 'string' ? err.response.data : "Lỗi server hoặc không có quyền truy cập."
-                                 : "Lỗi không xác định khi cập nhật trạng thái.";
+            const errorMessage = getErrorMessage(err);
             alert(`Lỗi khi cập nhật trạng thái: ${errorMessage}`);
             setShowStatusModal(false);
         }
@@ -595,7 +601,7 @@ function UserManagement() {
 
             {error && (
                 <Alert variant="danger" className="mb-4">
-                    <Alert.Heading>Lỗi Truy Cập</Alert.Heading>
+                    <Alert.Heading>Lỗi Truy Cập/Tải Dữ Liệu</Alert.Heading>
                     <p>{error}</p>
                 </Alert>
             )}
@@ -618,16 +624,9 @@ function UserManagement() {
                 </Row>
             )}
             
-            {/* Cảnh báo nếu không phải Admin nhưng API vẫn trả về dữ liệu (chỉ xảy ra nếu bỏ qua kiểm tra FE) */}
-             {!error && !isCurrentUserAdmin && (
+            {!error && !isCurrentUserAdmin && (
                 <Alert variant="warning" className="text-center">
                     Bạn không có quyền thực hiện các thao tác quản lý.
-                </Alert>
-            )}
-
-            {!error && users.length === 0 && isCurrentUserAdmin && (
-                <Alert variant="info" className="text-center">
-                    <p className="mb-0">Danh sách nhân viên trống.</p>
                 </Alert>
             )}
 
@@ -640,13 +639,12 @@ function UserManagement() {
                                 <th>Họ và Tên</th>
                                 <th>Email</th>
                                 <th>Vai trò</th>
-                                <th>Trạng thái</th> {/* Cột Trạng thái */}
+                                <th>Trạng thái</th> 
                                 <th className="text-center">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                             {users.map((user) => {
-                                // Kiểm tra quyền chỉnh sửa (Admin, không phải chính mình)
                                 const editable = canEdit(user.role, user.id); 
                                 
                                 return (
@@ -688,7 +686,7 @@ function UserManagement() {
                                                     </Button>
                                                 </>
                                             ) : (
-                                                <Badge bg="secondary">Không thể sửa</Badge>
+                                                <Badge bg="secondary" title="Không thể chỉnh sửa hoặc thay đổi trạng thái của tài khoản Admin">Không thể sửa</Badge>
                                             )}
                                         </td>
                                     </tr>
