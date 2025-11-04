@@ -4,8 +4,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
 
+// Cấu hình cố định cho Khách sạn đơn lẻ (ID=1)
 const DEFAULT_HOTEL_ID = 1; 
-// Khai báo hằng số cho quyền truy cập, chỉ cho phép 'MANAGER' truy cập trang
 const ALLOWED_ROLES = ['MANAGER']; 
 
 const ServiceManagement = () => {
@@ -28,40 +28,45 @@ const ServiceManagement = () => {
         code: "",
         name: "",
         description: "",
-        price: "", // Dùng string để dễ dàng nhập liệu trong form
+        price: "", 
     });
 
-    // Hàm định dạng giá tiền
+    // Hàm định dạng giá tiền (VND)
     const formatPrice = (price) => {
         if (price === null || price === undefined) return '';
         const numberPrice = parseFloat(price);
-        if (isNaN(numberPrice)) return price;
+        if (isNaN(numberPrice)) return '';
         // Định dạng tiền tệ Việt Nam (₫)
         return numberPrice.toLocaleString("vi-VN") + " ₫";
     };
 
     // Hàm tải danh sách dịch vụ
     const fetchServices = async () => {
-        // Nếu đã có lỗi quyền truy cập thì không gọi API nữa
-        if (error && error.includes('không có quyền truy cập')) return;
+        if (!canManageServices || (error && error.includes('không có quyền truy cập'))) {
+            setLoading(false);
+            return;
+        }
         
         setLoading(true);
         setError(null);
         try {
-            // Endpoint API cho Service
+            // Lấy toàn bộ danh sách Services từ Backend
             const response = await api.get("/service");
-            // ĐÃ SỬA: Loại bỏ .data để lấy trực tiếp nội dung phản hồi (body)
-            const data = response || response.content || response; 
+            const data = response; 
+            
+            // ✅ ĐÃ SỬA: Bỏ logic lọc ở FE, tin tưởng Backend chỉ trả về data của Hotel ID=1
             setServices(Array.isArray(data) ? data : []);
+
         } catch (err) {
-            setError("Không thể tải danh sách Dịch vụ. Lỗi API hoặc quyền truy cập.");
+            setError("Không thể tải danh sách Dịch vụ. Vui lòng kiểm tra Server.");
+            console.error("Fetch Services Error:", err);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        // 1. Kiểm tra quyền truy cập cấp trang
+        // Kiểm tra quyền truy cập cấp trang
         if (!ALLOWED_ROLES.includes(currentUserRole)) {
             setError('Bạn không có quyền truy cập trang Quản lý Dịch vụ. Yêu cầu vai trò MANAGER.');
             setLoading(false);
@@ -70,13 +75,13 @@ const ServiceManagement = () => {
         fetchServices();
     }, [currentUserRole]); 
 
-    // Mở Modal (đã bỏ kiểm tra quyền trong hàm này)
+    // Mở Modal
     const openModal = (service = null) => {
         if (service) {
             setIsEditing(true);
             setCurrentService({
                 ...service,
-                // Chuyển BigDecimal price sang string để hiển thị trong input number
+                // Chuyển giá trị sang string để hiển thị trong input number
                 price: service.price?.toString() || "" 
             });
         } else {
@@ -106,9 +111,9 @@ const ServiceManagement = () => {
             return;
         }
         
-        // Kiểm tra dữ liệu bắt buộc
-        if (!currentService.code || !currentService.name) {
-            setError("Mã dịch vụ và Tên dịch vụ là bắt buộc!");
+        // Validation cơ bản
+        if (!currentService.code || !currentService.name || currentService.price === "") {
+            setError("Mã dịch vụ, Tên dịch vụ và Giá là bắt buộc!");
             toast.error("Vui lòng nhập đủ thông tin bắt buộc.");
             return;
         }
@@ -124,18 +129,17 @@ const ServiceManagement = () => {
             const dataToSend = {
                 ...currentService,
                 price: priceValue,
-                // Thêm hotel id vào dataToSend (backend yêu cầu)
+                // Gán cố định hotel id = 1
                 hotel: { id: DEFAULT_HOTEL_ID } 
             };
             
+            // Loại bỏ ID nếu là thao tác thêm mới
             if (!isEditing) delete dataToSend.id; 
 
             if (isEditing) {
-                // PUT request: /api/service/{id}
                 await api.put(`/service/${dataToSend.id}`, dataToSend);
                 toast.success("✅ Cập nhật dịch vụ thành công!");
             } else {
-                // POST request: /api/service
                 await api.post("/service", dataToSend);
                 toast.success("➕ Thêm mới dịch vụ thành công!");
             }
@@ -143,14 +147,14 @@ const ServiceManagement = () => {
             fetchServices();
         } catch (err) {
             console.error("Chi tiết lỗi API:", err); 
-            let errorMessage = "Lỗi không xác định. Vui lòng thử lại.";
+            let errorMessage = "Lỗi không xác định. Vui lòng kiểm tra Console/Server.";
             
-            // Nếu API trả về lỗi có message (từ ErrorResponse trong Controller)
             if (err.response?.data?.message) {
                 errorMessage = err.response.data.message; 
             } else if (err.message) {
                 errorMessage = err.message;
             }
+            
             toast.error(`❌ Lỗi khi lưu: ${errorMessage}`);
             setError(`Lỗi khi lưu: ${errorMessage}`);
         }
@@ -165,6 +169,7 @@ const ServiceManagement = () => {
 
         // Thay window.confirm bằng Modal tùy chỉnh nếu cần, theo hướng dẫn chung
         if (!window.confirm(`Bạn có chắc muốn xóa dịch vụ "${name}" này?`)) return;
+        
         try {
             await api.delete(`/service/${id}`);
             toast.info(`🗑️ Đã xóa dịch vụ "${name}" thành công!`);
@@ -176,8 +181,10 @@ const ServiceManagement = () => {
     };
 
     // Hiển thị lỗi quyền truy cập cấp trang
-    if (error && error.includes('không có quyền truy cập') && !canManageServices) {
-        return <p className="text-danger text-center mt-5" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>Lỗi: {error}</p>;
+    if (!canManageServices) {
+        return <p className="text-danger text-center mt-5 p-4 bg-light rounded shadow-sm" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
+            Lỗi: Bạn không có quyền truy cập trang Quản lý Dịch vụ. Yêu cầu vai trò MANAGER.
+        </p>;
     }
 
 
@@ -185,7 +192,7 @@ const ServiceManagement = () => {
         return (
             <div className="text-center mt-5">
                 <Spinner animation="border" variant="primary" />
-                <p className="mt-2 text-primary">Đang tải dữ liệu...</p>
+                <p className="mt-2 text-primary">Đang tải dữ liệu Dịch vụ...</p>
             </div>
         );
     }
@@ -194,67 +201,84 @@ const ServiceManagement = () => {
         <div className="container mt-4">
             <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
 
-            <h3 className="mb-4 text-center text-primary">Quản lý Dịch vụ (Tiện ích) 🛎️</h3>
+            <h3 className="mb-4 text-center text-secondary border-bottom pb-2" style={{ fontWeight: 700, letterSpacing: '0.5px' }}>
+                {/* Tiêu đề được thiết kế lại */}
+                🛎️ QUẢN LÝ TIỆN ÍCH
+            </h3>
 
             {error && !showModal && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
 
-            {/* Chỉ hiển thị nút Thêm dịch vụ mới nếu có quyền */}
             {canManageServices && (
-                <Button variant="success" className="mb-3 shadow-sm" onClick={() => openModal()}>
-                    ➕ Thêm dịch vụ mới
-                </Button>
+                <Button variant="success" 
+                        className="mb-3 shadow-lg btn-lg" // Nút lớn hơn, nổi bật hơn
+                        onClick={() => openModal()}
+                        style={{ background: '#28a745', borderColor: '#28a745', fontWeight: 600 }}
+                >
+                    ➕ THÊM DỊCH VỤ MỚI
+                </Button>
             )}
 
 
-            <div className="shadow-sm rounded table-responsive">
-                <Table bordered hover className="bg-white" style={{ minWidth: '700px' }}> 
-                    <thead>
-                        <tr className="table-primary">
-                            <th className="text-center text-nowrap" style={{ width: '50px' }}>ID</th>
-                            <th className="text-nowrap" style={{ width: '100px' }}>Mã DV</th>
-                            <th className="text-nowrap" style={{ width: '180px' }}>Tên Dịch vụ</th>
-                            <th className="text-end text-nowrap" style={{ width: '120px' }}>Giá</th>
-                            <th>Mô tả</th>
-                            <th className="text-center text-nowrap" style={{ width: '100px' }}>Ngày tạo</th>
-                            {/* Chỉ hiển thị cột Hành động nếu có quyền */}
-                            {canManageServices && <th className="text-center text-nowrap" style={{ width: '140px' }}>Hành động</th>}
+            {/* Bảng dữ liệu được thiết kế lại */}
+            <div className="shadow-2xl rounded-xl table-responsive bg-white p-3 border border-gray-200">
+                <Table striped bordered hover className="m-0 align-middle caption-top"> 
+                    <caption className="text-primary fw-bold mb-2">
+                        Danh sách Dịch vụ đang hoạt động (Khách sạn ID: {DEFAULT_HOTEL_ID})
+                    </caption>
+                    <thead className="table-dark shadow-md">
+                        <tr style={{ backgroundColor: '#007bff' }}>
+                            <th className="text-center" style={{ width: '5%' }}>ID</th>
+                            <th style={{ width: '10%' }}>Mã DV</th>
+                            <th style={{ width: '20%' }}>Tên Dịch vụ</th>
+                            <th className="text-end" style={{ width: '15%' }}>Giá (VND)</th>
+                            <th style={{ width: '35%' }}>Mô tả</th>
+                            <th className="text-center" style={{ width: '10%' }}>Ngày tạo</th>
+                            {canManageServices && <th className="text-center" style={{ width: '15%' }}>Hành động</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {services.length > 0 ? (
-                            services.map((service) => (
-                                <tr key={service.id}>
-                                    <td className="text-center text-muted">{service.id}</td>
-                                    <td className="fw-bold">{service.code}</td>
+                            services.map((service, index) => (
+                                <tr key={service.id} className={index % 2 === 0 ? 'bg-light' : 'bg-white'}>
+                                    <td className="text-center text-muted fw-light">{service.id}</td>
+                                    <td className="fw-bold text-uppercase text-primary">{service.code}</td>
                                     <td>{service.name}</td>
                                     <td className="text-end fw-bold text-success">{formatPrice(service.price)}</td>
-                                    <td>{service.description?.substring(0, 70) + (service.description?.length > 70 ? '...' : '')}</td>
-                                    <td className="text-center text-muted">
-                                        {/* Hiển thị ngày tạo, có thể rút gọn nếu cần */}
+                                    <td>
+                                        {/* Hiển thị tóm tắt, dùng title để xem đầy đủ */}
+                                        <span title={service.description}>
+                                            {service.description?.substring(0, 70) + (service.description?.length > 70 ? '...' : '')}
+                                        </span>
+                                    </td>
+                                    <td className="text-center text-secondary small">
                                         {new Date(service.createdAt).toLocaleDateString('vi-VN')}
                                     </td>
-                                    {/* Chỉ hiển thị nút Sửa/Xóa nếu có quyền */}
                                     {canManageServices && (
-                                        <td className="text-center">
+                                        <td className="text-center text-nowrap">
                                             <Button
-                                                variant="outline-warning"
+                                                variant="warning"
                                                 size="sm"
-                                                className="me-2"
+                                                className="me-2 text-white shadow-sm hover:shadow-md transition duration-200"
                                                 onClick={() => openModal(service)}
-                                            >Sửa</Button>
+                                            >
+                                                ✏️ Sửa
+                                            </Button>
                                             <Button
-                                                variant="outline-danger"
+                                                variant="danger"
                                                 size="sm"
+                                                className="shadow-sm hover:shadow-md transition duration-200"
                                                 onClick={() => handleDelete(service.id, service.name)}
-                                            >Xóa</Button>
+                                            >
+                                                🗑️ Xóa
+                                            </Button>
                                         </td>
                                     )}
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={canManageServices ? "7" : "6"} className="text-center py-4 text-muted">
-                                        Không có dịch vụ nào được tìm thấy.
+                                <td colSpan={canManageServices ? "7" : "6"} className="text-center py-5 text-secondary">
+                                        📋 Hiện chưa có dịch vụ nào được thêm vào Khách sạn ID: {DEFAULT_HOTEL_ID}.
                                     </td>
                             </tr>
                         )}
@@ -262,66 +286,66 @@ const ServiceManagement = () => {
                 </Table>
             </div>
 
-            {canManageServices && (
-                <Modal show={showModal} onHide={closeModal}>
-                    <Modal.Header closeButton className={isEditing ? "bg-warning text-white" : "bg-primary text-white"}>
-                        <Modal.Title>{isEditing ? "Sửa Dịch vụ" : "Thêm Dịch vụ mới"}</Modal.Title>
-                    </Modal.Header>
-                    <Form onSubmit={handleSubmit}>
-                        <Modal.Body>
-                            {error && <Alert variant="danger">{error}</Alert>}
+            {/* Modal Thêm/Sửa Dịch vụ */}
+            <Modal show={showModal} onHide={closeModal} centered>
+                <Modal.Header closeButton className={isEditing ? "bg-warning text-dark" : "bg-primary text-white"}>
+                    <Modal.Title>{isEditing ? "Chỉnh Sửa Dịch vụ" : "Thêm Dịch vụ mới"}</Modal.Title>
+                </Modal.Header>
+                <Form onSubmit={handleSubmit}>
+                    <Modal.Body>
+                        {error && <Alert variant="danger">{error}</Alert>}
 
-                            <Form.Group className="mb-3">
-                                <Form.Label>Tên Dịch vụ <span className="text-danger">*</span></Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={currentService.name}
-                                    onChange={(e) => setCurrentService({ ...currentService, name: e.target.value })}
-                                    required
-                                />
-                            </Form.Group>
-                            
-                            <Form.Group className="mb-3">
-                                <Form.Label>Mã dịch vụ (Code) <span className="text-danger">*</span></Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    value={currentService.code}
-                                    onChange={(e) => setCurrentService({ ...currentService, code: e.target.value })}
-                                    required
-                                />
-                            </Form.Group>
-
-                            <Form.Group className="mb-3">
-                                <Form.Label>Giá (VND) <span className="text-danger">*</span></Form.Label>
-                                <Form.Control
-                                    type="number"
-                                    value={currentService.price}
-                                    onChange={(e) => setCurrentService({ ...currentService, price: e.target.value })}
-                                    required
-                                    min="0"
-                                />
-                            </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Tên Dịch vụ <span className="text-danger">*</span></Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={currentService.name}
+                                onChange={(e) => setCurrentService({ ...currentService, name: e.target.value })}
+                                required
+                            />
+                        </Form.Group>
                         
-                            <Form.Group className="mb-3">
-                                <Form.Label>Mô tả</Form.Label>
-                                <Form.Control
-                                    as="textarea"
-                                    rows={3}
-                                    value={currentService.description}
-                                    onChange={(e) => setCurrentService({ ...currentService, description: e.target.value })}
-                                />
-                            </Form.Group>
-                        </Modal.Body>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Mã dịch vụ (Code) <span className="text-danger">*</span></Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={currentService.code}
+                                onChange={(e) => setCurrentService({ ...currentService, code: e.target.value })}
+                                required
+                            />
+                        </Form.Group>
 
-                        <Modal.Footer>
-                            <Button variant="secondary" onClick={closeModal}>Hủy</Button>
-                            <Button type="submit" variant={isEditing ? "warning" : "primary"}>
-                                {isEditing ? "Lưu thay đổi" : "Thêm mới"}
-                            </Button>
-                        </Modal.Footer>
-                    </Form>
-                </Modal>
-            )}
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Giá (VND) <span className="text-danger">*</span></Form.Label>
+                            <Form.Control
+                                type="number"
+                                value={currentService.price}
+                                onChange={(e) => setCurrentService({ ...currentService, price: e.target.value })}
+                                required
+                                min="0"
+                                step="0.01" 
+                            />
+                        </Form.Group>
+                        
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Mô tả</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                value={currentService.description}
+                                onChange={(e) => setCurrentService({ ...currentService, description: e.target.value })}
+                            />
+                        </Form.Group>
+                    </Modal.Body>
+
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={closeModal}>Hủy</Button>
+                        <Button type="submit" variant={isEditing ? "warning" : "primary"}>
+                            {isEditing ? "Lưu thay đổi" : "Thêm mới"}
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
 
         </div>
     );
