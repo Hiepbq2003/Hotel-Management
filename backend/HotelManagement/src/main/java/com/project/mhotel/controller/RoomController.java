@@ -3,6 +3,7 @@ package com.project.mhotel.controller;
 import com.project.mhotel.entity.Room;
 import com.project.mhotel.entity.Room.Status;
 import com.project.mhotel.service.RoomService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,13 +56,13 @@ public class RoomController {
     }
 
     // POST create new room
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Room> createRoom(@RequestBody Room room) {
         return ResponseEntity.ok(roomService.createRoom(room));
     }
 
     // PUT update room
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Room> updateRoom(@PathVariable Long id, @RequestBody Room room) {
         return ResponseEntity.ok(roomService.updateRoom(id, room));
     }

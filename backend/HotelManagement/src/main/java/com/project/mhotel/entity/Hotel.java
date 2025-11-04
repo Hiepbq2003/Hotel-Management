@@ -52,21 +52,23 @@ public class Hotel {
     @Column(length = 100)
     private String email;
 
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Room> rooms;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    // Quan hệ với RoomType (1 hotel có nhiều loại phòng)
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<RoomType> roomTypes;
 
-    // Quan hệ với UserAccount (1 hotel có nhiều user)
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserAccount> users;
 
-    // Quan hệ với RatePlan (1 hotel có nhiều rate plan)
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RatePlan> ratePlans;
 

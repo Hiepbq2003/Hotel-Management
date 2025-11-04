@@ -1,5 +1,6 @@
 package com.project.mhotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,7 +22,7 @@ public class Room {
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_room_hotel"))
-    @JsonIgnore
+    @JsonBackReference
     private Hotel hotel;
 
     @Column(name = "room_number", nullable = false, length = 50)
@@ -30,7 +31,7 @@ public class Room {
     @ManyToOne
     @JoinColumn(name = "room_type_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_room_room_type"))
-    @JsonIgnore
+    @JsonBackReference
     private RoomType roomType;
 
     @Column
