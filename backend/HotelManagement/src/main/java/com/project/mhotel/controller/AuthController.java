@@ -3,10 +3,15 @@ package com.project.mhotel.controller;
 import com.project.mhotel.dto.*;
 import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.entity.UserAccount;
+import com.project.mhotel.security.JwtUtil;
 import com.project.mhotel.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -20,21 +25,41 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private JwtUtil jwtUtil; // Inject JwtUtil
+
+    @Autowired
+    private AuthenticationManager authenticationManager; // Inject AuthenticationManager
+
+    // Cần phải cập nhật AuthService.java để sử dụng PasswordEncoder trong quá trình đăng ký
+
     @PostMapping("/login")
     public ResponseEntity<?> authenticateCustomer(@RequestBody LoginRequest loginRequest) {
+        try {
+            // Xác thực bằng Spring Security Authentication Manager
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail(),
+                            loginRequest.getPassword()
+                    )
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        Optional<CustomerAccount> authenticatedAccount = authService.authenticateCustomer(
-                loginRequest.getEmail(),
-                loginRequest.getPassword()
-        );
+            Optional<CustomerAccount> authenticatedAccount = authService.authenticateCustomer(
+                    loginRequest.getEmail(),
+                    loginRequest.getPassword()
+            );
 
-        if (authenticatedAccount.isPresent()) {
+            // Tạo JWT sau khi xác thực thành công
             CustomerAccount customer = authenticatedAccount.get();
-
-            String dummyToken = "dummy_token_" + customer.getId();
+            String jwtToken = jwtUtil.generateToken(
+                    customer.getEmail(),
+                    "CUSTOMER",
+                    customer.getId()
+            );
 
             LoginResponse response = new LoginResponse(
-                    dummyToken,
+                    jwtToken, // Trả về JWT
                     customer.getEmail(),
                     "CUSTOMER",
                     customer.getFullName(),
@@ -43,46 +68,64 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
 
-        } else {
-
+        } catch (Exception e) {
+            // Bao gồm BadCredentialsException, v.v.
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body("Sai Email hoặc Mật khẩu.");
         }
     }
+
     @PostMapping("/staff/login")
     public ResponseEntity<?> authenticateStaff(@RequestBody LoginRequest loginRequest) {
+        try {
+            // Xác thực bằng Spring Security Authentication Manager
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail(),
+                            loginRequest.getPassword()
+                    )
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        Optional<UserAccount> authenticatedAccount = authService.authenticateUser(
-                loginRequest.getEmail(),
-                loginRequest.getPassword()
-        );
+            Optional<UserAccount> authenticatedAccount = authService.authenticateUser(
+                    loginRequest.getEmail(),
+                    loginRequest.getPassword()
+            );
 
-        if (authenticatedAccount.isPresent()) {
+            // Tạo JWT sau khi xác thực thành công
             UserAccount user = authenticatedAccount.get();
-
-            String dummyToken = "staff_token_" + user.getId();
+            String roleName = user.getRole().name().toUpperCase();
+            String jwtToken = jwtUtil.generateToken(
+                    user.getEmail(),
+                    roleName,
+                    user.getId()
+            );
 
             LoginResponse response = new LoginResponse(
-                    dummyToken,
+                    jwtToken, // Trả về JWT
                     user.getEmail(),
-                    user.getRole().name().toUpperCase(),
+                    roleName,
                     user.getFullName(),
                     user.getPhone()
             );
 
             return ResponseEntity.ok(response);
 
-        } else {
+        } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body("Sai Email hoặc Mật khẩu, hoặc tài khoản chưa được kích hoạt.");
         }
     }
 
+    // ... Giữ nguyên các phương thức khác như /register, /change-password, v.v.
+    // Lưu ý: Các phương thức này vẫn cần logic bảo mật/phân quyền khi JWT hoạt động.
+
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest registerRequest) {
         try {
+            // Đảm bảo AuthService.registerCustomer sử dụng PasswordEncoder để băm mật khẩu
             CustomerAccount newCustomer = authService.registerCustomer(registerRequest);
 
             return ResponseEntity.status(HttpStatus.CREATED).body("Đăng ký tài khoản " + newCustomer.getEmail() + " thành công!");
