@@ -14,7 +14,6 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
 --
 -- Table structure for table `customer_account`
 --
@@ -474,6 +473,30 @@ CREATE TABLE `user_account` (
   KEY `hotel_id` (`hotel_id`),
   CONSTRAINT `user_account_ibfk_1` FOREIGN KEY (`hotel_id`) REFERENCES `hotel` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `room_type_amenity`
+--
+
+DROP TABLE IF EXISTS `room_type_amenity`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `room_type_amenity` (
+  `room_type_id` bigint(20) NOT NULL,
+  `amenity_id` bigint(20) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`room_type_id`, `amenity_id`),
+  KEY `room_type_id` (`room_type_id`),
+  KEY `amenity_id` (`amenity_id`),
+  CONSTRAINT `fk_rta_room_type` 
+    FOREIGN KEY (`room_type_id`) 
+    REFERENCES `room_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_rta_amenity` 
+    FOREIGN KEY (`amenity_id`) 
+    REFERENCES `hotel_amenity` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

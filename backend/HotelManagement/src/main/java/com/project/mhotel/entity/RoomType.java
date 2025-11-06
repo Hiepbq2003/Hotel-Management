@@ -8,6 +8,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "room_type",
@@ -54,4 +55,13 @@ public class RoomType {
 
     @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomRate> roomRates;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "room_type_amenity",
+            joinColumns = @JoinColumn(name = "room_type_id"),
+            inverseJoinColumns = @JoinColumn(name = "amenity_id"),
+            uniqueConstraints = {@UniqueConstraint(columnNames = {"room_type_id", "amenity_id"})}
+    )
+    private Set<HotelAmenity> amenities;
 }

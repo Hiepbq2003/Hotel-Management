@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Table(name = "hotel_amenity")
@@ -34,4 +35,7 @@ public class HotelAmenity {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @ManyToMany(mappedBy = "amenities")
+    private Set<RoomType> roomTypes;
 }
