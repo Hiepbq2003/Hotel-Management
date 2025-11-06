@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/hotel-amenities")
-// Đảm bảo CORS được cấu hình (như @CrossOrigin trong RoomController)
 @CrossOrigin(origins = "http://localhost:3000")
 public class HotelAmenityController {
 
@@ -20,8 +19,6 @@ public class HotelAmenityController {
         this.amenityService = amenityService;
     }
 
-    // GET: Lấy tất cả tiện ích (hoặc tiện ích theo Hotel ID nếu cần)
-    // /api/hotel-amenities?hotelId=1
     @GetMapping
     public ResponseEntity<List<HotelAmenityResponse>> getAllAmenities(@RequestParam(required = false) Long hotelId) {
         List<HotelAmenityResponse> amenities;

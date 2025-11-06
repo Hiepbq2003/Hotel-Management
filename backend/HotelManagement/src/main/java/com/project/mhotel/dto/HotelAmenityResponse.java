@@ -27,8 +27,6 @@ public class HotelAmenityResponse {
         dto.setHotelId(entity.getHotel().getId());
         dto.setName(entity.getName());
         dto.setDescription(entity.getDescription());
-        dto.setIconUrl(entity.getIconUrl());
-        dto.setIsActive(entity.getIsActive());
         dto.setCreatedAt(entity.getCreatedAt());
         return dto;
     }

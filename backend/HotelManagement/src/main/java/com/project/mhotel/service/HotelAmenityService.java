@@ -49,11 +49,9 @@ public class HotelAmenityService {
             throw new RuntimeException("Hotel ID is required.");
         }
 
-        // 1. Kiểm tra Hotel
         Hotel hotel = hotelRepository.findById(request.getHotelId())
                 .orElseThrow(() -> new RuntimeException("Hotel not found with ID: " + request.getHotelId()));
 
-        // 2. Kiểm tra trùng lặp tên
         if (amenityRepository.existsByHotel_IdAndNameIgnoreCase(request.getHotelId(), request.getName())) {
             throw new RuntimeException("Amenity name already exists in this hotel.");
         }
@@ -63,8 +61,6 @@ public class HotelAmenityService {
                 .hotel(hotel)
                 .name(request.getName())
                 .description(request.getDescription())
-                .iconUrl(request.getIconUrl())
-                .isActive(request.getIsActive())
                 .build();
 
         return HotelAmenityResponse.fromEntity(amenityRepository.save(newAmenity));
@@ -76,7 +72,6 @@ public class HotelAmenityService {
         HotelAmenity existingAmenity = amenityRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Hotel Amenity not found with ID: " + id));
 
-        // 1. Kiểm tra trùng lặp tên (loại trừ chính nó)
         if (amenityRepository.existsByHotel_IdAndNameIgnoreCaseAndIdNot(
                 existingAmenity.getHotel().getId(),
                 request.getName(),
@@ -84,11 +79,10 @@ public class HotelAmenityService {
             throw new RuntimeException("Amenity name already exists in this hotel.");
         }
 
-        // 2. Cập nhật Entity
+
         existingAmenity.setName(request.getName());
         existingAmenity.setDescription(request.getDescription());
-        existingAmenity.setIconUrl(request.getIconUrl());
-        existingAmenity.setIsActive(request.getIsActive());
+
 
         return HotelAmenityResponse.fromEntity(amenityRepository.save(existingAmenity));
     }

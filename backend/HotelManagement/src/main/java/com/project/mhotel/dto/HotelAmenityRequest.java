@@ -12,5 +12,4 @@ public class HotelAmenityRequest {
     private String name;
     private String description;
     private String iconUrl;
-    private Boolean isActive = true;
 }

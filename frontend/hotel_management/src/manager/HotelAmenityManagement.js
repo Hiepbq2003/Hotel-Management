@@ -9,7 +9,7 @@ import api from "../api/apiConfig";
 const DEFAULT_HOTEL_ID = 1; 
 const ALLOWED_ROLES = ['MANAGER']; 
 
-// Hàm định dạng ngày tháng (tương tự như trong ServiceManagement nhưng đầy đủ hơn)
+// Hàm định dạng ngày tháng
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -46,13 +46,12 @@ const HotelAmenityManagement = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [amenitiesPerPage] = useState(10); // 10 tiện ích trên mỗi trang
     
-    // State cho Tiện ích (dựa trên cấu trúc bảng mới)
+    // State cho Tiện ích (Đã cập nhật: BỎ iconUrl, isActive)
     const [currentAmenity, setCurrentAmenity] = useState({
         id: null,
         hotelId: DEFAULT_HOTEL_ID, 
         name: "",
         description: "",
-        // không cần created_at vì backend tự động tạo
     });
 
     // Hàm tải danh sách Tiện ích
@@ -92,7 +91,7 @@ const HotelAmenityManagement = () => {
         // 1. Lọc/Tìm kiếm
         const filtered = allAmenities.filter(amenity =>
             amenity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            amenity.description.toLowerCase().includes(searchTerm.toLowerCase())
+            (amenity.description && amenity.description.toLowerCase().includes(searchTerm.toLowerCase()))
         );
         
         // Luôn reset trang về 1 khi filter/search thay đổi
@@ -121,8 +120,10 @@ const HotelAmenityManagement = () => {
         if (amenity) {
             setIsEditing(true);
             setCurrentAmenity({
-                ...amenity,
+                id: amenity.id,
                 hotelId: amenity.hotelId || DEFAULT_HOTEL_ID,
+                name: amenity.name,
+                description: amenity.description || "",
             });
         } else {
             setIsEditing(false);
@@ -165,12 +166,11 @@ const HotelAmenityManagement = () => {
         }
 
         try {
-            // DTO gửi lên Backend
+            // DTO gửi lên Backend (Đã cập nhật: BỎ iconUrl, isActive)
             const dataToSend = {
                 hotelId: currentAmenity.hotelId, 
                 name: currentAmenity.name,
                 description: currentAmenity.description,
-                // Các trường khác như id, created_at được BE tự động xử lý
             };
             
             if (isEditing) {
@@ -219,7 +219,7 @@ const HotelAmenityManagement = () => {
     // --- RENDER ---
     if (!canManageAmenities) {
         return <p className="text-danger text-center mt-5 p-4 bg-light rounded shadow-sm" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
-            Lỗi: Bạn không có quyền truy cập trang Quản lý Tiện ích. Yêu cầu vai trò MANAGER.
+            Lỗi: Bạn không có quyền truy cập trang Quản lý Tiện ích. Yêu cầu vai trò **MANAGER**.
         </p>;
     }
 
@@ -272,7 +272,7 @@ const HotelAmenityManagement = () => {
             <div className="shadow-2xl rounded-xl table-responsive bg-white p-3 border border-gray-200">
                 <Table striped bordered hover className="m-0 align-middle caption-top"> 
                     <caption className="text-primary fw-bold mb-2">
-                        Danh sách Tiện ích (Khách sạn ID: {DEFAULT_HOTEL_ID})
+                        Danh sách Tiện ích (Khách sạn ID: **{DEFAULT_HOTEL_ID}**)
                     </caption>
                     <thead className="table-dark shadow-md">
                         <tr style={{ backgroundColor: '#007bff' }}>
