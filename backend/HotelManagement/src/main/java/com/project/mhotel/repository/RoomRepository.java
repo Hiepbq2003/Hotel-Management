@@ -12,14 +12,16 @@ import java.util.Optional;
 
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Long> {
+
     Optional<Room> findByRoomNumber(String roomNumber);
+
     // Lấy danh sách phòng theo trạng thái
     List<Room> findByStatus(Status status);
 
-    // Lấy danh sách phòng theo khách sạn
+    // Lấy danh sách phòng theo khách sạn (Đã đổi tên thuộc tính: Hotel_Id)
     List<Room> findByHotel_Id(Long hotelId);
 
-    // Tìm phòng theo số phòng và khách sạn
+    // Tìm phòng theo số phòng và khách sạn (Đã đổi tên thuộc tính: Hotel_IdAndRoomNumber)
     Room findByHotel_IdAndRoomNumber(Long hotelId, String roomNumber);
 
     // ✅ Cập nhật trạng thái phòng mà không cần merge toàn bộ entity
@@ -28,4 +30,3 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Query("UPDATE Room r SET r.status = :status WHERE r.id = :roomId")
     void updateRoomStatus(@Param("roomId") Long roomId, @Param("status") Status status);
 }
-

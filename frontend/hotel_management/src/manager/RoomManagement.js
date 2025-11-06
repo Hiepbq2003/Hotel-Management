@@ -31,6 +31,7 @@ const RoomManagement = () => {
     const [currentRoom, setCurrentRoom] = useState({
         id: null,
         roomNumber: "",
+        // Đã thay đổi RoomType thành một object đơn giản để dễ dàng lấy ID
         roomType: { id: "" }, 
         floor: 1,
         status: "available",
@@ -206,19 +207,30 @@ const RoomManagement = () => {
         }
 
         try {
+            // CHỈNH SỬA Ở ĐÂY: Chuyển đổi cấu trúc dữ liệu sang DTO (flat structure)
             const dataToSend = {
-                ...currentRoom,
+                // Giữ lại ID nếu đang chỉnh sửa
+                ...(isEditing && { id: currentRoom.id }), 
+                
+                roomNumber: currentRoom.roomNumber,
                 floor: parseInt(currentRoom.floor),
-                roomType: { id: parseInt(currentRoom.roomType.id) },
-                hotel: { id: DEFAULT_HOTEL_ID } 
+                status: currentRoom.status,
+                description: currentRoom.description,
+
+                // SỬ DỤNG TÊN TRƯỜNG DTO (roomTypeId và hotelId)
+                roomTypeId: parseInt(currentRoom.roomType.id),
+                hotelId: DEFAULT_HOTEL_ID 
             };
             
+            // Đảm bảo không gửi ID khi POST
             if (!isEditing) delete dataToSend.id; 
 
             if (isEditing) {
+                // PUT request
                 await api.put(`/rooms/${dataToSend.id}`, dataToSend);
                 toast.success(`✅ Cập nhật phòng ${dataToSend.roomNumber} thành công!`);
             } else {
+                // POST request
                 await api.post("/rooms", dataToSend);
                 toast.success(`➕ Thêm phòng ${dataToSend.roomNumber} mới thành công!`);
             }

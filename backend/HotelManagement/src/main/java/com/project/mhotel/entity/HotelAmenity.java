@@ -1,11 +1,16 @@
 package com.project.mhotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "hotel_amenity")
+@Table(name = "hotel_amenity",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"hotel_id", "service_id"})})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,17 +21,16 @@ public class HotelAmenity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ ManyToOne với Hotel
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_hotel_amenity_hotel"))
+            foreignKey = @ForeignKey(name = "fk_amenity_hotel"))
+    @JsonBackReference
     private Hotel hotel;
 
-    @Column(nullable = false, length = 150)
-    private String name;
-
-    @Column(length = 300)
-    private String description;
+    @ManyToOne
+    @JoinColumn(name = "service_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_amenity_service"))
+    private Services service;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

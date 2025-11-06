@@ -19,7 +19,7 @@ import UserManagement from "../admin/UserManagement";
 import CustomerManagement from "../adminArea/CustomerManagement";
 import ServiceManagement from "../manager/ServiceManagement";
 import RoomManagement from "../manager/RoomManagement";
-
+import HotelAmenityManagement from "../manager/HotelAmenityManagement";
 function Routers() {
   return (
     <Router>
@@ -45,6 +45,7 @@ function Routers() {
           <Route path="service-management" element={<ServiceManagement />} />
           <Route path="room-management" element={<RoomManagement />} />
           <Route path="customer-management" element={<CustomerManagement />} />
+          <Route path="amenities" element={<HotelAmenityManagement />} />
         </Route>
 
         {/* *** ROUTE DÀNH CHO ADMIN *** */}
