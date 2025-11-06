@@ -11,8 +11,7 @@ public interface HotelAmenityRepository extends JpaRepository<HotelAmenity, Long
 
     List<HotelAmenity> findByHotel_Id(Long hotelId);
 
-    boolean existsByHotel_IdAndService_Id(Long hotelId, Long serviceId);
+    boolean existsByHotel_IdAndNameIgnoreCase(Long hotelId, String name);
 
-    boolean existsByHotel_IdAndService_IdAndIdNot(Long hotelId, Long serviceId, Long id);
-
+    boolean existsByHotel_IdAndNameIgnoreCaseAndIdNot(Long hotelId, String name, Long id);
 }

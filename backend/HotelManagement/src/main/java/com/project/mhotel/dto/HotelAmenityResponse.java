@@ -1,7 +1,6 @@
 package com.project.mhotel.dto;
 
 import com.project.mhotel.entity.HotelAmenity;
-import com.project.mhotel.entity.Services; // Import Services Entity
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,26 +14,22 @@ public class HotelAmenityResponse {
 
     private Long id;
     private Long hotelId;
-    private ServiceDto service;
+    private String name;
+    private String description;
+    private String iconUrl;
+    private Boolean isActive;
     private LocalDateTime createdAt;
 
+    // Mapper tĩnh
     public static HotelAmenityResponse fromEntity(HotelAmenity entity) {
         HotelAmenityResponse dto = new HotelAmenityResponse();
         dto.setId(entity.getId());
-
-        dto.setHotelId(entity.getHotel() != null ? entity.getHotel().getId() : null);
+        dto.setHotelId(entity.getHotel().getId());
+        dto.setName(entity.getName());
+        dto.setDescription(entity.getDescription());
+        dto.setIconUrl(entity.getIconUrl());
+        dto.setIsActive(entity.getIsActive());
         dto.setCreatedAt(entity.getCreatedAt());
-
-        Services serviceEntity = entity.getService();
-        if (serviceEntity != null) {
-            dto.setService(new ServiceDto(
-                    serviceEntity.getId(),
-                    serviceEntity.getCode(),
-                    serviceEntity.getName(),
-                    serviceEntity.getDescription(),
-                    serviceEntity.getPrice()
-            ));
-        }
         return dto;
     }
 }

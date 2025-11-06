@@ -8,8 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HotelAmenityRequest {
-
     private Long hotelId;
-    // ✅ THAY THẾ: Chỉ cần ID của Service được chọn
-    private Long serviceId;
+    private String name;
+    private String description;
+    private String iconUrl;
+    private Boolean isActive = true;
 }

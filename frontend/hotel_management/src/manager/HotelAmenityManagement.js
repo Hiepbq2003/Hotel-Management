@@ -1,16 +1,20 @@
 import React, { useEffect, useState, useMemo } from "react";
+// Thêm Pagination cho chức năng phân trang
 import { Table, Button, Modal, Form, Spinner, Alert, Pagination } from "react-bootstrap"; 
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
 
+// Cấu hình cố định cho Khách sạn đơn lẻ (ID=1)
 const DEFAULT_HOTEL_ID = 1; 
 const ALLOWED_ROLES = ['MANAGER']; 
 
+// Hàm định dạng ngày tháng (tương tự như trong ServiceManagement nhưng đầy đủ hơn)
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
         const date = new Date(dateString);
+        // Định dạng dd/MM/yyyy HH:mm
         return date.toLocaleDateString('vi-VN', { 
             year: 'numeric', 
             month: '2-digit', 
@@ -29,32 +33,43 @@ const HotelAmenityManagement = () => {
     const currentUserRole = localStorage.getItem('userRole');
     const canManageAmenities = ALLOWED_ROLES.includes(currentUserRole);
 
+    // State gốc chứa toàn bộ dữ liệu từ API
     const [allAmenities, setAllAmenities] = useState([]); 
-    // State mới để lưu danh sách Services từ Backend
-    const [availableServices, setAvailableServices] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     
+    // State cho Search và Pagination
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [amenitiesPerPage] = useState(10); 
+    const [amenitiesPerPage] = useState(10); // 10 tiện ích trên mỗi trang
     
+    // State cho Tiện ích (dựa trên cấu trúc bảng mới)
     const [currentAmenity, setCurrentAmenity] = useState({
         id: null,
         hotelId: DEFAULT_HOTEL_ID, 
-        // ✅ Cập nhật: Lưu Service ID được chọn
-        serviceId: "", 
+        name: "",
+        description: "",
+        // không cần created_at vì backend tự động tạo
     });
 
-    // ------------------- FETCH DATA -------------------
+    // Hàm tải danh sách Tiện ích
     const fetchAmenities = async () => {
+        if (!canManageAmenities || (error && error.includes('không có quyền truy cập'))) {
+            setLoading(false);
+            return;
+        }
+        
+        setLoading(true);
         setError(null);
         try {
-            const response = await api.get(`/hotel-amenities?hotelId=${DEFAULT_HOTEL_ID}`); 
-            setAllAmenities(Array.isArray(response) ? response : []);
+            // Endpoint đã cấu hình ở BE: /api/hotel-amenities?hotelId=1
+            const response = await api.get(`/hotel-amenities?hotelId=${DEFAULT_HOTEL_ID}`);
+            const data = response; 
+            setAllAmenities(Array.isArray(data) ? data : []);
+
         } catch (err) {
             setError("Không thể tải danh sách Tiện ích. Vui lòng kiểm tra Server.");
             console.error("Fetch Amenities Error:", err);
@@ -62,41 +77,32 @@ const HotelAmenityManagement = () => {
             setLoading(false);
         }
     };
-    
-    // Hàm mới: Tải danh sách tất cả Services để chọn
-    const fetchAvailableServices = async () => {
-        try {
-            const response = await api.get("/service");
-            setAvailableServices(Array.isArray(response) ? response : []);
-        } catch (err) {
-            console.error("Fetch Services Error:", err);
-            toast.error("Không thể tải danh sách Dịch vụ có sẵn.");
-        }
-    };
 
     useEffect(() => {
-        if (!canManageAmenities) {
+        if (!ALLOWED_ROLES.includes(currentUserRole)) {
             setError('Bạn không có quyền truy cập trang Quản lý Tiện ích. Yêu cầu vai trò MANAGER.');
             setLoading(false);
             return;
         }
         fetchAmenities();
-        fetchAvailableServices();
     }, [currentUserRole]); 
 
-    // Logic cho Tìm kiếm (Tìm kiếm theo tên Services)
+    // Logic cho Tìm kiếm và Phân trang (sử dụng useMemo để tối ưu)
     const filteredAmenities = useMemo(() => {
+        // 1. Lọc/Tìm kiếm
         const filtered = allAmenities.filter(amenity =>
-            amenity.service?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            amenity.service?.description.toLowerCase().includes(searchTerm.toLowerCase())
+            amenity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            amenity.description.toLowerCase().includes(searchTerm.toLowerCase())
         );
         
+        // Luôn reset trang về 1 khi filter/search thay đổi
         if (currentPage !== 1) setCurrentPage(1); 
         
         return filtered;
     }, [allAmenities, searchTerm]);
 
-    // Logic cho Phân trang
+
+    // 2. Logic cho Phân trang
     const indexOfLastAmenity = currentPage * amenitiesPerPage;
     const indexOfFirstAmenity = indexOfLastAmenity - amenitiesPerPage;
     const currentAmenities = filteredAmenities.slice(indexOfFirstAmenity, indexOfLastAmenity);
@@ -104,8 +110,10 @@ const HotelAmenityManagement = () => {
     const totalPages = Math.ceil(filteredAmenities.length / amenitiesPerPage);
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
     
+    // Xử lý thay đổi Search Term
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
+        // Việc reset page đã được xử lý trong useMemo
     };
 
     // Mở Modal
@@ -115,13 +123,11 @@ const HotelAmenityManagement = () => {
             setCurrentAmenity({
                 ...amenity,
                 hotelId: amenity.hotelId || DEFAULT_HOTEL_ID,
-                // ✅ Cập nhật: Lấy service ID từ object lồng nhau
-                serviceId: amenity.service?.id?.toString() || "", 
             });
         } else {
             setIsEditing(false);
             setCurrentAmenity({
-                id: null, hotelId: DEFAULT_HOTEL_ID, serviceId: "", description: ""
+                id: null, hotelId: DEFAULT_HOTEL_ID, name: "", description: ""
             });
         }
         setError(null);
@@ -137,16 +143,11 @@ const HotelAmenityManagement = () => {
     // Xử lý thay đổi Input
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        // Nếu là chọn Service, lưu giá trị vào serviceId
-        if (name === "serviceId") {
-            setCurrentAmenity({ ...currentAmenity, serviceId: value });
-        } else {
-            setCurrentAmenity({ ...currentAmenity, [name]: value });
-        }
+        setCurrentAmenity({ ...currentAmenity, [name]: value });
     };
 
 
-    // Xử lý Gửi form
+    // Xử lý Gửi form (Thêm mới/Cập nhật)
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
@@ -156,26 +157,28 @@ const HotelAmenityManagement = () => {
             return;
         }
         
-        if (!currentAmenity.serviceId) {
-            setError("Vui lòng chọn Dịch vụ cho tiện ích!");
-            toast.error("Dịch vụ là bắt buộc.");
+        // Validation cơ bản
+        if (!currentAmenity.name) {
+            setError("Tên tiện ích là bắt buộc!");
+            toast.error("Vui lòng nhập đủ thông tin bắt buộc.");
             return;
         }
 
         try {
-            // DTO gửi lên Backend (chỉ cần hotelId và serviceId)
+            // DTO gửi lên Backend
             const dataToSend = {
                 hotelId: currentAmenity.hotelId, 
-                serviceId: parseInt(currentAmenity.serviceId),
+                name: currentAmenity.name,
+                description: currentAmenity.description,
+                // Các trường khác như id, created_at được BE tự động xử lý
             };
             
             if (isEditing) {
-                // Endpoint PUT cập nhật chỉ cần ID của Amenity và DTO
                 await api.put(`/hotel-amenities/${currentAmenity.id}`, dataToSend);
-                toast.success(`✅ Cập nhật tiện ích thành công!`);
+                toast.success(`✅ Cập nhật tiện ích "${dataToSend.name}" thành công!`);
             } else {
                 await api.post("/hotel-amenities", dataToSend);
-                toast.success(`➕ Thêm mới tiện ích thành công!`);
+                toast.success(`➕ Thêm mới tiện ích "${dataToSend.name}" thành công!`);
             }
             closeModal();
             fetchAmenities();
@@ -200,7 +203,7 @@ const HotelAmenityManagement = () => {
             toast.error("Bạn không có quyền thực hiện thao tác này.");
             return;
         }
-        
+
         if (!window.confirm(`Bạn có chắc muốn xóa tiện ích "${name}" này? Thao tác này không thể hoàn tác.`)) return;
         
         try {
@@ -254,7 +257,7 @@ const HotelAmenityManagement = () => {
                 <Form className="d-flex w-50"> 
                     <Form.Control
                         type="search"
-                        placeholder="Tìm kiếm theo Tên/Mô tả Dịch vụ..."
+                        placeholder="Tìm kiếm theo Tên/Mô tả..."
                         className="me-2"
                         aria-label="Search"
                         value={searchTerm}
@@ -274,8 +277,8 @@ const HotelAmenityManagement = () => {
                     <thead className="table-dark shadow-md">
                         <tr style={{ backgroundColor: '#007bff' }}>
                             <th className="text-center" style={{ width: '5%' }}>ID</th>
-                            <th style={{ width: '25%' }}>Tên Dịch vụ</th>
-                            <th style={{ width: '45%' }}>Mô tả Dịch vụ</th>
+                            <th style={{ width: '25%' }}>Tên tiện ích</th>
+                            <th style={{ width: '45%' }}>Mô tả</th>
                             <th className="text-center" style={{ width: '15%' }}>Ngày tạo</th>
                             {canManageAmenities && <th className="text-center" style={{ width: '10%' }}>Hành động</th>}
                         </tr>
@@ -285,14 +288,10 @@ const HotelAmenityManagement = () => {
                             currentAmenities.map((amenity, index) => (
                                 <tr key={amenity.id} className={index % 2 === 0 ? 'bg-light' : 'bg-white'}>
                                     <td className="text-center text-muted fw-light">{amenity.id}</td>
-                                    {/* Hiển thị Tên và Mô tả từ object Services lồng nhau */}
-                                    <td className="fw-bold text-primary">
-                                        {amenity.service?.name || 'N/A'} 
-                                        {amenity.service?.code && <span className="text-muted small"> ({amenity.service.code})</span>}
-                                    </td>
+                                    <td className="fw-bold text-primary">{amenity.name}</td>
                                     <td>
-                                        <span title={amenity.service?.description}>
-                                            {amenity.service?.description?.substring(0, 100) + (amenity.service?.description?.length > 100 ? '...' : '') || 'N/A'}
+                                        <span title={amenity.description}>
+                                            {amenity.description?.substring(0, 100) + (amenity.description?.length > 100 ? '...' : '')}
                                         </span>
                                     </td>
                                     <td className="text-center text-secondary small">
@@ -312,7 +311,7 @@ const HotelAmenityManagement = () => {
                                                 variant="danger"
                                                 size="sm"
                                                 className="shadow-sm"
-                                                onClick={() => handleDelete(amenity.id, amenity.service?.name)}
+                                                onClick={() => handleDelete(amenity.id, amenity.name)}
                                             >
                                                 🗑️ Xóa
                                             </Button>
@@ -365,24 +364,25 @@ const HotelAmenityManagement = () => {
                         {error && <Alert variant="danger">{error}</Alert>}
 
                         <Form.Group className="mb-3">
-                            <Form.Label className="fw-bold">Chọn Dịch vụ <span className="text-danger">*</span></Form.Label>
-                            {/* Select Box để chọn Service ID */}
-                            <Form.Select
-                                name="serviceId"
-                                value={currentAmenity.serviceId}
+                            <Form.Label className="fw-bold">Tên tiện ích <span className="text-danger">*</span></Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="name"
+                                value={currentAmenity.name}
                                 onChange={handleInputChange}
                                 required
-                            >
-                                <option value="">-- Chọn Dịch vụ --</option>
-                                {availableServices.map(service => (
-                                    <option key={service.id} value={service.id}>
-                                        {service.name} ({service.code}) - {service.price.toLocaleString('vi-VN')} ₫
-                                    </option>
-                                ))}
-                            </Form.Select>
-                            <Form.Text className="text-muted">
-                                Dịch vụ này sẽ được áp dụng làm tiện ích cho khách sạn này.
-                            </Form.Text>
+                            />
+                        </Form.Group>
+                        
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Mô tả</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                name="description"
+                                value={currentAmenity.description}
+                                onChange={handleInputChange}
+                            />
                         </Form.Group>
                         
                     </Modal.Body>

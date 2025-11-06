@@ -10,6 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/hotel-amenities")
+// Đảm bảo CORS được cấu hình (như @CrossOrigin trong RoomController)
 @CrossOrigin(origins = "http://localhost:3000")
 public class HotelAmenityController {
 
@@ -19,6 +20,8 @@ public class HotelAmenityController {
         this.amenityService = amenityService;
     }
 
+    // GET: Lấy tất cả tiện ích (hoặc tiện ích theo Hotel ID nếu cần)
+    // /api/hotel-amenities?hotelId=1
     @GetMapping
     public ResponseEntity<List<HotelAmenityResponse>> getAllAmenities(@RequestParam(required = false) Long hotelId) {
         List<HotelAmenityResponse> amenities;
@@ -30,6 +33,7 @@ public class HotelAmenityController {
         return ResponseEntity.ok(amenities);
     }
 
+    // GET: Lấy tiện ích theo ID
     @GetMapping("/{id}")
     public ResponseEntity<HotelAmenityResponse> getAmenityById(@PathVariable Long id) {
         return amenityService.getAmenityById(id)
@@ -37,12 +41,14 @@ public class HotelAmenityController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // POST: Tạo tiện ích mới
     @PostMapping
     public ResponseEntity<HotelAmenityResponse> createAmenity(@RequestBody HotelAmenityRequest request) {
         HotelAmenityResponse newAmenity = amenityService.createAmenity(request);
         return ResponseEntity.ok(newAmenity);
     }
 
+    // PUT: Cập nhật tiện ích
     @PutMapping("/{id}")
     public ResponseEntity<HotelAmenityResponse> updateAmenity(@PathVariable Long id, @RequestBody HotelAmenityRequest request) {
         HotelAmenityResponse updatedAmenity = amenityService.updateAmenity(id, request);
