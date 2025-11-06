@@ -1,11 +1,12 @@
+// Giả định nội dung HotelAmenityResponse.java đã có:
 package com.project.mhotel.dto;
 
 import com.project.mhotel.entity.HotelAmenity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
+import java.util.List; // Cần import List
 
 @Data
 @NoArgsConstructor
@@ -16,11 +17,10 @@ public class HotelAmenityResponse {
     private Long hotelId;
     private String name;
     private String description;
-    private String iconUrl;
-    private Boolean isActive;
     private LocalDateTime createdAt;
 
-    // Mapper tĩnh
+    private List<RoomTypeDto> roomTypes;
+
     public static HotelAmenityResponse fromEntity(HotelAmenity entity) {
         HotelAmenityResponse dto = new HotelAmenityResponse();
         dto.setId(entity.getId());

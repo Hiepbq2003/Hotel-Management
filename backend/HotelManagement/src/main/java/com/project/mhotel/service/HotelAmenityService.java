@@ -2,8 +2,10 @@ package com.project.mhotel.service;
 
 import com.project.mhotel.dto.HotelAmenityRequest;
 import com.project.mhotel.dto.HotelAmenityResponse;
+import com.project.mhotel.dto.RoomTypeDto; // NEW IMPORT
 import com.project.mhotel.entity.Hotel;
 import com.project.mhotel.entity.HotelAmenity;
+import com.project.mhotel.entity.RoomTypeAmenity; // NEW IMPORT
 import com.project.mhotel.repository.HotelAmenityRepository;
 import com.project.mhotel.repository.HotelRepository;
 import org.springframework.stereotype.Service;
@@ -23,23 +25,23 @@ public class HotelAmenityService {
         this.hotelRepository = hotelRepository;
     }
 
-    // --- GET METHODS ---
+    // --- GET METHODS (UPDATED) ---
 
     public List<HotelAmenityResponse> getAllAmenities() {
         return amenityRepository.findAll().stream()
-                .map(HotelAmenityResponse::fromEntity)
+                .map(this::toResponse) // SỬ DỤNG PHƯƠNG THỨC MỚI CÓ XỬ LÝ MỐI QUAN HỆ
                 .collect(Collectors.toList());
     }
 
     public List<HotelAmenityResponse> getAmenitiesByHotel(Long hotelId) {
         return amenityRepository.findByHotel_Id(hotelId).stream()
-                .map(HotelAmenityResponse::fromEntity)
+                .map(this::toResponse) // SỬ DỤNG PHƯƠNG THỨC MỚI
                 .collect(Collectors.toList());
     }
 
     public Optional<HotelAmenityResponse> getAmenityById(Long id) {
         return amenityRepository.findById(id)
-                .map(HotelAmenityResponse::fromEntity);
+                .map(this::toResponse); // SỬ DỤNG PHƯƠNG THỨC MỚI
     }
 
     // --- CREATE METHOD ---
@@ -63,7 +65,7 @@ public class HotelAmenityService {
                 .description(request.getDescription())
                 .build();
 
-        return HotelAmenityResponse.fromEntity(amenityRepository.save(newAmenity));
+        return toResponse(amenityRepository.save(newAmenity)); // SỬ DỤNG PHƯƠNG THỨC MỚI
     }
 
     // --- UPDATE METHOD ---
@@ -84,7 +86,7 @@ public class HotelAmenityService {
         existingAmenity.setDescription(request.getDescription());
 
 
-        return HotelAmenityResponse.fromEntity(amenityRepository.save(existingAmenity));
+        return toResponse(amenityRepository.save(existingAmenity));
     }
 
     // --- DELETE METHOD ---
@@ -94,5 +96,31 @@ public class HotelAmenityService {
             throw new RuntimeException("Hotel Amenity not found with ID: " + id);
         }
         amenityRepository.deleteById(id);
+    }
+
+
+    private HotelAmenityResponse toResponse(HotelAmenity entity) {
+
+        List<RoomTypeDto> roomTypeDtos = entity.getRoomTypes() != null
+                ? entity.getRoomTypes().stream()
+                .map(RoomTypeAmenity::getRoomType)
+                .map(this::toRoomTypeDto)
+                .collect(Collectors.toList())
+                : List.of();
+
+        HotelAmenityResponse response = new HotelAmenityResponse();
+        response.setId(entity.getId());
+        response.setHotelId(entity.getHotel().getId());
+        response.setName(entity.getName());
+        response.setDescription(entity.getDescription());
+        response.setCreatedAt(entity.getCreatedAt());
+
+        response.setRoomTypes(roomTypeDtos);
+        return response;
+    }
+
+
+    private RoomTypeDto toRoomTypeDto(com.project.mhotel.entity.RoomType roomTypeEntity) {
+        return new RoomTypeDto(roomTypeEntity.getId(), roomTypeEntity.getName(), roomTypeEntity.getCode());
     }
 }

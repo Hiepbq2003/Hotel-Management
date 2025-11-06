@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode; // Import EqualsAndHashCode
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -36,6 +37,7 @@ public class HotelAmenity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToMany(mappedBy = "amenities")
-    private Set<RoomType> roomTypes;
+    @OneToMany(mappedBy = "amenity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
+    private Set<RoomTypeAmenity> roomTypes;
 }

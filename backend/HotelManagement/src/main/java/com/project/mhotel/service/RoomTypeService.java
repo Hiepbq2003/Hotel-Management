@@ -1,14 +1,24 @@
 package com.project.mhotel.service;
 
+import com.project.mhotel.dto.HotelAmenityResponse;
 import com.project.mhotel.dto.RoomTypeRequest;
 import com.project.mhotel.dto.RoomTypeResponse;
 import com.project.mhotel.entity.Hotel;
+import com.project.mhotel.entity.HotelAmenity;
 import com.project.mhotel.entity.RoomType;
+import com.project.mhotel.entity.RoomTypeAmenity;
+import com.project.mhotel.entity.RoomTypeAmenityId;
+import com.project.mhotel.repository.HotelAmenityRepository;
+import com.project.mhotel.repository.RoomTypeAmenityRepository;
 import com.project.mhotel.repository.RoomTypeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +26,8 @@ public class RoomTypeService {
 
     private final RoomTypeRepository roomTypeRepository;
     private final HotelService hotelService;
+    private final HotelAmenityRepository amenityRepository;
+    private final RoomTypeAmenityRepository roomTypeAmenityRepository;
 
 
     public List<RoomType> getAll() {
@@ -59,6 +71,7 @@ public class RoomTypeService {
     }
 
 
+    // --- DTO Methods ---
 
     public List<RoomTypeResponse> getAllDto() {
         return roomTypeRepository.findAll()
@@ -103,6 +116,35 @@ public class RoomTypeService {
         return toResponse(updated);
     }
 
+    // --- AMENITY MANAGEMENT METHOD (FIXED) ---
+    @Transactional
+    public RoomTypeResponse updateRoomTypeAmenities(Long roomTypeId, List<Long> amenityIds) {
+        RoomType roomType = getById(roomTypeId);
+
+        Set<RoomTypeAmenity> newAmenities = amenityIds.stream()
+                .map(amenityId -> {
+                    HotelAmenity amenity = amenityRepository.findById(amenityId)
+                            .orElseThrow(() -> new IllegalArgumentException("Amenity not found with id: " + amenityId));
+
+                    return RoomTypeAmenity.builder()
+                            .id(new RoomTypeAmenityId(roomTypeId, amenityId))
+                            .roomType(roomType)
+                            .amenity(amenity)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+                })
+                .collect(Collectors.toSet());
+
+        roomType.getAmenities().clear();
+
+        roomType.getAmenities().addAll(newAmenities);
+
+        RoomType saved = roomTypeRepository.save(roomType);
+
+        return toResponse(saved);
+    }
+
+    // --- Mapper Methods ---
 
     private RoomType toEntity(RoomTypeRequest dto, Hotel hotel) {
         RoomType roomType = new RoomType();
@@ -118,6 +160,20 @@ public class RoomTypeService {
     }
 
     private RoomTypeResponse toResponse(RoomType entity) {
+        List<HotelAmenityResponse> amenityResponses = entity.getAmenities() != null
+                ? entity.getAmenities().stream()
+                .map(RoomTypeAmenity::getAmenity)
+                .map(amenity -> new HotelAmenityResponse(
+                        amenity.getId(),
+                        amenity.getHotel().getId(),
+                        amenity.getName(),
+                        amenity.getDescription(),
+                        amenity.getCreatedAt(),
+                        List.of()
+                ))
+                .toList()
+                : List.of();
+
         return RoomTypeResponse.builder()
                 .id(entity.getId())
                 .code(entity.getCode())
@@ -129,6 +185,7 @@ public class RoomTypeService {
                 .createdAt(entity.getCreatedAt())
                 .hotelId(entity.getHotel() != null ? entity.getHotel().getId() : null)
                 .hotelName(entity.getHotel() != null ? entity.getHotel().getName() : null)
+                .amenities(amenityResponses)
                 .build();
     }
 }

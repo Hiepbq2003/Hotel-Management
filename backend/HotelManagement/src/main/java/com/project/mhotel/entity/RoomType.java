@@ -51,17 +51,14 @@ public class RoomType {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
     private List<Room> rooms;
 
     @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
     private List<RoomRate> roomRates;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "room_type_amenity",
-            joinColumns = @JoinColumn(name = "room_type_id"),
-            inverseJoinColumns = @JoinColumn(name = "amenity_id"),
-            uniqueConstraints = {@UniqueConstraint(columnNames = {"room_type_id", "amenity_id"})}
-    )
-    private Set<HotelAmenity> amenities;
+    @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
+    private Set<RoomTypeAmenity> amenities;
 }

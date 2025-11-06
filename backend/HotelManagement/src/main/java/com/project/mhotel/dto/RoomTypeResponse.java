@@ -3,6 +3,7 @@ package com.project.mhotel.dto;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List; // Import List
 
 @Data
 @NoArgsConstructor
@@ -19,5 +20,5 @@ public class RoomTypeResponse {
     private LocalDateTime createdAt;
     private Long hotelId;
     private String hotelName;
+    private List<HotelAmenityResponse> amenities;
 }
-
