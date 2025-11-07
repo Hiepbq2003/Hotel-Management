@@ -49,8 +49,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Vô hiệu hóa CSRF vì dùng JWT (stateless)
-                .cors(Customizer.withDefaults()) // Cho phép CORS
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
                         // Các API công khai, cho phép mọi người truy cập
                         .requestMatchers("/api/auth/**", "/api/hotels/**", "/api/rooms/**", "/api/room-type/**").permitAll()

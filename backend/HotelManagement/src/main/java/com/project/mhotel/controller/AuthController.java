@@ -26,12 +26,11 @@ public class AuthController {
     private AuthService authService;
 
     @Autowired
-    private JwtUtil jwtUtil; // Inject JwtUtil
+    private JwtUtil jwtUtil;
 
     @Autowired
-    private AuthenticationManager authenticationManager; // Inject AuthenticationManager
+    private AuthenticationManager authenticationManager;
 
-    // Cần phải cập nhật AuthService.java để sử dụng PasswordEncoder trong quá trình đăng ký
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateCustomer(@RequestBody LoginRequest loginRequest) {
@@ -50,7 +49,6 @@ public class AuthController {
                     loginRequest.getPassword()
             );
 
-            // Tạo JWT sau khi xác thực thành công
             CustomerAccount customer = authenticatedAccount.get();
             String jwtToken = jwtUtil.generateToken(
                     customer.getEmail(),
@@ -59,7 +57,7 @@ public class AuthController {
             );
 
             LoginResponse response = new LoginResponse(
-                    jwtToken, // Trả về JWT
+                    jwtToken,
                     customer.getEmail(),
                     "CUSTOMER",
                     customer.getFullName(),
@@ -69,7 +67,6 @@ public class AuthController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            // Bao gồm BadCredentialsException, v.v.
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body("Sai Email hoặc Mật khẩu.");
@@ -119,8 +116,6 @@ public class AuthController {
         }
     }
 
-    // ... Giữ nguyên các phương thức khác như /register, /change-password, v.v.
-    // Lưu ý: Các phương thức này vẫn cần logic bảo mật/phân quyền khi JWT hoạt động.
 
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest registerRequest) {

@@ -67,7 +67,6 @@ public class CustomerController {
 
         try {
             CustomerResponse newCustomer = customerService.createCustomer(request);
-            // Trả về HTTP 201 Created
             return ResponseEntity.status(HttpStatus.CREATED).body(newCustomer);
         } catch (IllegalArgumentException e) {
             // Lỗi email đã tồn tại

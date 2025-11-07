@@ -173,7 +173,6 @@ public class UserController {
     }
 
     @PutMapping("/{userId}/status")
-    // Loại bỏ hoàn toàn @RequestHeader
     public ResponseEntity<?> updateStatus(@PathVariable Long userId, @RequestBody Map<String, String> request) {
         String statusString = request.get("newStatus");
         if (statusString == null || statusString.isEmpty()) {
@@ -181,8 +180,7 @@ public class UserController {
         }
 
         try {
-            Status newStatus = Status.valueOf(statusString.toUpperCase()); // Chuyển toUpperCase để khớp với Enum
-            // Sử dụng vai trò Admin cứng
+            Status newStatus = Status.valueOf(statusString.toUpperCase());
             UserResponse updatedUser = userService.updateStatus(userId, newStatus, HARDCODED_ADMIN_ROLE);
             return ResponseEntity.ok(updatedUser);
         } catch (IllegalArgumentException e) {
@@ -191,7 +189,6 @@ public class UserController {
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (SecurityException e) {
-            // SecurityException vẫn được ném ra từ UserService nếu Admin cố gắng sửa Admin khác
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Cập nhật trạng thái thất bại: Lỗi hệ thống.");
@@ -205,7 +202,6 @@ public class UserController {
             @RequestBody UserRequest request) {
 
         try {
-            // Sử dụng vai trò Admin cứng
             UserResponse updatedUser = userService.updateStaffDetails(id, request, HARDCODED_ADMIN_ROLE);
 
             return ResponseEntity.ok(updatedUser);
