@@ -10,6 +10,7 @@ import com.project.mhotel.repository.HotelRepository;
 import com.project.mhotel.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class UserService {
 
     private final UserAccountRepository userAccountRepository;
     private final HotelRepository hotelRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private static final Set<String> STAFF_ROLES_STRING = Set.of(
             Role.admin.name().toUpperCase(),
@@ -31,8 +33,65 @@ public class UserService {
             Role.housekeeping.name().toUpperCase()
     );
 
-    public UserResponse updateStaffDetails(Long targetUserId, UserRequest request, Role callerRole) {
+    public UserResponse resetStaffPassword(Long targetUserId, Role callerRole) {
 
+        UserAccount targetUser = userAccountRepository.findById(targetUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Tài khoản người dùng không tồn tại."));
+
+        if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
+            throw new SecurityException("Bạn không có quyền reset mật khẩu. Chỉ Admin mới có quyền này.");
+        }
+
+        if (targetUser.getRole() == Role.admin) {
+            throw new SecurityException("Không thể reset mật khẩu của tài khoản Admin.");
+        }
+
+        final String DEFAULT_PASSWORD = "123456";
+        String newHashedPassword = passwordEncoder.encode(DEFAULT_PASSWORD);
+
+        targetUser.setPasswordHash(newHashedPassword);
+
+        return toUserResponse(userAccountRepository.save(targetUser));
+    }
+
+
+    // Phương thức đã sửa ở câu trả lời trước (chỉ giữ lại ở đây để đảm bảo tính đầy đủ)
+    public UserResponse createUser(UserRequest request, Role callerRole) {
+
+        if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
+            throw new SecurityException("Bạn không có quyền tạo tài khoản người dùng mới. Chỉ Admin mới có quyền này.");
+        }
+
+        if (userAccountRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email đã được sử dụng.");
+        }
+
+        if (userAccountRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username đã được sử dụng.");
+        }
+
+        Hotel hotel = null;
+
+        // Băm mật khẩu trước khi lưu
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+
+        UserAccount newUser = UserAccount.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .passwordHash(hashedPassword)
+                .fullName(request.getFullName())
+                .phone(request.getPhone())
+                .role(request.getRole() != null ? request.getRole() : Role.reception)
+                .status(Status.active)
+                .hotel(hotel)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return toUserResponse(userAccountRepository.save(newUser));
+    }
+
+    public UserResponse updateStaffDetails(Long targetUserId, UserRequest request, Role callerRole) {
+        // ... (Giữ nguyên logic cũ) ...
         UserAccount targetUser = userAccountRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Tài khoản người dùng không tồn tại."));
 
@@ -40,7 +99,8 @@ public class UserService {
             throw new SecurityException("Bạn không có quyền cập nhật thông tin chi tiết người dùng. Chỉ Admin mới có quyền này.");
         }
 
-        if (targetUser.getRole() == Role.admin && request.getRole() != targetUser.getRole()) {
+        if (targetUser.getRole() == Role.admin && (request.getRole() != null && request.getRole() != targetUser.getRole())) {
+            // Thêm kiểm tra này để đảm bảo không cố gắng thay đổi vai trò Admin
             throw new SecurityException("Không thể thay đổi vai trò của tài khoản Admin.");
         }
 
@@ -75,43 +135,9 @@ public class UserService {
         );
     }
 
-    public UserResponse createUser(UserRequest request, Role callerRole) {
-
-        // Kiểm tra quyền Admin BẰNG CÁCH SO SÁNH CHUỖI TÊN ROLE
-        if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
-            throw new SecurityException("Bạn không có quyền tạo tài khoản người dùng mới. Chỉ Admin mới có quyền này.");
-        }
-
-        if (userAccountRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email đã được sử dụng.");
-        }
-
-        if (userAccountRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("Username đã được sử dụng.");
-        }
-
-        Hotel hotel = null;
-
-        UserAccount newUser = UserAccount.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                // CHÚ Ý: Trong thực tế phải HASH mật khẩu ở đây
-                .passwordHash(request.getPassword())
-                .fullName(request.getFullName())
-                .phone(request.getPhone())
-                .role(request.getRole() != null ? request.getRole() : Role.reception) // Đảm bảo role có giá trị
-                .status(Status.active)
-                .hotel(hotel)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        return toUserResponse(userAccountRepository.save(newUser));
-    }
-
     public List<UserResponse> getAllUsers() {
-        // Đây là chức năng Xem. Không cần kiểm tra quyền Admin, quyền này sẽ được kiểm tra ở tầng Controller
         return userAccountRepository.findAll().stream()
-                .filter(user -> STAFF_ROLES_STRING.contains(user.getRole().name().toUpperCase())) // SỬA ĐỔI: Dùng chuỗi để lọc
+                .filter(user -> STAFF_ROLES_STRING.contains(user.getRole().name().toUpperCase()))
                 .map(this::toUserResponse)
                 .collect(Collectors.toList());
     }
@@ -120,12 +146,10 @@ public class UserService {
         UserAccount user = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
 
-        // Kiểm tra quyền Admin BẰNG CÁCH SO SÁNH CHUỖI TÊN ROLE
         if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
             throw new SecurityException("Bạn không có quyền thay đổi trạng thái của người dùng này. Chỉ Admin mới có quyền này.");
         }
 
-        // Ngăn Admin thay đổi trạng thái của tài khoản Admin
         if (user.getRole() == Role.admin) {
             throw new SecurityException("Không thể thay đổi trạng thái của tài khoản Admin.");
         }
