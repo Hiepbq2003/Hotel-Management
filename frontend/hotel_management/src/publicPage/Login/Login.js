@@ -23,7 +23,7 @@ export default function Login() {
         } else if (userRole === 'MANAGER') {
             navigate('/manager/dashboard');
         } else if (userRole === 'RECEPTION') {
-            navigate('/reception/dashboard');
+            navigate('/reception/check_in');
         } else {
             // Dành cho CUSTOMER hoặc các role không xác định khác
             navigate('/home'); 

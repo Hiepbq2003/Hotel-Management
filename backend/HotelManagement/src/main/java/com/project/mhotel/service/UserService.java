@@ -40,39 +40,24 @@ public class UserService {
             throw new SecurityException("Bạn không có quyền cập nhật thông tin chi tiết người dùng. Chỉ Admin mới có quyền này.");
         }
 
-        // Không cho phép thay đổi vai trò của tài khoản Admin
         if (targetUser.getRole() == Role.admin && request.getRole() != targetUser.getRole()) {
             throw new SecurityException("Không thể thay đổi vai trò của tài khoản Admin.");
         }
 
-        // Cập nhật FullName (nếu có trong request)
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
             targetUser.setFullName(request.getFullName().trim());
         }
 
-        // Cập nhật Phone (nếu có trong request)
         if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
             targetUser.setPhone(request.getPhone().trim());
         }
 
-        // Cập nhật Role (nếu có trong request)
         if (request.getRole() != null) {
-            // Kiểm tra tính hợp lệ của role mới
             if (!STAFF_ROLES_STRING.contains(request.getRole().name().toUpperCase())) {
                 throw new IllegalArgumentException("Vai trò mới không hợp lệ.");
             }
             targetUser.setRole(request.getRole());
         }
-
-        // LƯU Ý QUAN TRỌNG:
-        // Do FE gửi DTO đầy đủ (có cả status) và status được gửi là chữ thường ('active', 'inactive', 'blocked'),
-        // mà hàm này lại không có logic setStatus, Jackson có thể bị lỗi khi map DTO.
-        // Giải pháp tốt nhất là: Bỏ qua status trong DTO của API /details, hoặc đảm bảo FE chỉ gửi
-        // những trường cần thiết.
-        // Trong trường hợp này, tôi sẽ không thêm logic set Status vào đây vì nó có API riêng,
-        // hy vọng BE của bạn có thể bỏ qua trường không được xử lý một cách an toàn.
-
-        // Nếu vấn đề vẫn xảy ra, hãy kiểm tra lại DTO UserRequest.
 
         return toUserResponse(userAccountRepository.save(targetUser));
     }
@@ -105,7 +90,6 @@ public class UserService {
             throw new IllegalArgumentException("Username đã được sử dụng.");
         }
 
-        // 🌟 Chỉnh sửa theo yêu cầu: Bỏ qua logic Hotel và gán luôn là null
         Hotel hotel = null;
 
         UserAccount newUser = UserAccount.builder()
@@ -117,7 +101,7 @@ public class UserService {
                 .phone(request.getPhone())
                 .role(request.getRole() != null ? request.getRole() : Role.reception) // Đảm bảo role có giá trị
                 .status(Status.active)
-                .hotel(hotel) // hotel giờ là null
+                .hotel(hotel)
                 .createdAt(LocalDateTime.now())
                 .build();
 

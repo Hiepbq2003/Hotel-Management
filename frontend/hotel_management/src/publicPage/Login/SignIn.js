@@ -44,7 +44,8 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
 
     try {
       const response = await api.post("/auth/staff/login", loginPayload);
-      loginData = response.data || response;
+      // SỬA: response đã là object JSON, không cần .data
+      loginData = response; 
       loginSuccessful = true;
  
       console.log("Đăng nhập Staff thành công.");
@@ -54,15 +55,20 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
       
       try {
         const response = await api.post("/auth/login", loginPayload);
-        loginData = response.data || response;
+        // SỬA: response đã là object JSON, không cần .data
+        loginData = response;
         loginSuccessful = true;
         console.log("Đăng nhập User thành công.");
       } catch (errUser) {
       
         console.error("Lỗi đăng nhập cả Staff và User:", errUser);
-        setError(
-          "Đăng nhập thất bại. Vui lòng kiểm tra lại Email/Mật khẩu hoặc tài khoản đã kích hoạt."
-        );
+        
+        // Trích xuất thông báo lỗi từ server nếu có
+        const errorMessage = errUser && errUser.message 
+          ? errUser.message 
+          : "Đăng nhập thất bại. Vui lòng kiểm tra lại Email/Mật khẩu hoặc tài khoản đã kích hoạt.";
+          
+        setError(errorMessage);
       }
     }
 

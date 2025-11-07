@@ -26,7 +26,7 @@ public class CustomUserDetails implements UserDetails {
     public CustomUserDetails(CustomerAccount customer) {
         this.email = customer.getEmail();
         this.password = customer.getPasswordHash();
-        this.role = "CUSTOMER"; // Gán role cố định
+        this.role = "CUSTOMER";
         this.id = customer.getId();
     }
 
@@ -70,7 +70,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        // Tùy thuộc vào logic kích hoạt tài khoản của bạn
         return true;
     }
 }
