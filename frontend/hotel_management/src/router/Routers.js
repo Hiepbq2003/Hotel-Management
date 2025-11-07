@@ -19,7 +19,10 @@ import UserManagement from "../admin/UserManagement";
 import CustomerManagement from "../adminArea/CustomerManagement";
 import ServiceManagement from "../manager/ServiceManagement";
 import RoomManagement from "../manager/RoomManagement";
+
 import HotelAmenityManagement from "../manager/HotelAmenityManagement";
+
+import BookingPage from "../publicPage/BookingPage";
 function Routers() {
   return (
     <Router>
@@ -32,6 +35,7 @@ function Routers() {
           <Route path="about-us" element={<AboutUs />} />
           <Route path="contact" element={<Contact />} />
           <Route path="rooms/:id" element={<RoomDetail />} />
+          <Route path="booking/:id" element={<BookingPage />}/>
           <Route path="profile" element={<Profile />} />
         </Route>
         {/* Các route riêng */}

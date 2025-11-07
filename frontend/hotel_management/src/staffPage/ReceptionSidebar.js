@@ -1,7 +1,7 @@
 import React from 'react';
 import { Nav } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTachometerAlt, FaHotel, FaUsers, FaBed, FaSignOutAlt } from 'react-icons/fa'; // Cần cài đặt react-icons
+import { FaTachometerAlt, FaHotel, FaBed, FaSignOutAlt } from 'react-icons/fa'; // Cần cài đặt react-icons
 
 
 const ReceptionSidebar = () => {
