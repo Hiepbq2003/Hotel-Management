@@ -95,6 +95,24 @@ const Header = () => {
         }
     };
     
+    // Danh sách menu đã loại bỏ "News" và "Shop"
+    const navItems = ["Home", "Rooms", "About Us", "Contact"];
+
+    const getPath = (item) => {
+        switch (item) {
+            case "Home":
+                return "/"; 
+            case "Rooms":
+                return "/rooms";
+            case "About Us":
+                return "/about-us";
+            case "Contact":
+                return "/contact";
+            default:
+                return "/";
+        }
+    };
+
     return (
         <header>
             {/* --- Top Bar --- */}
@@ -193,18 +211,11 @@ const Header = () => {
                                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                                 <Navbar.Collapse id="basic-navbar-nav">
                                     <Nav className="ms-auto">
-                                        {["Home", "Rooms", "News", "About Us", "Shop", "Contact"].map((item, i) => (
+                                        {/* Sử dụng danh sách navItems mới */}
+                                        {navItems.map((item, i) => (
                                             <NavLink
                                                 key={i}
-                                                to={
-                                                    item === "Home" ? "/home" :
-                                                    item === "Rooms" ? "/rooms" :
-                                                    item === "News" ? "/news" :
-                                                    item === "About Us" ? "/about-us" :
-                                                    item === "Shop" ? "/shop" :
-                                                    item === "Contact" ? "/contact" :
-                                                        "/"
-                                                }
+                                                to={getPath(item)} // Sử dụng hàm getPath để lấy đường dẫn
                                                 className="nav-link"
                                                 style={({ isActive }) => ({
                                                     color: isActive ? "var(--main-color)" : "#333",

@@ -25,14 +25,14 @@ const ServiceSection = () => {
         {
             image:
                 "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=60",
-            title: "Premium King Room",
+            title: "Premier Connecting Room",
             price: 159,
             desc: "Spacious room with modern design and stunning city views.",
         },
         {
             image:
                 "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=60",
-            title: "Deluxe Queen Room",
+            title: "Grand Balcony Suite",
             price: 189,
             desc: "An elegant blend of comfort and a touch of luxury for your stay.",
         },
@@ -46,7 +46,7 @@ const ServiceSection = () => {
         {
             image:
                 "https://media.architecturaldigest.com/photos/669fc8c773a9e24e074ed817/4:3/w_5572,h_4179,c_limit/design%20by%20Shannon%20Eddings%20Interiors%20photo%20by%20Molly%20Culver%20Photography.jpg",
-            title: "Family Room",
+            title: "Grand Connecting Room",
             price: 199,
             desc: "Perfectly suited for family vacations, featuring large space and a cozy feel.",
         },

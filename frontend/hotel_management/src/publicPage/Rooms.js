@@ -2,11 +2,33 @@ import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Button, Spinner, Alert } from "react-bootstrap";
 import api from "../api/apiConfig";
 import { useNavigate } from "react-router-dom";
+
+// Danh sách các seed mới, tập trung vào chi tiết và tiện nghi cụ thể trong phòng khách sạn (ví dụ: giường, phòng tắm, tiện nghi).
+const IMAGE_SEEDS = [
+    'hotel bed pillows',        // Giường và gối
+    'hotel room shower bathroom', // Vòi sen và phòng tắm
+    'modern hotel suite desk',  // Bàn làm việc/không gian ngồi hiện đại
+    'luxury hotel lamp design', // Đèn và thiết kế sang trọng
+    'hotel minibar coffee',     // Tiện nghi minibar/cà phê
+    'hotel room mirror vanity', // Gương và bàn trang điểm
+    'high end hotel room art',  // Tranh/Nghệ thuật trong phòng
+    'modern small hotel lobby', // Góc nội thất chung hiện đại
+    'hotel room towels amenities' // Khăn tắm và đồ dùng vệ sinh
+];
+
+const getRoomImageUrl = (index) => {
+    // Sử dụng toán tử modulo (%) để lặp lại danh sách ảnh nếu có nhiều hơn 9 loại phòng.
+    const seed = IMAGE_SEEDS[index % IMAGE_SEEDS.length];
+    // Kích thước 800x500 cho hình ảnh ngang, ổn định
+    return `https://picsum.photos/seed/${seed}/800/500`; 
+};
+
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -66,7 +88,7 @@ const Rooms = () => {
       )}
 
       <Row className="g-4">
-        {rooms.map((room) => (
+        {rooms.map((room, index) => ( 
           <Col key={room.id} lg={4} md={6}>
             <Card
               className="h-100 shadow-sm border-0"
@@ -86,10 +108,8 @@ const Rooms = () => {
             >
               <Card.Img
                 variant="top"
-                src={
-                  room.imageUrl ||
-                  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=60"
-                }
+                // Dùng hàm getRoomImageUrl(index) để lấy ảnh mới
+                src={room.imageUrl || getRoomImageUrl(index)} 
                 alt={room.name}
                 style={{
                   height: "240px",
@@ -117,7 +137,7 @@ const Rooms = () => {
                     listStyle: "none",
                     paddingLeft: 0,
                     fontSize: "14px",
-                    color: "#var(--main-color)",
+                    color: "var(--main-color)",
                     marginBottom: "16px",
                   }}
                 >
@@ -137,7 +157,7 @@ const Rooms = () => {
                     fontWeight: "500",
                     padding: "8px 0",
                   }}
-                  onClick={() => navigate(`/rooms/${room.id}`)}  
+                  onClick={() => navigate(`/rooms/${room.id}`)}  
                 >
                   More Details
                 </Button>
