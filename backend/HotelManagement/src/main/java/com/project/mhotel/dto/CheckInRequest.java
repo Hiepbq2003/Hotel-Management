@@ -2,7 +2,6 @@ package com.project.mhotel.dto;
 
 import lombok.*;
 import java.time.LocalDateTime;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,5 +19,9 @@ public class CheckInRequest {
     private String nationality;
     private String documentType;
     private String documentNumber;
+
+    // ✅ thêm user tạo check-in
+    private Long receptionId;
 }
+
 

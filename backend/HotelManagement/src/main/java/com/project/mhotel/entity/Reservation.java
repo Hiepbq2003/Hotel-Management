@@ -46,8 +46,8 @@ public class Reservation {
     private UserAccount createdBy;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "ENUM('reserved','checked_in','checked_out','cancelled','no_show') DEFAULT 'reserved'")
-    private Status status = Status.reserved;
+    @Column(nullable = false, columnDefinition = "ENUM('pending_payment','reserved','checked_in','checked_out','cancelled','no_show') DEFAULT 'reserved'")
+    private Status status = Status.pending_payment;
 
     @Column(name = "arrival_date", nullable = false)
     private LocalDateTime arrivalDate;
@@ -67,7 +67,7 @@ public class Reservation {
     @Column(name = "booking_source", length = 100)
     private String bookingSource;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name="notes",columnDefinition = "TEXT")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -90,6 +90,12 @@ public class Reservation {
 
     // Enum trạng thái đặt phòng
     public enum Status {
-        reserved, checked_in, checked_out, cancelled, no_show
+        pending_payment,
+        reserved,
+        checked_in,
+        checked_out,
+        cancelled,
+        no_show
     }
+
 }

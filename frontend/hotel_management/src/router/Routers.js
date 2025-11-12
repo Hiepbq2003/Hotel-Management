@@ -21,7 +21,7 @@ import ServiceManagement from "../manager/ServiceManagement";
 import RoomManagement from "../manager/RoomManagement";
 
 import HotelAmenityManagement from "../manager/HotelAmenityManagement";
-
+import PaymentResult from "../publicPage/PaymentResult";
 import BookingPage from "../publicPage/BookingPage";
 function Routers() {
   return (
@@ -36,6 +36,7 @@ function Routers() {
           <Route path="contact" element={<Contact />} />
           <Route path="rooms/:id" element={<RoomDetail />} />
           <Route path="booking/:id" element={<BookingPage />}/>
+          <Route path="payment-result" element={<PaymentResult />} />
           <Route path="profile" element={<Profile />} />
         </Route>
         {/* Các route riêng */}

@@ -137,7 +137,7 @@ const Rooms = () => {
                     fontWeight: "500",
                     padding: "8px 0",
                   }}
-                  onClick={() => navigate(`/rooms/${room.id}`)}  // 👈 thêm dòng này
+                  onClick={() => navigate(`/rooms/${room.id}`)}  
                 >
                   More Details
                 </Button>

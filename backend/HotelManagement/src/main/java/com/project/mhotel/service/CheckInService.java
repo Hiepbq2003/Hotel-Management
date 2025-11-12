@@ -21,7 +21,7 @@ public class CheckInService {
     private final GuestRepository guestRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationRoomRepository reservationRoomRepository;
-    private final HotelService hotelService;
+private final UserAccountRepository userAccountRepository;
 
     private final Long DEFAULT_HOTEL_ID = 1L; // hotel mặc định
 
@@ -54,15 +54,18 @@ public class CheckInService {
                 .documentNumber(req.getDocumentNumber())
                 .build();
         guestRepository.save(guest);
-
+        UserAccount createdByUser = userAccountRepository
+                .findById(req.getReceptionId())
+                .orElseThrow(() -> new RuntimeException("Receptionist not found"));
         // 4️⃣ Lưu Reservation
         Reservation reservation = Reservation.builder()
                 .hotel(room.getHotel())
                 .guest(guest)
+                .createdBy(createdByUser)   // ✅ NEW
                 .reservationCode("CHK-" + System.currentTimeMillis())
                 .status(Reservation.Status.checked_in)
-                .arrivalDate(req.getCheckInDate())    // LocalDateTime
-                .departureDate(req.getCheckOutDate()) // LocalDateTime
+                .arrivalDate(req.getCheckInDate())
+                .departureDate(req.getCheckOutDate())
                 .pax(req.getAdultCount() + req.getChildCount())
                 .build();
         reservationRepository.save(reservation);

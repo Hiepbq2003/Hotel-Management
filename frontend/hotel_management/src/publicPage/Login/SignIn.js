@@ -14,9 +14,10 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
 
   // Hàm xử lý logic lưu thông tin đăng nhập thành công
   const handleLoginSuccess = (loginData) => {
-    const { token, role, email, fullName, phone } = loginData;
-    
+    const { token, role, email, fullName, phone, customerId } = loginData;
+
     // Lưu thông tin vào Local Storage
+    localStorage.setItem("customerId", customerId);
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", role);
     localStorage.setItem("email", email);
@@ -37,7 +38,7 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
       email: state.email,
       password: state.password,
     };
-    
+
 
     let loginSuccessful = false;
     let loginData = null;
@@ -45,14 +46,14 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
     try {
       const response = await api.post("/auth/staff/login", loginPayload);
       // SỬA: response đã là object JSON, không cần .data
-      loginData = response; 
+      loginData = response;
       loginSuccessful = true;
- 
+
       console.log("Đăng nhập Staff thành công.");
     } catch (errStaff) {
-    
+
       console.log("Đăng nhập Staff thất bại, thử sang User...");
-      
+
       try {
         const response = await api.post("/auth/login", loginPayload);
         // SỬA: response đã là object JSON, không cần .data
@@ -60,14 +61,14 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
         loginSuccessful = true;
         console.log("Đăng nhập User thành công.");
       } catch (errUser) {
-      
+
         console.error("Lỗi đăng nhập cả Staff và User:", errUser);
-        
+
         // Trích xuất thông báo lỗi từ server nếu có
-        const errorMessage = errUser && errUser.message 
-          ? errUser.message 
+        const errorMessage = errUser && errUser.message
+          ? errUser.message
           : "Đăng nhập thất bại. Vui lòng kiểm tra lại Email/Mật khẩu hoặc tài khoản đã kích hoạt.";
-          
+
         setError(errorMessage);
       }
     }
@@ -75,7 +76,7 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
     if (loginSuccessful && loginData) {
       handleLoginSuccess(loginData);
     }
-    
+
     setState({ ...state, password: "" });
   };
 

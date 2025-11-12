@@ -53,7 +53,13 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
                         // Các API công khai, cho phép mọi người truy cập
-                        .requestMatchers("/api/auth/**", "/api/hotels/**", "/api/rooms/**", "/api/room-type/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/hotels/**",
+                                "/api/rooms/**",
+                                "/api/room-type/**",
+                                "/api/payment/**"  // THÊM DÒNG NÀY - cho phép payment endpoints
+                        ).permitAll()
                         // Bất kỳ request nào khác đều phải được xác thực (authenticated)
                         .anyRequest().authenticated()
                 )

@@ -57,6 +57,7 @@ public class AuthController {
             );
 
             LoginResponse response = new LoginResponse(
+                    customer.getId(),
                     jwtToken,
                     customer.getEmail(),
                     "CUSTOMER",
@@ -100,6 +101,7 @@ public class AuthController {
             );
 
             LoginResponse response = new LoginResponse(
+                    user.getId(),
                     jwtToken, // Trả về JWT
                     user.getEmail(),
                     roleName,
