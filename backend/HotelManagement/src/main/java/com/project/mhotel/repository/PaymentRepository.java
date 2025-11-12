@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -14,6 +15,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByReservationOrderByPaidAtDesc(Reservation reservation);
 
     // Tìm payments theo status
+    // Tìm payment theo reservation
+    List<Payment> findByReservation(Reservation reservation);
+
+    // Tìm payment theo status
     List<Payment> findByStatus(Payment.Status status);
-    // Trong PaymentRepository
+
+    // Tìm payment theo transaction ref
+    Optional<Payment> findByTransactionRef(String transactionRef);
 }

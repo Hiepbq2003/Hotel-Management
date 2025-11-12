@@ -19,21 +19,28 @@ const CheckInPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🔹 Hàm tạo giá trị datetime-local đúng format
-// ✅ Hàm format đúng giờ địa phương (không bị lệch múi giờ)
-const formatDateTimeLocal = (date) => {
-  const pad = (n) => n.toString().padStart(2, "0");
-  const year = date.getFullYear();
-  const month = pad(date.getMonth() + 1);
-  const day = pad(date.getDate());
-  const hour = pad(date.getHours());
-  const minute = pad(date.getMinutes());
-  return `${year}-${month}-${day}T${hour}:${minute}`;
-};
-const now = new Date();
-const tomorrow = new Date(now);
-tomorrow.setDate(now.getDate() + 1);
-tomorrow.setHours(12, 0, 0, 0);
+  // 🎯 THÊM: State cho reception info
+  const [receptionInfo, setReceptionInfo] = useState({
+    id: null,
+    name: "",
+    role: ""
+  });
+
+  // ✅ Helper to format datetime-local correctly for local timezone
+  const formatDateTimeLocal = (date) => {
+    const pad = (n) => n.toString().padStart(2, "0");
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hour = pad(date.getHours());
+    const minute = pad(date.getMinutes());
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  };
+
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  tomorrow.setHours(12, 0, 0, 0);
 
   const [form, setForm] = useState({
     guestName: "",
@@ -42,11 +49,11 @@ tomorrow.setHours(12, 0, 0, 0);
     roomType: "",
     adultCount: 1,
     childCount: 0,
-    email: "",
     phone: "",
     nationality: "",
-    documentType: "",
-    documentNumber: "",
+    documentType: "CCCD", // 🎯 SET DEFAULT
+    documentNumber: "000000", // 🎯 MẶC ĐỊNH 000000
+    // 🎯 BỎ EMAIL HOÀN TOÀN
   });
 
   const nations = [
@@ -63,6 +70,7 @@ tomorrow.setHours(12, 0, 0, 0);
     "Anh",
     "Các nước khác",
   ];
+
   const [selectedTime, setSelectedTime] = useState("12:00");
 
   // 🔹 Load Room Types
@@ -71,6 +79,36 @@ tomorrow.setHours(12, 0, 0, 0);
       .get("/room-type/hotel/1")
       .then((res) => setRoomTypes(res))
       .catch((err) => console.error("❌ Lỗi khi tải room types:", err));
+  }, []);
+
+  // 🔹 Load reception info khi component mount
+  useEffect(() => {
+    const loadReceptionInfo = () => {
+      const customerId = localStorage.getItem("customerId");
+      const userId = localStorage.getItem("userId");
+      const fullName = localStorage.getItem("fullName");
+      const userRole = localStorage.getItem("userRole");
+      
+      const receptionId = userId || customerId;
+      
+      setReceptionInfo({
+        id: receptionId,
+        name: fullName || "Unknown Receptionist",
+        role: userRole || "Unknown"
+      });
+      
+      console.log("👤 Reception info loaded:", { 
+        receptionId, 
+        fullName, 
+        userRole
+      });
+
+      if (!receptionId) {
+        console.warn("⚠️ No reception ID found in localStorage!");
+      }
+    };
+
+    loadReceptionInfo();
   }, []);
 
   // 🔹 Load danh sách check-in hôm nay
@@ -109,48 +147,76 @@ tomorrow.setHours(12, 0, 0, 0);
   // 🔹 Xử lý Check-in
   const handleCheckIn = async () => {
     try {
+      // 🎯 LẤY RECEPTION ID
+      const receptionId = receptionInfo.id;
+      
+      if (!receptionId) {
+        alert("❌ Không tìm thấy thông tin receptionist. Vui lòng đăng nhập lại.");
+        return;
+      }
+
       const payload = {
         ...form,
-        // Gửi UTC ISO về backend
+        receptionId: parseInt(receptionId), // 🎯 QUAN TRỌNG: thêm receptionId
         checkInDate: new Date(form.checkInDate).toISOString(),
         checkOutDate: new Date(form.checkOutDate).toISOString(),
+        email: "", // 🎯 EMAIL LUÔN TRỐNG
+        documentNumber: "000000", // 🎯 DOCUMENT NUMBER LUÔN 000000
       };
+      
       console.log("📤 Payload gửi lên backend:", payload);
       const res = await api.post("/checkIn/assign", payload);
       console.log("✅ Response từ backend:", res);
-  
+
       if (!res) {
         alert("❌ Phản hồi rỗng từ server — kiểm tra backend!");
         return;
       }
-  
+
       setAssignedRoom(res);
       alert(
         `✅ Đã nhận phòng ${res.number} (${res.type}) cho khách ${form.guestName}`
       );
-  
-      fetchTodayCheckIns(); // Cập nhật danh sách mới
+
+      fetchTodayCheckIns(); // Refresh list
     } catch (err) {
       console.error("❌ Lỗi check-in:", err);
-      alert("❌ Không còn phòng trống hoặc lỗi server!");
+      
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          err.message || 
+                          "Không còn phòng trống hoặc lỗi server!";
+      alert(`❌ Lỗi check-in: ${errorMessage}`);
     }
   };
-  
 
   return (
     <Container className="mt-4">
+      {/* 🎯 THÊM: Hiển thị thông tin receptionist */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3>Reception - Guest Check-in</h3>
+        <div className="text-end">
+          <small className="text-muted">
+            Receptionist: <strong>{receptionInfo.name}</strong> 
+            {receptionInfo.id && ` (ID: ${receptionInfo.id})`}
+            {receptionInfo.role && ` - ${receptionInfo.role}`}
+          </small>
+        </div>
+      </div>
+
       {/* ==================== FORM CHECK-IN ==================== */}
-      <h3>Reception - Guest Check-in</h3>
       <Card className="p-4 shadow-sm mb-5">
         <Row>
           <Col md={6}>
             <Form.Group className="mb-3">
-              <Form.Label>Guest Name</Form.Label>
+              <Form.Label>Guest Name *</Form.Label>
               <Form.Control
                 type="text"
                 name="guestName"
                 value={form.guestName}
                 onChange={handleChange}
+                placeholder="Nhập tên khách hàng"
+                required
               />
             </Form.Group>
 
@@ -162,10 +228,13 @@ tomorrow.setHours(12, 0, 0, 0);
                 value={form.checkInDate}
                 readOnly
               />
+              <Form.Text className="text-muted">
+                Tự động set thời gian hiện tại
+              </Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Check-out Date</Form.Label>
+              <Form.Label>Check-out Date *</Form.Label>
               <Form.Control
                 type="date"
                 value={form.checkOutDate.slice(0, 10)}
@@ -174,6 +243,7 @@ tomorrow.setHours(12, 0, 0, 0);
                   const date = new Date(newDate + "T" + selectedTime);
                   setForm({ ...form, checkOutDate: formatDateTimeLocal(date) });
                 }}
+                required
               />
             </Form.Group>
 
@@ -192,13 +262,14 @@ tomorrow.setHours(12, 0, 0, 0);
             <Row>
               <Col>
                 <Form.Group className="mb-3">
-                  <Form.Label>Adults</Form.Label>
+                  <Form.Label>Adults *</Form.Label>
                   <Form.Control
                     type="number"
                     name="adultCount"
                     min="1"
                     value={form.adultCount}
                     onChange={handleChange}
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -216,20 +287,27 @@ tomorrow.setHours(12, 0, 0, 0);
               </Col>
             </Row>
           </Col>
+
           <Col lg={6}>
-            {["phone", "documentNumber"].map((key) => (
-              <Form.Group className="mb-3" key={key}>
-                <Form.Label>
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  name={key}
-                  value={form[key]}
-                  onChange={handleChange}
-                />
-              </Form.Group>
-            ))}
+            <Form.Group className="mb-3">
+              <Form.Label>Phone</Form.Label>
+              <Form.Control
+                type="text"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="Số điện thoại khách hàng"
+              />
+            </Form.Group>
+
+            {/* 🎯 BỎ EMAIL HOÀN TOÀN */}
+
+            {/* 🎯 DOCUMENT NUMBER: ẨN HOÀN TOÀN - LUÔN GỬI 000000 */}
+            <input 
+              type="hidden" 
+              name="documentNumber" 
+              value="000000" 
+            />
 
             <Form.Group className="mb-3">
               <Form.Label>Document Type</Form.Label>
@@ -256,7 +334,7 @@ tomorrow.setHours(12, 0, 0, 0);
                 value={form.nationality}
                 onChange={handleChange}
               >
-                <option value="">-- Select a nation --</option>
+                <option value="">-- Chọn quốc tịch --</option>
                 {nations.map((nation) => (
                   <option key={nation} value={nation}>
                     {nation}
@@ -266,13 +344,14 @@ tomorrow.setHours(12, 0, 0, 0);
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Room Type</Form.Label>
+              <Form.Label>Room Type *</Form.Label>
               <Form.Select
                 name="roomType"
                 value={form.roomType}
                 onChange={handleChange}
+                required
               >
-                <option value="">-- Select a type --</option>
+                <option value="">-- Chọn loại phòng --</option>
                 {roomTypes.map((type) => (
                   <option key={type.id} value={type.code}>
                     {type.name}
@@ -281,17 +360,28 @@ tomorrow.setHours(12, 0, 0, 0);
               </Form.Select>
             </Form.Group>
 
+            {/* 🎯 THÊM: Hiển thị reception info khi check-in */}
+            <div className="mb-3 p-2 border rounded bg-light">
+              <small>
+                <strong>Receptionist:</strong> {receptionInfo.name} 
+                {receptionInfo.id && ` (ID: ${receptionInfo.id})`}
+              </small>
+            </div>
+
             <Button
               onClick={handleCheckIn}
-              disabled={!form.guestName || !form.roomType || !form.checkOutDate}
+              disabled={!form.guestName || !form.roomType || !form.checkOutDate || !receptionInfo.id}
+              variant={!receptionInfo.id ? "warning" : "primary"}
             >
-              Assign Room
+              {!receptionInfo.id ? "⚠️ Chưa đăng nhập" : "Assign Room"}
             </Button>
 
             {assignedRoom && (
               <div className="mt-3 p-3 border rounded bg-light">
                 ✅ Assigned Room:{" "}
                 <strong>{assignedRoom.number}</strong> ({assignedRoom.type})
+                <br />
+                <small>Khách: {form.guestName}</small>
               </div>
             )}
           </Col>
@@ -328,8 +418,8 @@ tomorrow.setHours(12, 0, 0, 0);
                     <td>{item.guestName}</td>
                     <td>{item.roomNumber}</td>
                     <td>{item.roomType}</td>
-                    <td>{item.checkInDate}</td>
-                    <td>{item.checkOutDate}</td>
+                    <td>{new Date(item.checkInDate).toLocaleString()}</td>
+                    <td>{new Date(item.checkOutDate).toLocaleString()}</td>
                     <td>{item.documentType}</td>
                     <td>{item.documentNumber}</td>
                   </tr>

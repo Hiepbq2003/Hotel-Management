@@ -1,8 +1,6 @@
 package com.project.mhotel.controller;
 
-import com.project.mhotel.dto.AssignedRoomResponse;
-import com.project.mhotel.dto.CheckInRequest;
-import com.project.mhotel.dto.CheckInTodayResponse;
+import com.project.mhotel.dto.*;
 import com.project.mhotel.entity.RoomType;
 import com.project.mhotel.repository.RoomTypeRepository;
 import com.project.mhotel.service.CheckInService;
@@ -52,7 +50,22 @@ public class CheckInController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    @PostMapping("/reservation/{reservationId}")
+    public ResponseEntity<?> checkInFromBooking(
+            @PathVariable Long reservationId,
+            @RequestParam Long receptionistId) {
+        try {
+            CheckInResponse response = checkInService.checkInFromBooking(reservationId, receptionistId);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
-
+    // ✅ Lấy danh sách reservation có thể check-in
+    @GetMapping("/reservations")
+    public List<ReservationResponse> getReservationsForCheckIn() {
+        return checkInService.getReservationsForCheckIn();
+    }
 
 }

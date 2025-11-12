@@ -14,16 +14,22 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
 
   // Hàm xử lý logic lưu thông tin đăng nhập thành công
   const handleLoginSuccess = (loginData) => {
-    const { token, role, email, fullName, phone, customerId } = loginData;
-
-    // Lưu thông tin vào Local Storage
-    localStorage.setItem("customerId", customerId);
+    // 🎯 SỬA: Backend trả về 'id' thay vì 'customerId'
+    const { token, role, email, fullName, phone, id } = loginData;
+    
+    console.log("🔐 Login response data:", loginData);
+    
+    // 🎯 LƯU CẢ 'id' VÀ 'customerId' ĐỂ TƯƠNG THÍCH
+    localStorage.setItem("customerId", id); // 🎯 QUAN TRỌNG: dùng id
+    localStorage.setItem("userId", id);     // 🎯 Thêm userId để rõ ràng
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", role);
     localStorage.setItem("email", email);
     localStorage.setItem("fullName", fullName);
     localStorage.setItem("phone", phone);
-
+  
+    console.log("💾 Saved to localStorage - ID:", id, "Role:", role);
+  
     // Gọi hàm callback thành công
     if (onLoginSuccess) {
       onLoginSuccess(role);
@@ -33,53 +39,53 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
   const handleOnSubmit = async (evt) => {
     evt.preventDefault();
     setError(null);
-
+  
     const loginPayload = {
       email: state.email,
       password: state.password,
     };
-
-
+  
     let loginSuccessful = false;
     let loginData = null;
-
+  
     try {
       const response = await api.post("/auth/staff/login", loginPayload);
-      // SỬA: response đã là object JSON, không cần .data
+      
+      // 🎯 DEBUG CHI TIẾT RESPONSE
+      console.log("🔐 Staff login response:", response);
+      console.log("🔐 Response fields:", Object.keys(response));
+      
       loginData = response;
       loginSuccessful = true;
-
-      console.log("Đăng nhập Staff thành công.");
+      console.log("✅ Đăng nhập Staff thành công.");
+  
     } catch (errStaff) {
-
-      console.log("Đăng nhập Staff thất bại, thử sang User...");
-
+      console.log("❌ Đăng nhập Staff thất bại, thử sang User...");
+  
       try {
         const response = await api.post("/auth/login", loginPayload);
-        // SỬA: response đã là object JSON, không cần .data
+        
+        // 🎯 DEBUG CHI TIẾT RESPONSE
+        console.log("🔐 User login response:", response);
+        console.log("🔐 Response fields:", Object.keys(response));
+        
         loginData = response;
         loginSuccessful = true;
-        console.log("Đăng nhập User thành công.");
+        console.log("✅ Đăng nhập User thành công.");
+        
       } catch (errUser) {
-
-        console.error("Lỗi đăng nhập cả Staff và User:", errUser);
-
-        // Trích xuất thông báo lỗi từ server nếu có
-        const errorMessage = errUser && errUser.message
-          ? errUser.message
-          : "Đăng nhập thất bại. Vui lòng kiểm tra lại Email/Mật khẩu hoặc tài khoản đã kích hoạt.";
-
+        console.error("❌ Lỗi đăng nhập cả Staff và User:", errUser);
+        const errorMessage = errUser?.message || "Đăng nhập thất bại.";
         setError(errorMessage);
       }
     }
-
+  
     if (loginSuccessful && loginData) {
       handleLoginSuccess(loginData);
     }
-
+  
     setState({ ...state, password: "" });
   };
-
   return (
     <div className="form-container sign-in-container">
       <form onSubmit={handleOnSubmit}>

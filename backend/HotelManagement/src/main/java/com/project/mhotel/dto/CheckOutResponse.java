@@ -1,19 +1,19 @@
 package com.project.mhotel.dto;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class AssignedRoomResponse {
+public class CheckOutResponse {
     private String reservationCode;
-    private String number;      // room number
-    private String type;        // room type name
+    private String roomNumber;
     private String guestName;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
+    private BigDecimal totalAmount;
+    private String message;
 }
-

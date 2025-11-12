@@ -3,4 +3,11 @@ package com.project.mhotel.repository;
 import com.project.mhotel.entity.Guest;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface GuestRepository extends JpaRepository<Guest, Long> { }
+import java.util.Optional;
+
+public interface GuestRepository extends JpaRepository<Guest, Long> {
+    Optional<Guest> findByEmail(String email);
+
+    // Tìm guest theo phone
+    Optional<Guest> findByPhone(String phone);
+}

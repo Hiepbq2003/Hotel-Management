@@ -1,5 +1,6 @@
 package com.project.mhotel.repository;
 
+import com.project.mhotel.entity.Guest;
 import com.project.mhotel.entity.Reservation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,5 +17,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             LocalDateTime createdAt);
 
     // Tìm reservation bằng code
+    List<Reservation> findByStatus(Reservation.Status status);
+
+    // Tìm reservation theo code
     Optional<Reservation> findByReservationCode(String reservationCode);
+
+    // Tìm reservation theo guest
+    List<Reservation> findByGuest(Guest guest);
+
+    // Tìm reservation đang active (reserved hoặc checked_in)
+    @Query("SELECT r FROM Reservation r WHERE r.status IN ('reserved', 'checked_in')")
+    List<Reservation> findActiveReservations();
 }

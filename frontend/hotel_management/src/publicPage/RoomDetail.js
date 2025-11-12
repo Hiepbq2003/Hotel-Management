@@ -73,9 +73,10 @@ const RoomDetails = () => {
             <h5 className="mt-3">Tiện nghi</h5>
             <ul style={{ columns: 2, listStyle: "none", paddingLeft: 0 }}>
               {room.amenities?.map((a, i) => (
-                <li key={i}>✔️ {a}</li>
+                <li key={i}>✔️ {a.name || a}</li>
               )) || <li>Không có thông tin.</li>}
             </ul>
+
           </div>
         </Col>
 
