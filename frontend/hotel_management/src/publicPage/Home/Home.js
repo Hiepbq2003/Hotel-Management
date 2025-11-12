@@ -1,11 +1,11 @@
 import React from "react";
-import { Container, Row, Col,Card } from "react-bootstrap";
+import { Container, Row, Col, Card } from "react-bootstrap";
 import { FaClock } from "react-icons/fa";
 import HeroSection from "./HeroSection";
 import ServiceSection from "./ServiceSection";
 import TestimonialsSection from "./TestimonialsSection";
-const Home = () => {
 
+const Home = () => {
     const blogs = [
         {
             image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
@@ -48,7 +48,7 @@ const Home = () => {
     return (
         <>
             <HeroSection />
-            {/* About us */}
+            {/* About us - Updated content for Mr.STELLAR */}
             <Container style={{ marginTop: "120px", marginBottom: "140px", paddingRight: "50px", paddingLeft: "100px" }}>
                 <Row className="align-items-center">
                     {/* Left side: Text */}
@@ -70,17 +70,14 @@ const Home = () => {
                                 lineHeight: "1.2",
                             }}
                         >
-                            Intercontinental LA <br />
-                            Westlake Hotel
+                            Mr.STELLAR Luxury <br />
+                            Hotel
                         </h1>
                         <p style={{ color: "#555", fontSize: "16px", lineHeight: "1.8" }}>
-                            Sona.com is a leading online accommodation site. We’re passionate
-                            about travel. Every day, we inspire and reach millions of travelers
-                            across 90 local websites in 41 languages. <br />
+                            **Mr.STELLAR** is a premier luxury hotel, renowned for its exquisite service and sophisticated retreat spaces. We are dedicated to providing unforgettable experiences for all our guests.
                             <br />
-                            So when it comes to booking the perfect hotel, vacation rental,
-                            resort, apartment, guest house, or tree house — we’ve got you
-                            covered.
+                            <br />
+                            With a prime location, modern rooms, and exceptional amenities, Mr.STELLAR is not just a place to stay, but an ideal destination for relaxation and discovery. Our mission is to illuminate your journey with unparalleled comfort.
                         </p>
                         <p
                             style={{
@@ -100,30 +97,30 @@ const Home = () => {
                         md={12}
                         style={{
                             display: "flex",
-                            flexDirection: "row", // xếp dọc
-                            alignItems: "center", // căn giữa theo chiều ngang
-                            gap: "35px", // khoảng cách giữa 2 ảnh
+                            flexDirection: "row", 
+                            alignItems: "center", 
+                            gap: "35px", 
                         }}
                     >
-                        {/* Ảnh 1 */}
+                        {/* Image 1 */}
                         <img
-                            src="https://lh3.googleusercontent.com/proxy/Y16BeNVz6hzGj6N4RpNrn_92xEvPTKhWFPs3xU4j9RQeKks3Onmjv7kWd55WE-2KDUPLaiccX7ROsJqQ-2nYJ6UOVKZOuR4_pUR48pPa"
+                            src="https://images.squarespace-cdn.com/content/v1/6484fbeb3187284c2d37c26d/1119053e-90c0-42b7-897d-d0d63b172689/PRJ-center11-cafe.jpg"
                             alt="Hotel exterior 1"
                             style={{
-                                width: "100%", // to hết cột
+                                width: "50%", 
                                 borderRadius: "12px",
                                 boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
                                 objectFit: "cover",
-                                height: "420px", // chiều cao cố định, bạn có thể chỉnh
+                                height: "420px", 
                             }}
                         />
 
-                        {/* Ảnh 2 */}
+                        {/* Image 2 */}
                         <img
-                            src="https://hoangthanhthanglong.vn/wp-content/uploads/2023/05/lythaito6.jpg"
+                            src="https://a0.muscache.com/im/pictures/miso/Hosting-574118191615566465/original/c678f3b2-0d23-4055-8853-72a8725e177b.jpeg?im_w=720"
                             alt="Hotel exterior 2"
                             style={{
-                                width: "100%",
+                                width: "50%",
                                 borderRadius: "12px",
                                 boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
                                 objectFit: "cover",
@@ -131,8 +128,6 @@ const Home = () => {
                             }}
                         />
                     </Col>
-
-
                 </Row>
             </Container>
             <hr style={{ marginBottom: "100px" }}></hr>

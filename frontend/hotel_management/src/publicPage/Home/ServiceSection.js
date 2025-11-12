@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Row, Col,Button,Card} from "react-bootstrap";
+import { Container, Row, Col, Button, Card } from "react-bootstrap";
 import {
     FaMapMarkerAlt,
     FaUtensils,
@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 
 const ServiceSection = () => {
+    // List of services
     const services = [
         { icon: <FaMapMarkerAlt />, title: "Travel Plan" },
         { icon: <FaUtensils />, title: "Catering Service" },
@@ -18,36 +19,39 @@ const ServiceSection = () => {
         { icon: <FaCar />, title: "Hire Driver" },
         { icon: <FaCocktail />, title: "Bar & Drink" },
     ];
+
+    // List of rooms
     const rooms = [
         {
             image:
                 "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=60",
             title: "Premium King Room",
             price: 159,
-            desc: "Spacious room with modern design and city view.",
+            desc: "Spacious room with modern design and stunning city views.",
         },
         {
             image:
                 "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=60",
             title: "Deluxe Queen Room",
             price: 189,
-            desc: "Elegant comfort with a touch of luxury.",
+            desc: "An elegant blend of comfort and a touch of luxury for your stay.",
         },
         {
             image:
-                "https://images.unsplash.com/photo-1618213837799-9ce22d43c4d2?auto=format&fit=crop&w=800&q=60",
+                "https://www.exoticadubai.tajhotels.com/wp-content/uploads/sites/470/2025/08/Grand-Luxury-Suite-Sea-View-With-Open-Jacuzzi-5-2000x1000.jpg",
             title: "Luxury Suite",
             price: 249,
-            desc: "Enjoy full facilities and panoramic views.",
+            desc: "Enjoy full premium facilities and panoramic, breathtaking views.",
         },
         {
             image:
-                "https://images.unsplash.com/photo-1600585154205-8e8c6b7a5a59?auto=format&fit=crop&w=800&q=60",
+                "https://media.architecturaldigest.com/photos/669fc8c773a9e24e074ed817/4:3/w_5572,h_4179,c_limit/design%20by%20Shannon%20Eddings%20Interiors%20photo%20by%20Molly%20Culver%20Photography.jpg",
             title: "Family Room",
             price: 199,
-            desc: "Perfect for family vacations, large space & cozy feel.",
+            desc: "Perfectly suited for family vacations, featuring large space and a cozy feel.",
         },
     ];
+
     return (
         <>
             <Container style={{ textAlign: "center", marginBottom: "120px" }}>
@@ -128,8 +132,7 @@ const ServiceSection = () => {
                                                 transition: "color 0.3s",
                                             }}
                                         >
-                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                                            eiusmod tempor incididunt ut labore et dolore magna.
+                                            Experience top-notch hospitality services designed to cater to your every need, ensuring a seamless and comfortable stay.
                                         </p>
                                     </div>
                                 </Col>
@@ -138,6 +141,8 @@ const ServiceSection = () => {
                     </Col>
                 </Row>
             </Container>
+
+            {/* Our Rooms Section */}
             <Container fluid style={{ marginTop: "80px", marginBottom: "100px" }}>
                 <div style={{ textAlign: "center", marginBottom: "60px" }}>
                     <p
@@ -195,6 +200,7 @@ const ServiceSection = () => {
                                         style={{
                                             color: "#666",
                                             fontSize: "15px",
+                                            lineHeight: "1.8",
                                             marginBottom: "20px",
                                             minHeight: "48px",
                                         }}

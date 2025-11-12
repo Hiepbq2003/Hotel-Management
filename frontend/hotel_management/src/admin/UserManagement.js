@@ -47,9 +47,17 @@ const getErrorMessage = (err) => {
             // Cắt bớt stacktrace nếu quá dài
             return err.response.data.substring(0, 200) + (err.response.data.length > 200 ? '...' : '');
         }
-        // Nếu là JSON (thường là lỗi validation 400)
-        if (err.response.data.message) {
-             return err.response.data.message;
+        // Nếu là JSON (thường là lỗi validation 400 hoặc cấu trúc lỗi khác)
+        if (typeof err.response.data === 'object' && err.response.data.message) {
+            return err.response.data.message;
+        }
+        // Nếu là JSON từ API reset pass mới
+        if (typeof err.response.data === 'object' && err.response.data.error) {
+            return err.response.data.error;
+        }
+        // Nếu là string lỗi không xác định
+        if (typeof err.response.data === 'string') {
+            return err.response.data;
         }
     }
     return "Lỗi không xác định hoặc lỗi kết nối mạng.";
@@ -57,7 +65,7 @@ const getErrorMessage = (err) => {
 
 
 // =================================================================================
-// 1. CREATE USER MODAL (Thêm mới nhân viên) - KHÔNG ĐỔI
+// 1. CREATE USER MODAL (Thêm mới nhân viên)
 // =================================================================================
 
 function CreateUserModal({ show, handleClose, handleCreate, editableRoles }) {
@@ -492,13 +500,12 @@ function UserManagement() {
     const handleEditDetails = async (userId, updatedFields, originalUser) => {
         
         // 1. CHUẨN BỊ DỮ LIỆU CẬP NHẬT CHI TIẾT (API /details)
-        // Đây là API updateStaffDetails, giả định rằng nó có thể yêu cầu DTO UserRequest đầy đủ
-        // và yêu cầu role/status ở dạng chữ thường.
         
         const roleToSend = updatedFields.role ? updatedFields.role.toLowerCase() : originalUser.role.toLowerCase();
-        // **FIX**: Chuyển status sang chữ thường cho API details (nếu nó yêu cầu DTO đầy đủ)
-        const statusToSend = updatedFields.status ? updatedFields.status.toUpperCase() : originalUser.status.toUpperCase(); 
-
+        // Cần đảm bảo rằng trạng thái được gửi đi trong DTO details không gây lỗi
+        // Tuy nhiên, vì BE API details không xử lý Status, ta chỉ cần đảm bảo DTO không bị lỗi format.
+        // Ta sẽ ưu tiên gọi API /status riêng biệt nếu trạng thái thay đổi.
+        
         const detailUpdatePayload = {
             // Giữ lại các trường không thay đổi, giả định BE cần DTO đầy đủ
             username: originalUser.username,
@@ -509,8 +516,7 @@ function UserManagement() {
             phone: updatedFields.phone,
             role: roleToSend,
             
-            // **FIX**: Thêm status vào đây, nhưng gửi dạng chữ thường để khớp với BE nếu cần DTO hoàn chỉnh
-            status: statusToSend, 
+            // DTO UserRequest không có trường status, nên bỏ qua.
             
             password: originalUser.password || '******', // Giả định
             hotelId: originalUser.hotelId || null, 
@@ -520,15 +526,12 @@ function UserManagement() {
             let updateStatus = false;
             
             // 1. CẬP NHẬT CHI TIẾT (PUT /user/{userId}/details)
-            // API này có thể xử lý cả vai trò và trạng thái nếu nó map lại toàn bộ DTO
             await api.put(`/user/${userId}/details`, detailUpdatePayload);
             
-            // 2. CẬP NHẬT TRẠNG THÁI (PUT /user/{userId}/status) - LÀM CÁCH 2 NẾU CẦN
-            // CHỈ GỌI API STATUS NẾU CẦN THIẾT VÀ KHÔNG PHẢI ADMIN (để đảm bảo không bị lỗi)
+            // 2. CẬP NHẬT TRẠNG THÁI (PUT /user/{userId}/status) - TÁCH RIÊNG
             // Nếu trạng thái thay đổi
             if (originalUser.status !== updatedFields.status && originalUser.role !== 'ADMIN') {
                 updateStatus = true;
-                // **FIX LỖI BAO QUANH CỦA BẠN**: API /status CHẮC CHẮN DÙNG ENUM.
                 // Trạng thái được chọn trong form là 'ACTIVE', 'INACTIVE', 'BLOCKED' (chữ hoa)
                 const statusPayload = { newStatus: updatedFields.status.toUpperCase() }; 
                 await api.put(`/user/${userId}/status`, statusPayload);
@@ -541,6 +544,26 @@ function UserManagement() {
             // Cố gắng lấy lỗi chi tiết từ body response
             const errorMessage = getErrorMessage(err);
             alert(`Lỗi khi cập nhật chi tiết: ${errorMessage}`);
+        }
+    };
+
+    // NEW HANDLER: Reset Password Logic
+    const handleResetPassword = async (userId, userFullName) => {
+        if (!window.confirm(`Bạn có chắc chắn muốn ĐẶT LẠI MẬT KHẨU cho nhân viên: ${userFullName} (ID: ${userId}) không? Mật khẩu sẽ được đặt lại về mặc định "123456".`)) {
+            return;
+        }
+
+        try {
+            // Call Backend API: PUT /api/user/{userId}/reset-password
+            const response = await api.put(`/user/${userId}/reset-password`);
+            
+            // Lấy thông báo từ response body (đã được cấu hình ở BE)
+            alert(response.data.message || `Đặt lại mật khẩu cho ${userFullName} thành công! Mật khẩu mặc định: 123456.`);
+            fetchUsers();
+        } catch (err) {
+            console.error("❌ Lỗi reset mật khẩu:", err);
+            const errorMessage = getErrorMessage(err);
+            alert(`Lỗi khi đặt lại mật khẩu: ${errorMessage}`);
         }
     };
     
@@ -602,12 +625,6 @@ function UserManagement() {
                 </Alert>
             )}
 
-            {!error && users.length === 0 && isCurrentUserAdmin && (
-                <Alert variant="info" className="text-center">
-                    <p className="mb-0">Danh sách nhân viên trống.</p>
-                </Alert>
-            )}
-
             {!error && users.length > 0 && (
                 <div className="table-responsive">
                     <Table striped bordered hover className="align-middle shadow-sm">
@@ -639,19 +656,32 @@ function UserManagement() {
                                         </td>
                                         <td className="text-center">
                                             {isCurrentUserAdmin ? (
-                                                <Button 
-                                                    variant="warning" 
-                                                    size="sm"
-                                                    className="me-2 text-white"
-                                                    onClick={() => {
-                                                        setSelectedUser(user);
-                                                        setShowEditModal(true);
-                                                    }}
-                                                    title={editable ? "Chỉnh sửa Tên, Vai trò và Trạng thái" : "Không thể sửa Admin"}
-                                                    disabled={!editable} // Disable nếu là tài khoản Admin
-                                                >
-                                                    <i className="bi bi-pencil-square"></i> Edit
-                                                </Button>
+                                                <>
+                                                    <Button 
+                                                        variant="warning" 
+                                                        size="sm"
+                                                        className="me-2 text-white"
+                                                        onClick={() => {
+                                                            setSelectedUser(user);
+                                                            setShowEditModal(true);
+                                                        }}
+                                                        title={editable ? "Chỉnh sửa Tên, Vai trò và Trạng thái" : "Không thể sửa Admin"}
+                                                        disabled={!editable} // Disable nếu là tài khoản Admin
+                                                    >
+                                                        <i className="bi bi-pencil-square"></i> Edit
+                                                    </Button>
+                                                    
+                                                    {/* NEW RESET PASSWORD BUTTON */}
+                                                    <Button 
+                                                        variant="danger" 
+                                                        size="sm"
+                                                        onClick={() => handleResetPassword(user.id, user.fullName)}
+                                                        title={editable ? "Reset mật khẩu về 123456" : "Không thể reset mật khẩu Admin"}
+                                                        disabled={!editable} // Disable nếu là tài khoản Admin
+                                                    >
+                                                        <i className="bi bi-key-fill"></i> Reset Pass
+                                                    </Button>
+                                                </>
                                             ) : (
                                                 <Badge bg="secondary">Không thể sửa</Badge>
                                             )}
