@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity; // 👈 DÒNG IMPORT CẦN THIẾT
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -20,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // 👈 THÊM DÒNG NÀY ĐỂ KÍCH HOẠT @PreAuthorize
 public class SecurityConfig {
 
     @Autowired
@@ -58,9 +60,8 @@ public class SecurityConfig {
                                 "/api/hotels/**",
                                 "/api/rooms/**",
                                 "/api/room-type/**",
-                                "/api/payment/**"  // THÊM DÒNG NÀY - cho phép payment endpoints
+                                "/api/payment/**"
                         ).permitAll()
-                        // Bất kỳ request nào khác đều phải được xác thực (authenticated)
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

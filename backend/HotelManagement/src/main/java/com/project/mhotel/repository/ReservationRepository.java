@@ -11,7 +11,6 @@ import java.util.Optional;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    // Tìm các reservation đang chờ thanh toán và được tạo trước thời điểm specified
     List<Reservation> findByStatusAndCreatedAtBefore(
             Reservation.Status status,
             LocalDateTime createdAt);
@@ -28,4 +27,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // Tìm reservation đang active (reserved hoặc checked_in)
     @Query("SELECT r FROM Reservation r WHERE r.status IN ('reserved', 'checked_in')")
     List<Reservation> findActiveReservations();
+
+    Long countByArrivalDate (LocalDateTime arrivalDate);
 }

@@ -11,4 +11,5 @@ public class DashboardStatsResponse {
     private BigDecimal totalMonthlyRevenue;
     private BigDecimal totalAnnualRevenue;
     private Long totalEmployees;
+    private Long bookingsToday;
 }
