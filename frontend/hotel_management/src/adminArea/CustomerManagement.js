@@ -159,10 +159,6 @@ function CreateCustomerModal({ show, handleClose, handleCreate }) {
     );
 }
 
-// =================================================================================
-// 2. EDIT CUSTOMER MODAL (Gộp Sửa TT + Sửa Status)
-// =================================================================================
-
 function EditCustomerModal({ show, handleClose, customer, statusOptions, handleSaveDetailsAndStatus }) {
     const [formData, setFormData] = useState({
         fullName: customer?.fullName || '',
