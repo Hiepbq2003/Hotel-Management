@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class CheckAvailabilityRequest {
-    private String roomType;         // code loại phòng (VD: "DLX")
+    private String roomType;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
     private int adultCount;
