@@ -17,18 +17,21 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
     // 🎯 SỬA: Backend trả về 'id' thay vì 'customerId'
     const { token, role, email, fullName, phone, id } = loginData;
     
+    // 🆕 FIX: Nếu 'id' là undefined/null, sử dụng giá trị rỗng "" để tránh lưu chuỗi "undefined"
+    const userIdToStore = id || ""; 
+    
     console.log("🔐 Login response data:", loginData);
     
     // 🎯 LƯU CẢ 'id' VÀ 'customerId' ĐỂ TƯƠNG THÍCH
-    localStorage.setItem("customerId", id); // 🎯 QUAN TRỌNG: dùng id
-    localStorage.setItem("userId", id);     // 🎯 Thêm userId để rõ ràng
+    localStorage.setItem("customerId", userIdToStore); // 🎯 QUAN TRỌNG: dùng id
+    localStorage.setItem("userId", userIdToStore);     // 🎯 Thêm userId để rõ ràng
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", role);
     localStorage.setItem("email", email);
     localStorage.setItem("fullName", fullName);
     localStorage.setItem("phone", phone);
   
-    console.log("💾 Saved to localStorage - ID:", id, "Role:", role);
+    console.log("💾 Saved to localStorage - ID:", userIdToStore, "Role:", role);
   
     // Gọi hàm callback thành công
     if (onLoginSuccess) {
