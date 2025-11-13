@@ -38,6 +38,9 @@ public class RoomType {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 255)
+    private String image;
+
     @Column(nullable = false)
     private Integer capacity = 1;
 

@@ -15,4 +15,5 @@ public class RoomTypeRequest {
     private Integer capacity;
     private String bedInfo;
     private BigDecimal basePrice;
+    private String image;
 }

@@ -62,6 +62,7 @@ public class RoomTypeService {
         existing.setDescription(updated.getDescription());
         existing.setCapacity(updated.getCapacity());
         existing.setBedInfo(updated.getBedInfo());
+        existing.setImage(updated.getImage());
         existing.setBasePrice(updated.getBasePrice());
         return roomTypeRepository.save(existing);
     }
@@ -111,6 +112,7 @@ public class RoomTypeService {
         existing.setDescription(request.getDescription());
         existing.setCapacity(request.getCapacity());
         existing.setBedInfo(request.getBedInfo());
+        existing.setImage(request.getImage());
         existing.setBasePrice(request.getBasePrice());
         RoomType updated = roomTypeRepository.save(existing);
         return toResponse(updated);
@@ -154,6 +156,7 @@ public class RoomTypeService {
         roomType.setDescription(dto.getDescription());
         roomType.setCapacity(dto.getCapacity());
         roomType.setBedInfo(dto.getBedInfo());
+        roomType.setImage(dto.getImage());
         roomType.setBasePrice(dto.getBasePrice());
         roomType.setHotel(hotel);
         return roomType;
@@ -181,6 +184,7 @@ public class RoomTypeService {
                 .description(entity.getDescription())
                 .capacity(entity.getCapacity())
                 .bedInfo(entity.getBedInfo())
+                .image(entity.getImage())
                 .basePrice(entity.getBasePrice())
                 .createdAt(entity.getCreatedAt())
                 .hotelId(entity.getHotel() != null ? entity.getHotel().getId() : null)

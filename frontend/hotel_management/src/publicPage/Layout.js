@@ -1,4 +1,3 @@
-
 import { Outlet, useLocation } from "react-router-dom";
 import Breadcrumbs from "../components/Breadcrumbs";
 import Footer from "../components/Footer";
@@ -13,6 +12,7 @@ const Layout = () => {
     return (
         <>
             <Header />
+            <Breadcrumbs/>
             <Outlet /> 
             <Footer />
         </>

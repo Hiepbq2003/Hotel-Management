@@ -21,4 +21,5 @@ public class RoomTypeResponse {
     private Long hotelId;
     private String hotelName;
     private List<HotelAmenityResponse> amenities;
+    private String image;
 }

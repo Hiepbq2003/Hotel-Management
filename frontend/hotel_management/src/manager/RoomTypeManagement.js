@@ -25,7 +25,7 @@ const RoomTypeManagement = () => {
         capacity: "",
         bedInfo: "",
         description: "",
-        imageUrl: "",
+        image: "", // ĐÃ ĐỔI TỪ imageUrl SANG image
         code: "" 
     });
 
@@ -96,16 +96,19 @@ const RoomTypeManagement = () => {
         
         if (room) {
             setIsEditing(true);
+            // Lấy trường image từ data response của BE
             setCurrentRoom({
                 ...room,
                 basePrice: room.basePrice?.toString() || "",
-                capacity: room.capacity?.toString() || ""
+                capacity: room.capacity?.toString() || "",
+                image: room.image || "" // MAPPING: Lấy trường image
             });
         } else {
             setIsEditing(false);
+            // Tạo mới, reset trường image
             setCurrentRoom({
                 id: null, name: "", basePrice: "", capacity: "",
-                bedInfo: "", description: "", imageUrl: "", code: "" 
+                bedInfo: "", description: "", image: "", code: "" // Updated: dùng image
             });
         }
         setError(null);
@@ -115,6 +118,11 @@ const RoomTypeManagement = () => {
     const closeModal = () => {
         setShowModal(false);
         setError(null); 
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setCurrentRoom(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
@@ -137,6 +145,7 @@ const RoomTypeManagement = () => {
                 ...currentRoom,
                 basePrice: parseFloat(currentRoom.basePrice),
                 capacity: parseInt(currentRoom.capacity),
+                image: currentRoom.image, // GỬI TRƯỜNG IMAGE ĐÃ CẬP NHẬT
             };
             
             if (!isEditing) delete dataToSend.id; 
@@ -292,7 +301,7 @@ const RoomTypeManagement = () => {
                             <th className="text-nowrap" style={{ width: '8%' }}>Mã phòng</th>
                             <th className="text-nowrap" style={{ width: '10%' }}>Giường</th>
                             <th>Mô tả</th>
-                            <th className="text-center text-nowrap" style={{ width: '8%' }}>Ảnh</th>
+                            <th className="text-center text-nowrap" style={{ width: '8%' }}>Ảnh</th> {/* CỘT IMAGE */}
                             <th className="text-center text-nowrap" style={{ width: '10%' }}>Tiện nghi</th>
                             <th className="text-center text-nowrap" style={{ width: '14%' }}>Hành động</th>
                         </tr>
@@ -314,7 +323,7 @@ const RoomTypeManagement = () => {
                                     </td>
                                     <td className="text-center">
                                         <img
-                                            src={room.imageUrl || "https://via.placeholder.com/80x60?text=No+Image"}
+                                            src={room.image || "https://via.placeholder.com/80x60?text=No+Image"} // SỬ DỤNG room.image
                                             alt={room.name}
                                             width="80"
                                             height="60"
@@ -382,8 +391,9 @@ const RoomTypeManagement = () => {
                                 <Form.Label className="fw-bold">Tên phòng <span className="text-danger">*</span></Form.Label>
                                 <Form.Control
                                     type="text"
+                                    name="name" // Thêm name
                                     value={currentRoom.name}
-                                    onChange={(e) => setCurrentRoom({ ...currentRoom, name: e.target.value })}
+                                    onChange={handleInputChange} // Cập nhật cách gọi
                                     required
                                 />
                             </Form.Group>
@@ -392,8 +402,9 @@ const RoomTypeManagement = () => {
                                 <Form.Label className="fw-bold">Mã loại phòng (Code) <span className="text-danger">*</span></Form.Label>
                                 <Form.Control
                                     type="text"
+                                    name="code" // Thêm name
                                     value={currentRoom.code}
-                                    onChange={(e) => setCurrentRoom({ ...currentRoom, code: e.target.value })}
+                                    onChange={handleInputChange} // Cập nhật cách gọi
                                     required
                                 />
                             </Form.Group>
@@ -402,8 +413,9 @@ const RoomTypeManagement = () => {
                                 <Form.Label className="fw-bold">Giá cơ bản (VND) <span className="text-danger">*</span></Form.Label>
                                 <Form.Control
                                     type="number"
+                                    name="basePrice" // Thêm name
                                     value={currentRoom.basePrice}
-                                    onChange={(e) => setCurrentRoom({ ...currentRoom, basePrice: e.target.value })}
+                                    onChange={handleInputChange} // Cập nhật cách gọi
                                     required
                                     min="0"
                                 />
@@ -413,8 +425,9 @@ const RoomTypeManagement = () => {
                                 <Form.Label className="fw-bold">Sức chứa (Người) <span className="text-danger">*</span></Form.Label>
                                 <Form.Control
                                     type="number"
+                                    name="capacity" // Thêm name
                                     value={currentRoom.capacity}
-                                    onChange={(e) => setCurrentRoom({ ...currentRoom, capacity: e.target.value })}
+                                    onChange={handleInputChange} // Cập nhật cách gọi
                                     min="1"
                                     required
                                 />
@@ -424,8 +437,9 @@ const RoomTypeManagement = () => {
                                 <Form.Label className="fw-bold">Thông tin giường</Form.Label>
                                 <Form.Control
                                     type="text"
+                                    name="bedInfo" // Thêm name
                                     value={currentRoom.bedInfo}
-                                    onChange={(e) => setCurrentRoom({ ...currentRoom, bedInfo: e.target.value })}
+                                    onChange={handleInputChange} // Cập nhật cách gọi
                                     placeholder="Ví dụ: 1 King Bed"
                                 />
                             </Form.Group>
@@ -435,20 +449,35 @@ const RoomTypeManagement = () => {
                                 <Form.Control
                                     as="textarea"
                                     rows={3}
+                                    name="description" // Thêm name
                                     value={currentRoom.description}
-                                    onChange={(e) => setCurrentRoom({ ...currentRoom, description: e.target.value })}
+                                    onChange={handleInputChange} // Cập nhật cách gọi
                                 />
                             </Form.Group>
 
-                            <Form.Group>
-                                <Form.Label className="fw-bold">Ảnh (URL)</Form.Label>
+                            {/* TRƯỜNG NHẬP URL ẢNH */}
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">Ảnh (URL) - **ĐÃ CẬP NHẬT**</Form.Label>
                                 <Form.Control
                                     type="text"
-                                    value={currentRoom.imageUrl}
-                                    onChange={(e) => setCurrentRoom({ ...currentRoom, imageUrl: e.target.value })}
+                                    name="image" // SỬ DỤNG TRƯỜNG 'image' MỚI
+                                    value={currentRoom.image}
+                                    onChange={handleInputChange} // SỬ DỤNG TRƯỜNG 'image' MỚI
                                     placeholder="Nhập URL ảnh loại phòng"
                                 />
+                                {/* Hiển thị ảnh xem trước */}
+                                {currentRoom.image && (
+                                    <div className="mt-3 text-center p-2 border rounded" style={{ backgroundColor: '#f9f9f9' }}>
+                                        <p className="text-muted small mb-1 fw-bold">Ảnh xem trước:</p>
+                                        <img 
+                                            src={currentRoom.image} 
+                                            alt="Room Type Preview" 
+                                            style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'cover', borderRadius: '4px' }}
+                                        />
+                                    </div>
+                                )}
                             </Form.Group>
+
                         </Modal.Body>
 
                         <Modal.Footer>

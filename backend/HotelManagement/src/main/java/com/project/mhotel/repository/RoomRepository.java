@@ -30,4 +30,9 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             @Param("roomTypeId") Long roomTypeId,
             @Param("checkIn") LocalDateTime checkIn,
             @Param("checkOut") LocalDateTime checkOut);
+
+    @Query("SELECT COUNT(r) FROM Room r")
+    Long countTotalRooms();
+
+    Long countByStatus(Room.Status status);
 }

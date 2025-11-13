@@ -145,13 +145,6 @@ const AboutUs = () => {
 
     return (
         <div>
-            {/* Breadcrumb Section (Giữ nguyên) */}
-            <Breadcrumbs 
-                title="About Us" 
-                homeTitle="Home" 
-                homeUrl="/home" 
-                current="About Us" 
-            />
             
             {/* About Us Page Section Begin */}
             <section style={{ padding: '100px 0', backgroundColor: '#f9f9f9' }}> 

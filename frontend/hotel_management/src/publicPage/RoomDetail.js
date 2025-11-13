@@ -9,12 +9,15 @@ const RoomDetails = () => {
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // URL placeholder mặc định
+  const DEFAULT_IMAGE_URL = "https://via.placeholder.com/800x500?text=Room+Image";
 
   useEffect(() => {
     const fetchRoom = async () => {
       try {
         const data = await api.get(`/room-type/${id}`);
-        setRoom(data);
+        setRoom(data); // data giờ chứa trường 'image'
         setError(null);
       } catch (err) {
         setError(err.message || "Không thể tải thông tin phòng.");
@@ -45,6 +48,12 @@ const RoomDetails = () => {
         Không tìm thấy thông tin phòng.
       </Alert>
     );
+    
+    // Tạo mảng ảnh cho Carousel. Vì BE chỉ trả về 1 URL (image), ta sẽ hiển thị nó.
+    // Nếu có trường room.images (cho nhiều ảnh), ưu tiên dùng nó. Nếu không, dùng room.image.
+    const carouselItems = (room.images && room.images.length > 0)
+        ? room.images.map(img => ({ url: img.url || img })) // Giả định img là object có url hoặc là string url
+        : [{ url: room.image }]; // SỬ DỤNG TRƯỜNG room.image MỚI
 
   return (
     <Container style={{ paddingTop: "50px", paddingBottom: "50px" }}>
@@ -52,13 +61,11 @@ const RoomDetails = () => {
         {/* Carousel ảnh phòng */}
         <Col md={7}>
           <Carousel fade>
-            {(room.images || [
-              { url: room.imageUrl },
-            ]).map((img, index) => (
+            {carouselItems.map((img, index) => (
               <Carousel.Item key={index}>
                 <img
                   className="d-block w-100"
-                  src={img.url || "https://via.placeholder.com/800x500?text=Room+Image"}
+                  src={img.url || DEFAULT_IMAGE_URL} // Dùng URL ảnh
                   alt={`Room ${index}`}
                   style={{ height: "400px", objectFit: "cover", borderRadius: "10px" }}
                 />
