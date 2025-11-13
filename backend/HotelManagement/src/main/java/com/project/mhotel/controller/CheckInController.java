@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -55,10 +56,31 @@ public class CheckInController {
             @PathVariable Long reservationId,
             @RequestParam Long receptionistId) {
         try {
+            System.out.println("🎯 Received check-in request - Reservation ID: " + reservationId + ", Receptionist ID: " + receptionistId);
+
             CheckInResponse response = checkInService.checkInFromBooking(reservationId, receptionistId);
+
+            System.out.println("✅ Check-in successful: " + response.getReservationCode());
             return ResponseEntity.ok(response);
+
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            System.out.println("❌ Check-in error: " + e.getMessage());
+            e.printStackTrace(); // 🆕 Thêm logging chi tiết
+
+            // 🆕 Trả về response chuẩn với cấu trúc Map
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage(),
+                    "timestamp", LocalDateTime.now().toString()
+            ));
+        } catch (Exception e) {
+            System.out.println("❌ Unexpected check-in error: " + e.getMessage());
+            e.printStackTrace();
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Server error: " + e.getMessage(),
+                            "timestamp", LocalDateTime.now().toString()
+                    ));
         }
     }
 
@@ -67,5 +89,25 @@ public class CheckInController {
     public List<ReservationResponse> getReservationsForCheckIn() {
         return checkInService.getReservationsForCheckIn();
     }
+    // ✅ API xác thực document cho booking
+    @PostMapping("/verify-document")
+    public ResponseEntity<?> verifyDocument(@RequestBody VerifyDocumentRequest request) {
+        try {
+            boolean isValid = checkInService.verifyDocument(
+                    request.getReservationCode(),
+                    request.getDocumentType(),
+                    request.getDocumentNumber()
+            );
 
+            return ResponseEntity.ok(Map.of(
+                    "valid", isValid,
+                    "message", "Document verification successful"
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "valid", false,
+                    "error", e.getMessage()
+            ));
+        }
+    }
 }

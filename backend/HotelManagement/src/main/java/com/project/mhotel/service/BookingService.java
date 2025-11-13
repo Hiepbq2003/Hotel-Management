@@ -51,56 +51,88 @@ public class BookingService {
                 .multiply(BigDecimal.valueOf(roomCount))
                 .multiply(BigDecimal.valueOf(nights));
 
-        // 5️⃣ Validate và tạo guest chính (main guest)
-        String mainGuestName = (req.getGuestName() != null) ? req.getGuestName().trim() : null;
-        if (mainGuestName == null || mainGuestName.isEmpty()) {
-            throw new RuntimeException("Guest name is required");
+        // 5️⃣ Xác định guest chính THÔNG MINH HƠN
+        Guest mainGuest;
+        boolean isMultiRoom = req.getRooms() != null && !req.getRooms().isEmpty();
+
+        if (isMultiRoom) {
+            // MULTI-ROOM: Dùng guest từ phòng đầu tiên làm guest chính
+            BookingRequest.RoomBookingItem firstRoom = req.getRooms().get(0);
+            String firstGuestName = (firstRoom.getGuestName() != null) ? firstRoom.getGuestName().trim() : null;
+
+            if (firstGuestName == null || firstGuestName.isEmpty()) {
+                throw new RuntimeException("Guest name for the first room is required");
+            }
+
+            mainGuest = Guest.builder()
+                    .customer(customer)
+                    .fullName(firstGuestName)
+                    .email(firstRoom.getEmail())
+                    .phone(firstRoom.getPhone())
+                    .documentType(firstRoom.getDocumentType())
+                    .documentNumber(firstRoom.getDocumentNumber())
+                    .build();
+        } else {
+            // SINGLE-ROOM: Dùng guest từ request chính
+            String mainGuestName = (req.getGuestName() != null) ? req.getGuestName().trim() : null;
+            if (mainGuestName == null || mainGuestName.isEmpty()) {
+                throw new RuntimeException("Guest name is required");
+            }
+
+            mainGuest = Guest.builder()
+                    .customer(customer)
+                    .fullName(mainGuestName)
+                    .email(req.getEmail())
+                    .phone(req.getPhone())
+                    .nationality(req.getNationality())
+                    .documentType(req.getDocumentType())
+                    .documentNumber(req.getDocumentNumber())
+                    .build();
         }
 
-        Guest mainGuest = Guest.builder()
-                .customer(customer)
-                .fullName(mainGuestName)
-                .email(req.getEmail())
-                .phone(req.getPhone())
-                .nationality(req.getNationality())
-                .documentType(req.getDocumentType())
-                .documentNumber(req.getDocumentNumber())
-                .build();
         guestRepository.save(mainGuest);
 
+        // 6️⃣ Tạo reservation
         Reservation reservation = Reservation.builder()
                 .hotel(roomType.getHotel())
-                .guest(mainGuest)                 // gán guest chính
+                .guest(mainGuest)
                 .reservationCode("RES-" + System.currentTimeMillis())
-                .status(Reservation.Status.reserved) // Chờ thanh toán
+                .status(Reservation.Status.reserved) // Sửa thành pending_payment để nhất quán
                 .arrivalDate(req.getCheckInDate())
                 .departureDate(req.getCheckOutDate())
                 .pax(req.getAdultCount() + req.getChildCount())
                 .totalAmount(totalAmount)
                 .bookingSource("Online Booking")
-                .notes(req.getNotes())            // lưu notes
+                .notes(req.getNotes())
                 .build();
         reservationRepository.save(reservation);
 
         // 7️⃣ Xử lý multi-room nếu có
-        if (req.getRooms() != null && !req.getRooms().isEmpty()) {
+        if (isMultiRoom) {
+            for (int i = 0; i < req.getRooms().size(); i++) {
+                BookingRequest.RoomBookingItem item = req.getRooms().get(i);
 
-            for (BookingRequest.RoomBookingItem item : req.getRooms()) {
+                Guest roomGuest;
+                if (i == 0) {
+                    // Phòng đầu tiên dùng guest chính đã tạo
+                    roomGuest = mainGuest;
+                } else {
+                    // Các phòng khác tạo guest mới
+                    String itemGuestName = (item.getGuestName() != null) ? item.getGuestName().trim() : null;
+                    if (itemGuestName == null || itemGuestName.isEmpty()) {
+                        throw new RuntimeException("Guest name for room " + (i + 1) + " is required");
+                    }
 
-                String itemGuestName = (item.getGuestName() != null) ? item.getGuestName().trim() : null;
-                if (itemGuestName == null || itemGuestName.isEmpty()) {
-                    throw new RuntimeException("Guest name for a room is required");
+                    roomGuest = Guest.builder()
+                            .customer(customer)
+                            .fullName(itemGuestName)
+                            .email(item.getEmail())
+                            .phone(item.getPhone())
+                            .documentType(item.getDocumentType())
+                            .documentNumber(item.getDocumentNumber())
+                            .build();
+                    guestRepository.save(roomGuest);
                 }
-
-                Guest guest = Guest.builder()
-                        .customer(customer)
-                        .fullName(itemGuestName)
-                        .email(item.getEmail())
-                        .phone(item.getPhone())
-                        .documentType(item.getDocumentType())
-                        .documentNumber(item.getDocumentNumber())
-                        .build();
-                guestRepository.save(guest);
 
                 ReservationRoom rr = ReservationRoom.builder()
                         .reservation(reservation)
@@ -110,7 +142,7 @@ public class BookingService {
                         .adultCount(item.getAdultCount())
                         .childCount(item.getChildCount())
                         .nightlyPrice(roomType.getBasePrice())
-                        .status(ReservationRoom.Status.booked)
+                        .status(ReservationRoom.Status.booked) // Đồng bộ trạng thái
                         .build();
 
                 reservationRoomRepository.save(rr);
@@ -125,7 +157,7 @@ public class BookingService {
                     .adultCount(req.getAdultCount())
                     .childCount(req.getChildCount())
                     .nightlyPrice(roomType.getBasePrice())
-                    .status(ReservationRoom.Status.booked)
+                    .status(ReservationRoom.Status.booked) // Đồng bộ trạng thái
                     .build();
 
             reservationRoomRepository.save(rr);
@@ -160,6 +192,13 @@ public class BookingService {
         // Cập nhật trạng thái reservation thành reserved
         reservation.setStatus(Reservation.Status.reserved);
         reservation.setUpdatedAt(LocalDateTime.now());
+
+        // Cập nhật trạng thái các reservation room
+        if (reservation.getReservationRooms() != null) {
+            for (ReservationRoom room : reservation.getReservationRooms()) {
+                room.setStatus(ReservationRoom.Status.booked);
+            }
+        }
 
         return reservationRepository.save(reservation);
     }
