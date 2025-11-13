@@ -118,13 +118,6 @@ const ContactUs = () => {
     return (
         <div>
             {/* Breadcrumb Section */}
-            <Breadcrumbs 
-                title="Contact Us" 
-                homeTitle="Home" 
-                homeUrl="/home" 
-                current="Contact Us" 
-            />
-            
             {/* Contact Section Begin - Tương đương .spad */}
             <section style={{ padding: '100px 0', backgroundColor: 'white' }}>
                 <div className="container">

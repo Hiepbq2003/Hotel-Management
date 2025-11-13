@@ -15,5 +15,9 @@ public class CheckOutResponse {
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
     private BigDecimal totalAmount;
+    private BigDecimal originalAmount; // 🆕 Thêm original amount
+    private String paymentType; // 🆕 Thêm loại thanh toán
     private String message;
+
+    // constructor, getter, setter, builder...
 }

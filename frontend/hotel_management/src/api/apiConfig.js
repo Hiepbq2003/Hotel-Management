@@ -1,3 +1,4 @@
+// apiConfig.js
 const BASE_URL = "http://localhost:8083/api";
 const TIMEOUT = 5000;
 
@@ -26,6 +27,8 @@ const request = async (endpoint, method = "GET", data = null) => {
   if (data) config.body = JSON.stringify(data);
 
   try {
+    console.log(`🚀 ${method} ${BASE_URL}${endpoint}`, data || '');
+    
     const response = await fetchWithTimeout(`${BASE_URL}${endpoint}`, config);
 
     // 🔍 Nếu server không trả về JSON hợp lệ
@@ -39,28 +42,41 @@ const request = async (endpoint, method = "GET", data = null) => {
 
     // 🧭 Xử lý lỗi HTTP
     if (!response.ok) {
+      console.error(`❌ HTTP ${response.status}:`, json);
+      
       if (response.status === 401) {
         console.error("401 Unauthorized: Token hết hạn hoặc không hợp lệ.");
         localStorage.removeItem("token");
-        // window.location.href = "/login"; // nếu muốn tự động logout
       } else if (response.status === 403) {
         console.error("403 Forbidden: Không có quyền truy cập.");
       } else if (response.status >= 500) {
         console.error("Lỗi server:", json);
       }
-      throw json;
+      
+      // 🆕 Tạo error object với message hợp lệ
+      const error = new Error(json.error || json.message || `HTTP ${response.status}`);
+      error.response = response;
+      error.data = json;
+      throw error;
     }
 
+    console.log(`✅ ${method} ${endpoint} success:`, json);
     return json; // ✅ Thành công
 
   } catch (error) {
+    console.error(`❌ ${method} ${endpoint} error:`, error);
+    
     if (error.message === "Request timeout") {
       console.error("⏱️ Timeout: Server không phản hồi.");
     } else if (error.message.includes("Failed to fetch")) {
       console.error("🌐 Network Error: Không thể kết nối server.");
-    } else {
-      console.error("❌ Lỗi không xác định:", error);
     }
+    
+    // 🆕 Đảm bảo error luôn có message
+    if (!error.message) {
+      error.message = 'Unknown error occurred';
+    }
+    
     throw error;
   }
 };

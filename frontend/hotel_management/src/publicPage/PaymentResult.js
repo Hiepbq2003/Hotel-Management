@@ -186,16 +186,16 @@ export default function PaymentResult() {
               {/* Các nút hành động */}
               <div className="d-grid gap-2 d-md-flex justify-content-center">
                 <Link to="/" className="btn btn-success btn-lg me-md-3">
-                  <i className="fas fa-home me-2"></i>Về trang chủ
+                 Về trang chủ
                 </Link>
                 <Link to="/bookings" className="btn btn-outline-primary btn-lg">
-                  <i className="fas fa-list me-2"></i>Xem đơn đặt phòng
+                 Xem đơn đặt phòng
                 </Link>
                 <button 
                   onClick={() => window.print()} 
                   className="btn btn-outline-secondary btn-lg"
                 >
-                  <i className="fas fa-print me-2"></i>In hóa đơn
+                  In hóa đơn
                 </button>
               </div>
 

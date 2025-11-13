@@ -23,6 +23,7 @@ import RoomManagement from "../manager/RoomManagement";
 import HotelAmenityManagement from "../manager/HotelAmenityManagement";
 import PaymentResult from "../publicPage/PaymentResult";
 import BookingPage from "../publicPage/BookingPage";
+import CheckInforBooking from "../staffPage/CheckInforBooking";
 function Routers() {
   return (
     <Router>
@@ -64,6 +65,7 @@ function Routers() {
         <Route path="/reception" element={<Reception />}>
           <Route index element={<CheckInPage />} />
           <Route path="check-in" element={<CheckInPage />} />
+          <Route path="check-in-booking" element={<CheckInforBooking />} />
           <Route path="check-out" element={<CheckOutPage />} />
           <Route path="check-room" element={<CheckRoom />} />
         </Route>

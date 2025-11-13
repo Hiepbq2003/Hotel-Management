@@ -35,7 +35,7 @@ const BookingPage = () => {
         const data = await api.get(`/room-type/${id}`);
         setRoom(data);
       } catch (err) {
-        setError("Không tải được thông tin phòng.");
+        setError("Failed to load room information.");
       } finally {
         setLoading(false);
       }
@@ -69,7 +69,7 @@ const BookingPage = () => {
     for (let i = 0; i < requiredRooms; i++) {
       rooms.push({
         customerId: customerId,
-        guestName: i === 0 ? form.guestName : `${form.guestName} (phòng ${i + 1})`,
+        guestName: i === 0 ? form.guestName : `${form.guestName} (room ${i + 1})`,
         email: form.email,
         phone: form.phone,
         nationality: form.nationality,
@@ -90,6 +90,7 @@ const BookingPage = () => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -114,7 +115,7 @@ const BookingPage = () => {
 
       const res = await api.post("/booking", body);
       
-      // FIX: Lấy reservationId từ response data đúng cách
+      // FIX: Retrieve reservationId correctly from response data
       const reservationId = res.data?.reservationId || res.data?.id || res?.reservationId || res?.id;
 
       console.log("Full response:", res);
@@ -122,10 +123,10 @@ const BookingPage = () => {
 
       if (!reservationId) {
         console.error("Response structure:", res);
-        throw new Error("Không lấy được reservationId từ server. Response: " + JSON.stringify(res.data));
+        throw new Error("Failed to get reservationId from server. Response: " + JSON.stringify(res.data));
       }
 
-      const mainRoomDoc = body.rooms[0]?.documentNumber || "Không có mã";
+      const mainRoomDoc = body.rooms[0]?.documentNumber || "No document code";
       const nights =
         (new Date(form.checkOutDate) - new Date(form.checkInDate)) /
           (1000 * 60 * 60 * 24) || 1;
@@ -133,39 +134,39 @@ const BookingPage = () => {
 
       setSuccess(
         <>
-          <p>Đặt phòng thành công!</p>
+          <p>Booking successful!</p>
           <p>
-            Mã phòng chính: <strong>{mainRoomDoc}</strong>
+            Main room code: <strong>{mainRoomDoc}</strong>
           </p>
           <p>
-            Tiền cọc (20%): <strong>{deposit.toLocaleString()} VNĐ</strong>
+            Deposit (20%): <strong>{deposit.toLocaleString()} VND</strong>
           </p>
-          <p>Đang chuyển sang VNPay...</p>
+          <p>Redirecting to VNPay...</p>
         </>
       );
 
-      // Thêm delay để hiển thị thông báo thành công
+      // Delay to show success message
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const paymentResp = await api.post("/payment/create-vnpay", {
         reservationId,
       });
       
-      // FIX: Lấy VNPay URL đúng cách
+      // FIX: Retrieve VNPay URL correctly
       const vnpUrl = paymentResp?.data?.vnpayUrl || paymentResp?.vnpayUrl;
 
       console.log("Payment response:", paymentResp);
       console.log("VNPay URL:", vnpUrl);
 
       if (!vnpUrl) {
-        throw new Error("Không tạo được VNPay URL. Response: " + JSON.stringify(paymentResp.data));
+        throw new Error("Failed to generate VNPay URL. Response: " + JSON.stringify(paymentResp.data));
       }
 
       window.location.assign(vnpUrl);
 
     } catch (err) {
       console.error("Booking error:", err);
-      setError("Đặt phòng thất bại: " + (err.response?.data?.message || err.response?.data || err.message));
+      setError("Booking failed: " + (err.response?.data?.message || err.response?.data || err.message));
     } finally {
       setSubmitting(false);
     }
@@ -178,44 +179,44 @@ const BookingPage = () => {
       </div>
     );
 
-  if (!room) return <Alert variant="danger">Không tìm thấy loại phòng.</Alert>;
+  if (!room) return <Alert variant="danger">Room type not found.</Alert>;
 
   return (
     <Container style={{ paddingTop: 40, paddingBottom: 40 }}>
-      <Row>
-        <Col md={7}>
+      <Row className="justify-content-center gap-5">
+        <Col md={5}>
           <h3 className="fw-bold">{room.name}</h3>
           <p style={{ color: "#666" }}>{room.description}</p>
-          <p><strong>Giá:</strong> {(room.basePrice * 23000).toLocaleString()} VNĐ/đêm</p>
-          <p><strong>Sức chứa:</strong> {room.capacity} người lớn</p>
-          <p><strong>Giường:</strong> {room.bedInfo}</p>
+          <p><strong>Price:</strong> {(room.basePrice * 23000).toLocaleString()} VND/night</p>
+          <p><strong>Capacity:</strong> {room.capacity} adults</p>
+          <p><strong>Beds:</strong> {room.bedInfo}</p>
 
           {requiredRooms > 1 && (
             <Alert variant="warning">
-              Số khách vượt sức chứa 1 phòng. Hệ thống tự động đặt {requiredRooms} phòng.
+              The number of guests exceeds the capacity of one room. The system will automatically book {requiredRooms} rooms.
             </Alert>
           )}
         </Col>
 
         <Col md={5}>
           <div style={{ background: "#1f1f1f", padding: 25, borderRadius: 10, color: "#fff" }}>
-            <h4 className="text-warning fw-bold mb-3">Thông tin đặt phòng</h4>
+            <h4 className="text-warning fw-bold mb-3">Booking Information</h4>
 
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}
 
             <Form onSubmit={handleSubmit}>
-              <h5 className="text-info fw-bold mb-3">Phòng 1</h5>
+              <h5 className="text-info fw-bold mb-3">Room 1</h5>
               <Row>
                 <Col>
                   <Form.Group className="mb-3">
-                    <Form.Label>Ngày nhận phòng</Form.Label>
+                    <Form.Label>Check-in Date</Form.Label>
                     <Form.Control type="date" name="checkInDate" value={form.checkInDate} onChange={handleChange} required />
                   </Form.Group>
                 </Col>
                 <Col>
                   <Form.Group className="mb-3">
-                    <Form.Label>Ngày trả phòng</Form.Label>
+                    <Form.Label>Check-out Date</Form.Label>
                     <Form.Control type="date" name="checkOutDate" value={form.checkOutDate} onChange={handleChange} required />
                   </Form.Group>
                 </Col>
@@ -224,33 +225,33 @@ const BookingPage = () => {
               <Row>
                 <Col>
                   <Form.Group className="mb-3">
-                    <Form.Label>Người lớn</Form.Label>
+                    <Form.Label>Adults</Form.Label>
                     <Form.Control type="number" min="1" name="adultCount" value={form.adultCount} onChange={handleChange} />
                   </Form.Group>
                 </Col>
                 <Col>
                   <Form.Group className="mb-3">
-                    <Form.Label>Trẻ em</Form.Label>
+                    <Form.Label>Children</Form.Label>
                     <Form.Control type="number" min="0" name="childCount" value={form.childCount} onChange={handleChange} />
                   </Form.Group>
                 </Col>
               </Row>
 
               <Form.Group className="mb-3">
-                <Form.Label>Ghi chú</Form.Label>
+                <Form.Label>Notes</Form.Label>
                 <Form.Control as="textarea" rows={3} name="notes" value={form.notes} onChange={handleChange} />
               </Form.Group>
 
               {requiredRooms > 1 &&
                 extraDocs.map((doc, index) => (
                   <div key={index} className="mt-4 p-3" style={{ background: "#333", borderRadius: 8 }}>
-                    <h5 className="text-warning">Phòng {index + 2}</h5>
-                    <p>Mã tự sinh: {doc}</p>
+                    <h5 className="text-warning">Room {index + 2}</h5>
+                    <p>Auto-generated code: {doc}</p>
                   </div>
                 ))}
 
               <Button variant="warning" type="submit" className="w-100 fw-bold" disabled={submitting}>
-                {submitting ? "Đang xử lý..." : "Hoàn tất đặt phòng"}
+                {submitting ? "Processing..." : "Complete Booking"}
               </Button>
             </Form>
           </div>

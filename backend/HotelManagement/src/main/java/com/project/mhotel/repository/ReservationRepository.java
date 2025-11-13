@@ -11,21 +11,18 @@ import java.util.Optional;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    // Tìm các reservation đang chờ thanh toán và được tạo trước thời điểm specified
     List<Reservation> findByStatusAndCreatedAtBefore(
             Reservation.Status status,
             LocalDateTime createdAt);
-
-    // Tìm reservation bằng code
     List<Reservation> findByStatus(Reservation.Status status);
-
-    // Tìm reservation theo code
-    Optional<Reservation> findByReservationCode(String reservationCode);
-
-    // Tìm reservation theo guest
     List<Reservation> findByGuest(Guest guest);
 
     // Tìm reservation đang active (reserved hoặc checked_in)
     @Query("SELECT r FROM Reservation r WHERE r.status IN ('reserved', 'checked_in')")
     List<Reservation> findActiveReservations();
+    @Query("SELECT r FROM Reservation r WHERE r.reservationCode = :reservationCode")
+    Optional<Reservation> findByReservationCode(@Param("reservationCode") String reservationCode);
+
+    // 🆕 Hoặc nếu dùng derived query, đảm bảo trường khớp với database
+
 }

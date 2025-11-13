@@ -3,7 +3,7 @@ import { Nav } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaTachometerAlt, FaHotel, FaUsers, FaBed, FaSignOutAlt } from 'react-icons/fa';
 
-const Sidebar = ({ role }) => { 
+const Sidebar = ({ role }) => {
     const userRole = role ? role.toUpperCase() : '';
     const location = useLocation();
     const navigate = useNavigate();
@@ -113,7 +113,7 @@ const Sidebar = ({ role }) => {
                         <FaUsers className="me-2" /> Staff Management
                     </Nav.Link>
                 )}
-
+               
                 <hr className="bg-secondary my-2" />
 
                 {/* ✅ Logout Button */}
