@@ -32,7 +32,7 @@ public class DashboardService {
         DashboardStatsResponse stats = new DashboardStatsResponse();
 
         // ... (Giữ nguyên phần khai báo ngày tháng năm)
-        LocalDateTime today = LocalDateTime.now();
+        LocalDate today = LocalDate.now();
         int currentYear = today.getYear();
         int currentMonth = today.getMonthValue();
 

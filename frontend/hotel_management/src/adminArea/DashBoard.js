@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/apiConfig';
 import { FaBed, FaCalendarCheck, FaDollarSign, FaUsers, FaCheck, FaTimes } from 'react-icons/fa';
 
-// --- Constants (Theo phong cách UserManagement) ---
 const ALLOWED_ACCESS_ROLES = ['ADMIN']; 
 
 // Hàm định dạng tiền tệ (VND) - Giữ nguyên

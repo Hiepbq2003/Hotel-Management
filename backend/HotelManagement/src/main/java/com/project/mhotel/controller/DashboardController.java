@@ -7,14 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Controller cho Dashboard (Bảng điều khiển) quản lý.
- * Cung cấp các số liệu thống kê tổng hợp (KPIs) cho Frontend.
- */
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/admin/dashboard")
 public class DashboardController {
@@ -25,7 +23,7 @@ public class DashboardController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_RECEPTION')")
     @GetMapping("/stats")
     public ResponseEntity<DashboardStatsResponse> getDashboardStatistics(
-            // Lấy thông tin người dùng đã xác thực từ Security Context
+
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         // Lấy role (không có prefix ROLE_) để truyền cho service logic
