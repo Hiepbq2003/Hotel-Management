@@ -31,4 +31,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findActiveReservations();
 
     Long countByArrivalDate (LocalDate arrivalDate);
+
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.arrivalDate >= :startOfDay AND r.arrivalDate < :startOfNextDay")
+    Long countReservationsByArrivalDateRange(
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("startOfNextDay") LocalDateTime startOfNextDay);
 }

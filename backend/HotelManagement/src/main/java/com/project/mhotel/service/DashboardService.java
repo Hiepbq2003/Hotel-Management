@@ -31,11 +31,11 @@ public class DashboardService {
     public DashboardStatsResponse getDashboardStats(String userRole) {
         DashboardStatsResponse stats = new DashboardStatsResponse();
 
-        // ... (Giữ nguyên phần khai báo ngày tháng năm)
-        LocalDate today = LocalDate.now();
-        int currentYear = today.getYear();
-        int currentMonth = today.getMonthValue();
-
+        LocalDate todayDate = LocalDate.now();
+        int currentYear = todayDate.getYear();
+        int currentMonth = todayDate.getMonthValue();
+        LocalDateTime startOfDay = todayDate.atStartOfDay();
+        LocalDateTime startOfNextDay = todayDate.plusDays(1).atStartOfDay();
 
         // 1. Thống kê Phòng (Giữ nguyên)
         Long totalRooms = roomRepository.countTotalRooms();
@@ -55,11 +55,8 @@ public class DashboardService {
         stats.setTotalAnnualRevenue(annualRevenue != null ? annualRevenue : BigDecimal.ZERO);
 
 
-        // 3. THÊM: Thống kê Đặt phòng hôm nay
-        // Giả định đặt phòng "hôm nay" là các đặt phòng có ngày check-in (startDate) là hôm nay
-        Long bookingsToday = reservationRepository.countByArrivalDate(today);
+        Long bookingsToday = reservationRepository.countReservationsByArrivalDateRange(startOfDay, startOfNextDay);
         stats.setBookingsToday(bookingsToday != null ? bookingsToday : 0L);
-
 
         // 4. Thống kê Nhân viên (Giữ nguyên)
         if ("ADMIN".equalsIgnoreCase(userRole) || "MANAGER".equalsIgnoreCase(userRole)) {

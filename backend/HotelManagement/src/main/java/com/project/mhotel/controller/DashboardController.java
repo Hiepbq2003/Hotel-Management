@@ -26,14 +26,13 @@ public class DashboardController {
 
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        // Lấy role (không có prefix ROLE_) để truyền cho service logic
+
         String userRole = userDetails.getAuthorities().stream()
                 .findFirst()
                 .map(a -> a.getAuthority())
                 .orElse("CUSTOMER")
                 .replace("ROLE_", "");
 
-        // Gọi service để lấy dữ liệu. Service sẽ quyết định hiển thị gì dựa trên role.
         DashboardStatsResponse stats = dashboardService.getDashboardStats(userRole);
 
         return ResponseEntity.ok(stats);
