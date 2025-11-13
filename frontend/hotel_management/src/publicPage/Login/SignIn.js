@@ -14,24 +14,26 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
 
   // Hàm xử lý logic lưu thông tin đăng nhập thành công
   const handleLoginSuccess = (loginData) => {
-    // 🎯 SỬA: Backend trả về 'id' thay vì 'customerId'
-    const { token, role, email, fullName, phone, id } = loginData;
+    // 🎯 Lấy các trường thông tin cần thiết từ loginData
+    // Giả sử backend trả về: { token, role, email, fullName, phone, id, userId, ... }
+    const { token, role, email, fullName, phone, id, userId: staffId } = loginData; 
     
-    // 🆕 FIX: Nếu 'id' là undefined/null, sử dụng giá trị rỗng "" để tránh lưu chuỗi "undefined"
-    const userIdToStore = id || ""; 
+    // 🆕 FIX: Sử dụng trường 'id' hoặc 'staffId' (hoặc 'userId') tùy theo backend trả về
+    const finalId = id || staffId || ""; // Ưu tiên 'id', nếu không có thì dùng 'staffId', nếu không có thì dùng ""
     
     console.log("🔐 Login response data:", loginData);
     
-    // 🎯 LƯU CẢ 'id' VÀ 'customerId' ĐỂ TƯƠNG THÍCH
-    localStorage.setItem("customerId", userIdToStore); // 🎯 QUAN TRỌNG: dùng id
-    localStorage.setItem("userId", userIdToStore);     // 🎯 Thêm userId để rõ ràng
+    // 🎯 LƯU CẢ 'id' VÀ 'customerId' (đã fix để không lưu "undefined")
+    // Lưu ID dưới cả hai tên để các component cũ/mới đều dùng được
+    localStorage.setItem("customerId", finalId); 
+    localStorage.setItem("userId", finalId);     
     localStorage.setItem("token", token);
     localStorage.setItem("userRole", role);
     localStorage.setItem("email", email);
     localStorage.setItem("fullName", fullName);
     localStorage.setItem("phone", phone);
   
-    console.log("💾 Saved to localStorage - ID:", userIdToStore, "Role:", role);
+    console.log("💾 Saved to localStorage - ID:", finalId, "Role:", role);
   
     // Gọi hàm callback thành công
     if (onLoginSuccess) {
@@ -52,6 +54,7 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
     let loginData = null;
   
     try {
+      // 1. Thử đăng nhập Staff
       const response = await api.post("/auth/staff/login", loginPayload);
       
       // 🎯 DEBUG CHI TIẾT RESPONSE
@@ -66,6 +69,7 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
       console.log("❌ Đăng nhập Staff thất bại, thử sang User...");
   
       try {
+        // 2. Thử đăng nhập User
         const response = await api.post("/auth/login", loginPayload);
         
         // 🎯 DEBUG CHI TIẾT RESPONSE
@@ -78,7 +82,7 @@ function SignInForm({ onLoginSuccess, onForgotPasswordClick }) {
         
       } catch (errUser) {
         console.error("❌ Lỗi đăng nhập cả Staff và User:", errUser);
-        const errorMessage = errUser?.message || "Đăng nhập thất bại.";
+        const errorMessage = errUser.response?.data?.message || errUser?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại Email và Mật khẩu.";
         setError(errorMessage);
       }
     }
