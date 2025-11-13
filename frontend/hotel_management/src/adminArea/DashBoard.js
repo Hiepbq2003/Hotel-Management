@@ -1,26 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Container, 
-    Row, 
-    Col, 
-    Spinner, 
-    Alert, 
-    Badge,
-    Card, // Sử dụng Card component của React Bootstrap
-    Button
-} from 'react-bootstrap'; 
-// Cần cài đặt và import từ thư viện react-icons/fa
+import axios from 'axios';
+// ⚠️ Cần cài đặt và import từ thư viện như react-icons/fa
 import { FaBed, FaCalendarCheck, FaDollarSign, FaUsers, FaCheck, FaTimes } from 'react-icons/fa';
 
-// --- Constants ---
-// 💡 GIẢ ĐỊNH: BASE_URL được lấy từ file apiConfig.js
+// 💡 GIẢ ĐỊNH: BASE_URL được lấy từ file apiConfig.js của bạn
+// Ví dụ: const BASE_URL = 'http://localhost:8080/api';
 const BASE_URL = 'http://localhost:8080/api'; 
-const API_ENDPOINT = '/admin/dashboard/stats';
-
-// --- Helper Functions ---
 
 // Hàm định dạng tiền tệ (VND)
 const formatVND = (amount) => {
+    // Chuyển đổi từ số (có thể là chuỗi từ JSON) sang định dạng tiền tệ
     const numAmount = Number(amount);
     if (isNaN(numAmount) || numAmount === null) return '0 VND';
     
@@ -31,47 +20,6 @@ const formatVND = (amount) => {
     });
 };
 
-// Hàm lấy variant màu cho role (dựa trên UserManagement)
-const getRoleVariant = (role) => {
-    switch (role.toUpperCase()) {
-        case 'ADMIN': return 'danger';
-        case 'MANAGER': return 'warning';
-        case 'RECEPTION': return 'info';
-        case 'HOUSEKEEPING': return 'primary';
-        default: return 'secondary';
-    }
-}
-
-// Hàm trích xuất lỗi (Đã được điều chỉnh để hoạt động với Fetch API response)
-const getErrorMessage = (error, status) => {
-    // 1. Lỗi phân quyền/HTTP Status
-    if (status === 403) {
-        return "403 Forbidden: Bạn không có quyền truy cập vào Dashboard này.";
-    }
-    if (status) {
-        return `Lỗi HTTP: ${status}. Không thể tải dữ liệu thống kê.`;
-    }
-    
-    // 2. Lỗi mạng/Response body
-    if (error instanceof Error) {
-        return error.message;
-    }
-    
-    // 3. Giả định lỗi từ body response (theo format JSON của backend)
-    if (typeof error === 'object' && error !== null) {
-        if (error.message) {
-             return error.message;
-        }
-        if (error.error) {
-             return error.error;
-        }
-    }
-    
-    return "Lỗi không xác định hoặc lỗi kết nối mạng.";
-};
-
-// --- Dashboard Component ---
-
 const DashBoard = () => {
     const [stats, setStats] = useState({
         totalRooms: 0,
@@ -79,72 +27,58 @@ const DashBoard = () => {
         bookedRooms: 0,
         totalMonthlyRevenue: 0,
         totalAnnualRevenue: 0,
-        totalEmployees: null, 
-        bookingsToday: 0, // Giả định
+        totalEmployees: null, // Đặt null để ẩn nếu không phải admin
+        bookingsToday: 0, // Giả định thêm trường này cho "Đặt phòng hôm nay"
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // Lấy Role và Token bảo mật
-    const userRole = localStorage.getItem('userRole') || 'STAFF'; 
-    const authToken = localStorage.getItem('authToken'); 
+    // 💡 GIẢ LẬP: Lấy Role và Token. 
+    // Trong thực tế, bạn sẽ lấy từ Context, Redux, hoặc hook xác thực.
+    const userRole = localStorage.getItem('userRole') || 'ADMIN'; // Mặc định là ADMIN để test
+    const authToken = localStorage.getItem('authToken') || 'YOUR_JWT_TOKEN'; // Thay bằng token thực tế
 
-    // Hàm fetch dữ liệu sử dụng Fetch API (kèm logic bảo mật)
+    // Hàm fetch dữ liệu từ Backend
     const fetchDashboardStats = async () => {
         setLoading(true);
         setError(null);
-        
-        if (!authToken) {
-            setError("Lỗi xác thực: Không tìm thấy Token đăng nhập.");
-            setLoading(false);
-            return;
-        }
-
         try {
-            const response = await fetch(`${BASE_URL}${API_ENDPOINT}`, {
-                method: 'GET',
+            const response = await axios.get(`${BASE_URL}/admin/dashboard/stats`, {
                 headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}` 
                 }
             });
 
-            // 1. Xử lý lỗi HTTP Status
-            if (!response.ok) {
-                let errorBody = {};
-                try {
-                    // Cố gắng đọc body nếu có
-                    errorBody = await response.json();
-                } catch (e) {
-                    // Nếu không phải JSON, bỏ qua
-                }
-                
-                // Sử dụng hàm getErrorMessage để format lỗi
-                const parsedError = getErrorMessage(errorBody, response.status);
-                throw new Error(parsedError);
-            }
-
-            // 2. Parse dữ liệu thành công
-            const data = await response.json();
-
-            // Cập nhật state
+            // Cập nhật state với dữ liệu API trả về (bao gồm các trường của DashboardStatsResponse)
             setStats({
-                ...data,
-                bookingsToday: 15, // Dữ liệu giả lập tạm thời cho Booking hôm nay (nếu backend chưa có)
+                ...response.data,
+                // Giả lập thêm bookingsToday nếu backend chưa có (hoặc bạn có thể fetch riêng)
+                bookingsToday: 15, 
             });
             
         } catch (err) {
-            console.error("Lỗi tải dữ liệu Dashboard:", err);
-            setError(err.message || "Lỗi không xác định khi giao tiếp với API.");
+            console.error("Lỗi khi tải dữ liệu Dashboard:", err);
+            // Kiểm tra lỗi 403 (Forbidden) hoặc network
+            const errorMessage = err.response && err.response.status === 403 
+                               ? "Bạn không có quyền truy cập trang này (403 Forbidden)."
+                               : "Không thể tải dữ liệu thống kê. Vui lòng kiểm tra kết nối API.";
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
+    // Gọi API khi component được load
     useEffect(() => {
-        fetchDashboardStats();
-    }, [authToken]); // Dependency: Chạy lại khi token thay đổi
-
+        // Chỉ fetch nếu có token
+        if (authToken && authToken !== 'YOUR_JWT_TOKEN') {
+            fetchDashboardStats();
+        } else {
+            // Nếu không có token, vẫn hiển thị, nhưng báo lỗi hoặc dùng mock data
+            setError("Người dùng chưa được xác thực hoặc thiếu JWT Token.");
+            setLoading(false);
+        }
+    }, []);
     
     // Chuẩn bị dữ liệu hiển thị từ state đã fetch
     const statsData = [
@@ -161,7 +95,7 @@ const DashBoard = () => {
             bgColor: "bg-success" 
         },
         { 
-            title: "Phòng Đã Đặt",
+            title: "Phòng Đã Đặt", // (Đang ở/Occupied)
             value: stats.bookedRooms, 
             icon: FaTimes, 
             bgColor: "bg-danger" 
@@ -184,13 +118,13 @@ const DashBoard = () => {
             icon: FaDollarSign, 
             bgColor: "bg-dark" 
         },
-        // Thẻ này chỉ hiển thị khi backend trả về giá trị (tức là khi người dùng có quyền Admin/Manager)
+        // Thẻ này chỉ hiển thị khi tổng nhân viên khác null (được backend trả về cho Admin)
         { 
             title: "Tổng số Nhân viên", 
             value: stats.totalEmployees, 
             icon: FaUsers, 
             bgColor: "bg-secondary", 
-            adminOnly: true 
+            adminOnly: true // Đánh dấu là thẻ chỉ dành cho admin
         },
     ];
 
@@ -198,141 +132,117 @@ const DashBoard = () => {
     const statsToDisplay = stats.totalEmployees !== null 
         ? statsData 
         : statsData.filter(stat => !stat.adminOnly);
-        
-    // Hàm ánh xạ màu nền Bootstrap
-    const getBgColorClass = (stat) => {
-        const variantMap = {
-            "bg-primary": "primary",
-            "bg-success": "success",
-            "bg-danger": "danger",
-            "bg-info": "info",
-            "bg-warning": "warning",
-            "bg-dark": "dark",
-            "bg-secondary": "secondary",
-        };
-        return variantMap[stat.bgColor] || 'secondary';
-    };
 
-
-    // --- Conditional Rendering ---
-    
+    // Xử lý trạng thái Loading
     if (loading) {
         return (
-            <Container className="my-5 text-center">
-                <Spinner animation="border" role="status" variant="primary" />
-                <p className="mt-3">Đang tải dữ liệu Dashboard từ API...</p>
-            </Container>
+            <div className="container-fluid py-5 text-center">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2">Đang tải dữ liệu Dashboard từ API...</p>
+            </div>
         );
     }
 
+    // Xử lý trạng thái Lỗi
     if (error) {
         return (
-            <Container className="my-5">
-                <Alert variant="danger" className="text-center">
-                    <Alert.Heading>Lỗi Tải Dữ Liệu</Alert.Heading>
-                    <p>{error}</p>
-                    <hr />
-                    <Button variant="outline-danger" onClick={fetchDashboardStats}>
-                        Thử tải lại
-                    </Button>
-                </Alert>
-            </Container>
+            <div className="container-fluid py-5 text-center">
+                <div className="alert alert-danger" role="alert">
+                    <strong>Lỗi:</strong> {error}
+                    <button onClick={fetchDashboardStats} className="btn btn-sm btn-link text-danger">Thử lại</button>
+                </div>
+            </div>
         );
     }
 
 
     return (
-        <Container fluid className="my-4">
-            <Row className="mb-4">
-                <Col className="text-center">
-                    <h2 className="text-primary display-6 fw-bold">📊 Bảng Điều Khiển Quản Lý</h2>
-                    <p className="lead text-muted">
-                        Quyền hạn: <Badge bg={getRoleVariant(userRole)} className="fs-6">{userRole.toUpperCase()}</Badge>
-                    </p>
-                </Col>
-            </Row>
+        <div className="container-fluid py-4">
+            <h1 className='text-center mb-4 text-primary'>
+                Bảng Điều Khiển Quản Lý
+            </h1>
+            
+            {/* Thông báo vai trò (tùy chọn) */}
+            <p className='text-center text-muted'>
+                {stats.totalEmployees !== null ? `Bạn đang xem Dashboard với vai trò ${userRole.toUpperCase()}.` : 'Chào mừng đến với Dashboard.'}
+            </p>
 
             {/* Hàng chứa các ô thống kê (Stats Cards) */}
-            <Row className="g-4"> 
+            <div className="row">
                 {statsToDisplay.map((stat, index) => (
-                    // Sử dụng Col xs=12, md=6, lg=4, xl=3 để đảm bảo Responsive
-                    <Col xs={12} md={6} lg={4} xl={3} key={index}>
-                        <Card 
-                            bg={getBgColorClass(stat)} 
-                            text="white" 
-                            className="shadow-lg h-100 border-0"
-                        >
-                            <Card.Body>
-                                <div className="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <Card.Title className="text-uppercase mb-1 fs-6">{stat.title}</Card.Title>
-                                        <Card.Text className="fs-3 fw-bold">{stat.value}</Card.Text>
+                    // Sử dụng col-xl-2.4 hoặc col-xl-3 tùy theo số lượng thẻ bạn muốn trên 1 hàng
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4" key={index}> 
+                        <div className={`card text-white ${stat.bgColor} shadow-lg h-100`}>
+                            <div className="card-body">
+                                <div className="row align-items-center">
+                                    <div className="col-8">
+                                        <p className="card-title text-white mb-1 fw-bold">{stat.title}</p>
+                                        <h3 className="card-text fw-bold">{stat.value}</h3>
                                     </div>
-                                    <div className="flex-shrink-0">
-                                        {stat.icon && <stat.icon size={40} className="opacity-75" />}
+                                    <div className="col-4 text-end">
+                                        {stat.icon && <stat.icon size={40} />}
                                     </div>
                                 </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
+                            </div>
+                        </div>
+                    </div>
                 ))}
-            </Row>
+            </div>
             
-            <hr className="my-5"/>
+            <hr className="my-4"/>
 
             {/* Khu vực Biểu đồ/Bảng dữ liệu */}
-            <Row className="g-4">
+            <div className="row">
                 {/* Biểu đồ Doanh thu */}
-                <Col lg={8}>
-                    <Card className="shadow-lg h-100">
-                        <Card.Header className="fw-bold bg-light">
-                            💰 Biểu đồ Doanh thu (Monthly/Annual trend)
-                        </Card.Header>
-                        <Card.Body style={{ minHeight: '300px' }}>
+                <div className="col-lg-8 mb-4">
+                    <div className="card shadow h-100">
+                        <div className="card-header bg-light fw-bold">
+                            Doanh thu 7 ngày gần nhất
+                        </div>
+                        <div className="card-body" style={{ height: '300px' }}>
                             <p className="text-muted text-center pt-5">
-                                [Vị trí hiển thị Biểu đồ Doanh thu chi tiết theo ngày/tháng]
+                                [Vị trí hiển thị Biểu đồ Doanh thu thực tế]
                             </p>
-                        </Card.Body>
-                    </Card>
-                </Col>
+                        </div>
+                    </div>
+                </div>
                 
-                {/* Tỷ lệ Phòng Trống/Đã Đặt */}
-                <Col lg={4}>
-                    <Card className="shadow-lg h-100">
-                        <Card.Header className="fw-bold bg-light">
-                             Tỷ lệ Phòng
-                        </Card.Header>
-                        <Card.Body className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '300px' }}>
-                            <h4 className="mb-3 text-secondary">Phân bổ hiện tại</h4>
-                            <p className="fs-5">
-                                Tổng phòng: <Badge bg="primary">{stats.totalRooms}</Badge><br/>
-                                Phòng trống: <Badge bg="success">{stats.availableRooms}</Badge> ({stats.totalRooms > 0 ? ((stats.availableRooms / stats.totalRooms) * 100).toFixed(1) : 0}%)<br/>
-                                Phòng đã đặt: <Badge bg="danger">{stats.bookedRooms}</Badge> ({stats.totalRooms > 0 ? ((stats.bookedRooms / stats.totalRooms) * 100).toFixed(1) : 0}%)<br/>
-                            </p>
-                            <p className="text-muted mt-3">
+                {/* Biểu đồ Trạng thái Phòng */}
+                <div className="col-lg-4 mb-4">
+                    <div className="card shadow h-100">
+                        <div className="card-header bg-light fw-bold">
+                            Tỷ lệ Phòng Trống/Đã Đặt
+                        </div>
+                        <div className="card-body d-flex align-items-center justify-content-center" style={{ height: '300px' }}>
+                            <p className="text-muted text-center">
+                                Tổng phòng: **{stats.totalRooms}**<br/>
+                                Phòng trống: **{stats.availableRooms}** ({stats.totalRooms > 0 ? ((stats.availableRooms / stats.totalRooms) * 100).toFixed(1) : 0}%)<br/>
+                                Phòng đã đặt: **{stats.bookedRooms}** ({stats.totalRooms > 0 ? ((stats.bookedRooms / stats.totalRooms) * 100).toFixed(1) : 0}%)<br/>
                                 [Vị trí hiển thị Biểu đồ Tròn]
                             </p>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             {/* Bảng đặt phòng sắp tới */}
-            <Row className="mt-5">
-                <Col xs={12}>
-                    <Card className="shadow-lg">
-                        <Card.Header className="fw-bold bg-light">
-                            🗓️ Danh sách Đặt phòng Sắp tới
-                        </Card.Header>
-                        <Card.Body>
+            <div className="row">
+                <div className="col-12">
+                    <div className="card shadow">
+                        <div className="card-header bg-light fw-bold">
+                            Danh sách Đặt phòng Sắp tới
+                        </div>
+                        <div className="card-body">
                             <p className="text-muted text-center">
-                                [Vị trí hiển thị Bảng Dữ liệu các Reservation sắp đến]
+                                [Vị trí hiển thị Bảng Đặt phòng sắp tới]
                             </p>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 
