@@ -1,426 +1,306 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../api/apiConfig";
 import {
   Container,
-  Card,
-  Form,
+  Table,
   Button,
+  Spinner,
+  Alert,
   Row,
   Col,
-  Alert,
-  Spinner,
-  Table,
+  Card,
+  Badge,
   Modal,
 } from "react-bootstrap";
-import api from "../api/apiConfig";
 
-const CheckInforBooking = () => {
-  const [reservations, setReservations] = useState([]);
-  const [filteredReservations, setFilteredReservations] = useState([]);
-  const [loading, setLoading] = useState(false);
+const CheckOutPage = () => {
+  const [checkIns, setCheckIns] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  // 🎯 State cho form check-in
-  const [checkInForm, setCheckInForm] = useState({
-    reservationCode: "",
-    documentType: "CCCD",
-    documentNumber: "000000", // 🆕 Đặt giá trị mặc định
-  });
-
-  // 🎯 State cho reception info
-  const [receptionInfo, setReceptionInfo] = useState({
-    id: null,
-    name: "",
-    role: ""
-  });
-
-  // 🎯 State cho modal xác nhận
+  const [success, setSuccess] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [selectedReservation, setSelectedReservation] = useState(null);
+  const [selectedGuest, setSelectedGuest] = useState(null);
+  const [checkoutDetails, setCheckoutDetails] = useState(null);
 
-  // 🔹 Load reception info
-  useEffect(() => {
-    const loadReceptionInfo = () => {
-      const customerId = localStorage.getItem("customerId");
-      const userId = localStorage.getItem("userId");
-      const fullName = localStorage.getItem("fullName");
-      const userRole = localStorage.getItem("userRole");
-      
-      const receptionId = userId || customerId;
-      
-      setReceptionInfo({
-        id: receptionId,
-        name: fullName || "Unknown Receptionist",
-        role: userRole || "Unknown"
-      });
-
-      if (!receptionId) {
-        console.warn("⚠️ No reception ID found in localStorage!");
-      }
-    };
-
-    loadReceptionInfo();
-  }, []);
-
-  // 🔹 Load danh sách reservations có thể check-in
-  const fetchReservations = async () => {
+  // 🔹 Tải danh sách khách đang check-in
+  const fetchCheckedInGuests = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/checkIn/reservations");
-      setReservations(res || []);
-      setFilteredReservations(res || []);
-      setError(null);
-    } catch (err) {
-      console.error("❌ Lỗi tải danh sách booking:", err);
-      setError("Không thể tải danh sách booking");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReservations();
-  }, []);
-
-  // 🔹 Tìm kiếm reservation
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredReservations(reservations);
-      return;
-    }
-
-    const filtered = reservations.filter(res => 
-      res.reservationCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      res.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (res.email && res.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (res.phone && res.phone.includes(searchTerm))
-    );
-    
-    setFilteredReservations(filtered);
-  }, [searchTerm, reservations]);
-
-  // 🔹 Xử lý thay đổi form
-  const handleFormChange = (e) => {
-    setCheckInForm({
-      ...checkInForm,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  // 🆕 Tự động điền document number khi chọn reservation từ bảng
-  const handleSelectReservation = (reservation) => {
-    setCheckInForm({
-      reservationCode: reservation.reservationCode,
-      documentType: "CCCD",
-      documentNumber: "000000" // 🆕 Luôn đặt giá trị mặc định
-    });
-    setSelectedReservation(reservation);
-    setError(null);
-  };
-
-  // 🔹 Xác thực mã booking và document
-  const handleVerifyBooking = async () => {
-    try {
-      if (!checkInForm.reservationCode.trim()) {
-        setError("Vui lòng nhập mã booking");
-        return;
-      }
-
-      // 🆕 Không cần kiểm tra document number nữa vì đã có giá trị mặc định
-      if (!checkInForm.documentNumber.trim()) {
-        setCheckInForm(prev => ({ ...prev, documentNumber: "000000" }));
-      }
-
-      setLoading(true);
+      const res = await api.get("/checkIn/today");
       
-      // 🎯 Tìm reservation theo mã
-      const reservation = reservations.find(
-        res => res.reservationCode === checkInForm.reservationCode
+      // 🎯 Lọc chỉ những khách đang checked_in
+      const activeCheckIns = res.filter(item => 
+        item.status === "checked_in" || 
+        item.status === "CHECKED_IN" ||
+        !item.status // Nếu không có status, mặc định là đang ở
       );
-
-      if (!reservation) {
-        setError("❌ Mã booking không tồn tại");
-        return;
-      }
-
-      setSelectedReservation(reservation);
-      setShowConfirmModal(true);
-      setError(null);
       
+      setCheckIns(activeCheckIns);
+      setError(null);
     } catch (err) {
-      console.error("❌ Lỗi xác thực booking:", err);
-      setError("Lỗi xác thực thông tin booking");
+      console.error("❌ Lỗi tải danh sách khách đang ở:", err);
+      setError("Không thể tải danh sách khách đang ở.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Xử lý check-in
-const handleCheckIn = async () => {
+  useEffect(() => {
+    fetchCheckedInGuests();
+  }, []);
+
+  // 🔹 Xác nhận checkout
+  const confirmCheckOut = (guest) => {
+    setSelectedGuest(guest);
+    setShowConfirmModal(true);
+  };
+
+  // 🔹 Thực hiện checkout
+  const handleCheckOut = async () => {
+    if (!selectedGuest) return;
+
     try {
-      if (!selectedReservation) {
-        setError("❌ Vui lòng chọn reservation trước khi check-in");
-        return;
-      }
-  
-      // 🎯 Kiểm tra reception ID
-      if (!receptionInfo.id) {
-        setError("❌ Không tìm thấy thông tin receptionist. Vui lòng đăng nhập lại.");
-        return;
-      }
-  
       setLoading(true);
-      setError(null);
       
-      const reservationId = selectedReservation.id;
-      const receptionistId = parseInt(receptionInfo.id);
-  
-      console.log("📤 Gửi request check-in:", {
-        reservationId: reservationId,
-        receptionistId: receptionistId,
-        documentType: checkInForm.documentType,
-        documentNumber: checkInForm.documentNumber
-      });
-  
-      // 🎯 VALIDATION trước khi gọi API
-      if (!reservationId || reservationId <= 0) {
-        throw new Error("Reservation ID không hợp lệ: " + reservationId);
-      }
-  
-      if (!receptionistId || receptionistId <= 0) {
-        throw new Error("Receptionist ID không hợp lệ: " + receptionistId);
-      }
-  
-      // 🎯 Gọi API check-in với error handling chi tiết
-      try {
-        const response = await api.post(
-          `/checkIn/reservation/${reservationId}?receptionistId=${receptionistId}`
-        );
-  
-        console.log("✅ Check-in response:", response);
-  
-        setSuccess(`✅ Check-in thành công cho ${selectedReservation.guestName}`);
-        setShowConfirmModal(false);
-        setCheckInForm({
-          reservationCode: "",
-          documentType: "CCCD",
-          documentNumber: "000000",
+      // 🎯 Gọi API checkout - chỉ cần roomNumber theo backend
+      const payload = {
+        roomNumber: selectedGuest.roomNumber
+      };
+      
+      console.log("📤 Gửi request checkout:", payload);
+      
+      const res = await api.post("/checkIn/checkout", payload);
+      console.log("✅ Checkout Response:", res);
+
+      // 🎯 Hiển thị thông tin thanh toán nếu có
+      if (res.totalAmount) {
+        setCheckoutDetails({
+          guestName: selectedGuest.guestName,
+          roomNumber: selectedGuest.roomNumber,
+          totalAmount: res.totalAmount,
+          message: res.message
         });
-        setSelectedReservation(null);
-        
-        // Refresh danh sách
-        fetchReservations();
-        
-      } catch (apiError) {
-        console.error("❌ API Error chi tiết:", {
-          name: apiError.name,
-          message: apiError.message,
-          stack: apiError.stack,
-          response: apiError.response,
-          config: apiError.config
-        });
-  
-        // 🆕 Phân loại lỗi
-        if (apiError.response) {
-          // Backend trả về lỗi
-          const errorData = apiError.response.data;
-          const errorMsg = errorData?.error || errorData?.message || `HTTP ${apiError.response.status}`;
-          setError(`❌ Lỗi từ server: ${errorMsg}`);
-        } else if (apiError.request) {
-          // Request được gửi nhưng không nhận được response
-          setError("❌ Không nhận được phản hồi từ server. Kiểm tra kết nối mạng.");
-        } else {
-          // Lỗi khi thiết lập request
-          setError(`❌ Lỗi thiết lập request: ${apiError.message}`);
-        }
       }
+
+      setSuccess(`✅ Khách ${selectedGuest.guestName} đã trả phòng ${selectedGuest.roomNumber}`);
+      setShowConfirmModal(false);
+      setSelectedGuest(null);
+      
+      // Refresh danh sách sau 2 giây
+      setTimeout(() => {
+        fetchCheckedInGuests();
+        setCheckoutDetails(null);
+      }, 2000);
       
     } catch (err) {
-      console.error("❌ Lỗi tổng thể check-in:", err);
-      setError(`❌ Lỗi hệ thống: ${err.message}`);
+      console.error("❌ Lỗi khi checkout:", err);
+      const errorMsg = err.response?.data?.error || err.message || "Không thể checkout";
+      setError(`❌ Lỗi: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
   };
+
+  // 🔹 Format tiền VND
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  };
+
+  // 🔹 Format trạng thái
+  const getStatusBadge = (status) => {
+    switch (status?.toUpperCase()) {
+      case "CHECKED_IN":
+        return <Badge bg="success">Đang ở</Badge>;
+      case "CHECKED_OUT":
+        return <Badge bg="secondary">Đã trả phòng</Badge>;
+      case "BOOKED":
+        return <Badge bg="warning">Đã đặt</Badge>;
+      default:
+        return <Badge bg="info">Đang ở</Badge>;
+    }
+  };
+
+  if (loading && checkIns.length === 0) {
+    return (
+      <Container className="mt-4">
+        <div className="text-center">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-2">Đang tải danh sách khách đang ở...</p>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container className="mt-4">
-      {/* 🎯 Header với reception info */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Reception - Check-in từ Booking Online</h3>
-        <div className="text-end">
-          <small className="text-muted">
-            Receptionist: <strong>{receptionInfo.name}</strong> 
-            {receptionInfo.id && ` (ID: ${receptionInfo.id})`}
-          </small>
-        </div>
+      {/* Header */}
+      <div className="text-center mb-4">
+        <h2 className="text-primary">🛎️ Quản lý Trả Phòng</h2>
+        <p className="text-muted">Danh sách khách hàng đang lưu trú</p>
       </div>
 
-      {/* 🎯 Form xác thực booking */}
-      <Card className="p-4 shadow-sm mb-4">
-        <h5 className="text-primary mb-3">🔐 Xác thực Booking</h5>
-        
-        <Row>
-          <Col md={4}>
-            <Form.Group className="mb-3">
-              <Form.Label>Mã Booking *</Form.Label>
-              <Form.Control
-                type="text"
-                name="reservationCode"
-                value={checkInForm.reservationCode}
-                onChange={handleFormChange}
-                placeholder="Nhập mã booking (VD: RES-123456)"
-                required
-              />
-            </Form.Group>
-          </Col>
+      {/* Thông báo */}
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert variant="success" dismissible onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
 
-          <Col md={4}>
-            <Form.Group className="mb-3">
-              <Form.Label>Loại giấy tờ *</Form.Label>
-              <Form.Select
-                name="documentType"
-                value={checkInForm.documentType}
-                onChange={handleFormChange}
-              >
-                <option value="CCCD">CCCD</option>
-                <option value="Passport">Passport</option>
-                <option value="DriverLicense">Bằng lái xe</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
+      {/* Thông tin thanh toán sau checkout */}
+      {checkoutDetails && (
+        <Alert variant="info" className="mb-4">
+          <h6>💰 Thông tin thanh toán</h6>
+          <hr />
+          <p><strong>Khách hàng:</strong> {checkoutDetails.guestName}</p>
+          <p><strong>Phòng:</strong> {checkoutDetails.roomNumber}</p>
+          <p><strong>Tổng tiền:</strong> <span className="text-success fw-bold">{formatCurrency(checkoutDetails.totalAmount)}</span></p>
+          <p><strong>Trạng thái:</strong> <Badge bg="success">Đã thanh toán</Badge></p>
+        </Alert>
+      )}
 
-          <Col md={4} className="d-flex align-items-end mb-3">
-            <Button
-              onClick={handleVerifyBooking}
-              disabled={!checkInForm.reservationCode || !checkInForm.documentNumber || !receptionInfo.id}
-              variant={!receptionInfo.id ? "warning" : "primary"}
-              className="w-100"
-            >
-              {!receptionInfo.id ? "⚠️ Chưa ĐN" : "Xác thực"}
-            </Button>
-          </Col>
-        </Row>
-
-        {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
-        {success && <Alert variant="success" className="mt-3">{success}</Alert>}
-      </Card>
-
-      {/* 🎯 Danh sách booking có thể check-in */}
-      <Card className="p-4 shadow-sm">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="text-primary">📋 Danh sách Booking chờ Check-in</h5>
-          
-          <Form.Group className="w-25">
-            <Form.Control
-              type="text"
-              placeholder="Tìm theo mã, tên, email, SĐT..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </Form.Group>
-        </div>
-
-        {loading && <div className="text-center"><Spinner animation="border" /></div>}
-
-        {!loading && filteredReservations.length === 0 && (
-          <Alert variant="info">
-            {searchTerm ? "Không tìm thấy booking phù hợp" : "Không có booking nào chờ check-in"}
-          </Alert>
-        )}
-
-        {!loading && filteredReservations.length > 0 && (
-          <Table bordered hover responsive>
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>Mã Booking</th>
-                <th>Khách hàng</th>
-                <th>Email</th>
-                <th>SĐT</th>
-                <th>Ngày đến</th>
-                <th>Ngày đi</th>
-                <th>Trạng thái</th>
-                <th>🆕 Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredReservations.map((res, index) => (
-                <tr 
-                  key={res.id} 
-                  className={selectedReservation?.id === res.id ? "table-warning" : ""}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td>{index + 1}</td>
-                  <td>
-                    <strong>{res.reservationCode}</strong>
-                  </td>
-                  <td>{res.guestName}</td>
-                  <td>{res.email || "N/A"}</td>
-                  <td>{res.phone || "N/A"}</td>
-                  <td>{new Date(res.arrivalDate).toLocaleString()}</td>
-                  <td>{new Date(res.departureDate).toLocaleString()}</td>
-                  <td>
-                    <span className="badge bg-warning">Chờ check-in</span>
-                  </td>
-                  <td>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => handleSelectReservation(res)}
-                    >
-                      Chọn
-                    </Button>
-                  </td>
+      {/* Danh sách khách đang ở */}
+      <Card className="shadow-sm">
+        <Card.Header className="bg-light">
+          <h5 className="mb-0">
+            👥 Khách đang lưu trú 
+            <Badge bg="primary" className="ms-2">{checkIns.length}</Badge>
+          </h5>
+        </Card.Header>
+        <Card.Body>
+          {checkIns.length === 0 ? (
+            <div className="text-center py-4">
+              <div className="text-muted mb-2">
+                <i className="fas fa-bed fa-2x"></i>
+              </div>
+              <h5>Không có khách nào đang ở</h5>
+              <p className="text-muted">Tất cả phòng đều trống</p>
+            </div>
+          ) : (
+            <Table responsive hover className="align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Khách hàng</th>
+                  <th>Phòng</th>
+                  <th>Loại phòng</th>
+                  <th>Check-in</th>
+                  <th>Check-out dự kiến</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
+              </thead>
+              <tbody>
+                {checkIns.map((guest, index) => (
+                  <tr key={index}>
+                    <td><strong>{index + 1}</strong></td>
+                    <td>
+                      <div>
+                        <strong>{guest.guestName}</strong>
+                        {guest.phone && <div className="text-muted small">{guest.phone}</div>}
+                      </div>
+                    </td>
+                    <td>
+                      <Badge bg="outline-primary" className="fs-6">
+                        {guest.roomNumber}
+                      </Badge>
+                    </td>
+                    <td>{guest.roomType}</td>
+                    <td>
+                      <small>
+                        {new Date(guest.checkInDate).toLocaleDateString('vi-VN')}
+                        <br />
+                        <span className="text-muted">
+                          {new Date(guest.checkInDate).toLocaleTimeString('vi-VN')}
+                        </span>
+                      </small>
+                    </td>
+                    <td>
+                      <small>
+                        {new Date(guest.checkOutDate).toLocaleDateString('vi-VN')}
+                        <br />
+                        <span className="text-muted">
+                          {new Date(guest.checkOutDate).toLocaleTimeString('vi-VN')}
+                        </span>
+                      </small>
+                    </td>
+                    <td>
+                      {getStatusBadge(guest.status)}
+                    </td>
+                    <td>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => confirmCheckOut(guest)}
+                        disabled={loading}
+                      >
+                        {loading ? <Spinner size="sm" /> : "🚪 Trả phòng"}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card.Body>
       </Card>
 
-      {/* 🎯 Modal xác nhận check-in */}
+      {/* Modal xác nhận checkout */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>✅ Xác nhận Check-in</Modal.Title>
+          <Modal.Title>✅ Xác nhận trả phòng</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedReservation && (
+          {selectedGuest && (
             <div>
-              <p>Bạn có chắc muốn check-in cho booking sau?</p>
+              <p>Bạn có chắc muốn trả phòng cho khách hàng sau?</p>
               
               <div className="border p-3 rounded bg-light">
-                <p><strong>Mã Booking:</strong> {selectedReservation.reservationCode}</p>
-                <p><strong>Khách hàng:</strong> {selectedReservation.guestName}</p>
-                <p><strong>Email:</strong> {selectedReservation.email || "N/A"}</p>
-                <p><strong>SĐT:</strong> {selectedReservation.phone || "N/A"}</p>
-                <p><strong>Ngày đến:</strong> {new Date(selectedReservation.arrivalDate).toLocaleString()}</p>
-                <p><strong>Ngày đi:</strong> {new Date(selectedReservation.departureDate).toLocaleString()}</p>
-                <p><strong>Loại giấy tờ:</strong> {checkInForm.documentType}</p>
-                <p><strong>Số giấy tờ:</strong> {checkInForm.documentNumber}</p>
-                <p><strong>Receptionist:</strong> {receptionInfo.name} (ID: {receptionInfo.id})</p>
+                <p><strong>Khách hàng:</strong> {selectedGuest.guestName}</p>
+                <p><strong>Phòng:</strong> {selectedGuest.roomNumber}</p>
+                <p><strong>Loại phòng:</strong> {selectedGuest.roomType}</p>
+                <p><strong>Check-in:</strong> {new Date(selectedGuest.checkInDate).toLocaleString('vi-VN')}</p>
+                <p><strong>Check-out dự kiến:</strong> {new Date(selectedGuest.checkOutDate).toLocaleString('vi-VN')}</p>
               </div>
 
-              <Alert variant="info" className="mt-3">
+              <Alert variant="warning" className="mt-3">
                 <small>
-                  📝 <strong>Lưu ý:</strong> Sau khi check-in, phòng sẽ được đánh dấu là "đã nhận phòng" 
-                  và khách có thể sử dụng phòng.
+                  ⚠️ <strong>Lưu ý:</strong> Hệ thống sẽ tự động tính toán tổng số tiền 
+                  dựa trên thời gian lưu trú thực tế và chuyển trạng thái phòng thành "cần dọn dẹp".
                 </small>
               </Alert>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowConfirmModal(false)}
+            disabled={loading}
+          >
             Hủy
           </Button>
           <Button 
-            variant="primary" 
-            onClick={handleCheckIn}
+            variant="danger" 
+            onClick={handleCheckOut}
             disabled={loading}
           >
-            {loading ? <Spinner size="sm" /> : "✅ Xác nhận Check-in"}
+            {loading ? (
+              <>
+                <Spinner size="sm" className="me-2" />
+                Đang xử lý...
+              </>
+            ) : (
+              "✅ Xác nhận trả phòng"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -428,4 +308,4 @@ const handleCheckIn = async () => {
   );
 };
 
-export default CheckInforBooking;
+export default CheckOutPage;
