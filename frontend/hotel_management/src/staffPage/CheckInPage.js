@@ -26,6 +26,10 @@ const CheckInPage = () => {
     role: ""
   });
 
+  // 🆕 State cho validation errors
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
   // ✅ Helper to format datetime-local correctly for local timezone
   const formatDateTimeLocal = (date) => {
     const pad = (n) => n.toString().padStart(2, "0");
@@ -51,9 +55,8 @@ const CheckInPage = () => {
     childCount: 0,
     phone: "",
     nationality: "",
-    documentType: "CCCD", // 🎯 SET DEFAULT
-    documentNumber: "000000", // 🎯 MẶC ĐỊNH 000000
-    // 🎯 BỎ EMAIL HOÀN TOÀN
+    documentType: "CCCD",
+    documentNumber: "000000",
   });
 
   const nations = [
@@ -89,18 +92,12 @@ const CheckInPage = () => {
       const fullName = localStorage.getItem("fullName");
       const userRole = localStorage.getItem("userRole");
       
-      const receptionId = userId || customerId;
+      const receptionId = userId;
       
       setReceptionInfo({
         id: receptionId,
         name: fullName || "Unknown Receptionist",
         role: userRole || "Unknown"
-      });
-      
-      console.log("👤 Reception info loaded:", { 
-        receptionId, 
-        fullName, 
-        userRole
       });
 
       if (!receptionId) {
@@ -129,6 +126,118 @@ const CheckInPage = () => {
     fetchTodayCheckIns();
   }, []);
 
+  // 🆕 VALIDATION RULES
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "guestName":
+        if (!value.trim()) {
+          error = "Tên khách hàng là bắt buộc";
+        } else if (value.trim().length < 2) {
+          error = "Tên khách hàng phải có ít nhất 2 ký tự";
+        } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(value.trim())) {
+          error = "Tên khách hàng chỉ được chứa chữ cái và khoảng trắng";
+        }
+        break;
+
+      case "phone":
+        if (value && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(value)) {
+          error = "Số điện thoại không hợp lệ (VD: 0912345678)";
+        }
+        break;
+
+      case "roomType":
+        if (!value) {
+          error = "Vui lòng chọn loại phòng";
+        }
+        break;
+
+      case "adultCount":
+        if (!value || value < 1) {
+          error = "Số người lớn phải lớn hơn 0";
+        } else if (value > 10) {
+          error = "Số người lớn không được vượt quá 10";
+        }
+        break;
+
+      case "childCount":
+        if (value < 0) {
+          error = "Số trẻ em không được âm";
+        } else if (value > 10) {
+          error = "Số trẻ em không được vượt quá 10";
+        }
+        break;
+
+      case "nationality":
+        if (!value) {
+          error = "Vui lòng chọn quốc tịch";
+        }
+        break;
+
+      case "checkOutDate":
+        const checkOutDate = new Date(value);
+        const checkInDate = new Date(form.checkInDate);
+        if (checkOutDate <= checkInDate) {
+          error = "Ngày check-out phải sau ngày check-in";
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    return error;
+  };
+
+  // 🆕 VALIDATE FORM
+  const validateForm = () => {
+    const newErrors = {};
+    
+    Object.keys(form).forEach(field => {
+      if (field !== "documentNumber") { // Skip documentNumber validation
+        const error = validateField(field, form[field]);
+        if (error) {
+          newErrors[field] = error;
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // 🆕 HANDLE BLUR (when user leaves a field)
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  // 🆕 HANDLE CHANGE với validation real-time
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    setForm(prev => ({ 
+      ...prev, 
+      [name]: name === "adultCount" || name === "childCount" ? parseInt(value) || 0 : value 
+    }));
+
+    // Real-time validation sau khi user đã touch field
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
+    }
+  };
+
   // 🔹 Khi chọn mốc giờ checkout
   const handleCheckoutTimeChange = (e) => {
     const newTime = e.target.value;
@@ -138,14 +247,54 @@ const CheckInPage = () => {
     const [hour, minute] = newTime.split(":").map(Number);
     dateOnly.setHours(hour, minute, 0, 0);
 
-    setForm({ ...form, checkOutDate: formatDateTimeLocal(dateOnly) });
+    const newCheckOutDate = formatDateTimeLocal(dateOnly);
+    setForm(prev => ({ ...prev, checkOutDate: newCheckOutDate }));
+
+    // Validate checkOutDate
+    if (touched.checkOutDate) {
+      const error = validateField("checkOutDate", newCheckOutDate);
+      setErrors(prev => ({
+        ...prev,
+        checkOutDate: error
+      }));
+    }
   };
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // 🆕 RESET FORM
+  const resetForm = () => {
+    setForm({
+      guestName: "",
+      checkInDate: formatDateTimeLocal(now),
+      checkOutDate: formatDateTimeLocal(tomorrow),
+      roomType: "",
+      adultCount: 1,
+      childCount: 0,
+      phone: "",
+      nationality: "",
+      documentType: "CCCD",
+      documentNumber: "000000",
+    });
+    setErrors({});
+    setTouched({});
+    setSelectedTime("12:00");
+    setAssignedRoom(null);
+  };
 
   // 🔹 Xử lý Check-in
   const handleCheckIn = async () => {
+    // Mark all fields as touched để hiển thị tất cả errors
+    const allTouched = {};
+    Object.keys(form).forEach(key => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    // Validate form
+    if (!validateForm()) {
+      alert("❌ Vui lòng kiểm tra lại thông tin trong form!");
+      return;
+    }
+
     try {
       // 🎯 LẤY RECEPTION ID
       const receptionId = receptionInfo.id;
@@ -157,11 +306,11 @@ const CheckInPage = () => {
 
       const payload = {
         ...form,
-        receptionId: parseInt(receptionId), // 🎯 QUAN TRỌNG: thêm receptionId
+        receptionId: parseInt(receptionId),
         checkInDate: new Date(form.checkInDate).toISOString(),
         checkOutDate: new Date(form.checkOutDate).toISOString(),
-        email: "", // 🎯 EMAIL LUÔN TRỐNG
-        documentNumber: "000000", // 🎯 DOCUMENT NUMBER LUÔN 000000
+        email: "",
+        documentNumber: "000000",
       };
       
       console.log("📤 Payload gửi lên backend:", payload);
@@ -178,7 +327,10 @@ const CheckInPage = () => {
         `✅ Đã nhận phòng ${res.number} (${res.type}) cho khách ${form.guestName}`
       );
 
+      // Reset form sau khi check-in thành công
+      resetForm();
       fetchTodayCheckIns(); // Refresh list
+      
     } catch (err) {
       console.error("❌ Lỗi check-in:", err);
       
@@ -188,6 +340,20 @@ const CheckInPage = () => {
                           "Không còn phòng trống hoặc lỗi server!";
       alert(`❌ Lỗi check-in: ${errorMessage}`);
     }
+  };
+
+  // 🆕 Helper để hiển thị error
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && errors[fieldName] ? errors[fieldName] : "";
+  };
+
+  // 🆕 Check if form is valid
+  const isFormValid = () => {
+    return form.guestName && 
+           form.roomType && 
+           form.checkOutDate && 
+           receptionInfo.id && 
+           Object.keys(errors).length === 0;
   };
 
   return (
@@ -215,9 +381,14 @@ const CheckInPage = () => {
                 name="guestName"
                 value={form.guestName}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 placeholder="Nhập tên khách hàng"
+                isInvalid={!!getFieldError("guestName")}
                 required
               />
+              <Form.Control.Feedback type="invalid">
+                {getFieldError("guestName")}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -241,10 +412,25 @@ const CheckInPage = () => {
                 onChange={(e) => {
                   const newDate = e.target.value;
                   const date = new Date(newDate + "T" + selectedTime);
-                  setForm({ ...form, checkOutDate: formatDateTimeLocal(date) });
+                  const newCheckOutDate = formatDateTimeLocal(date);
+                  setForm(prev => ({ ...prev, checkOutDate: newCheckOutDate }));
+
+                  // Validate
+                  if (touched.checkOutDate) {
+                    const error = validateField("checkOutDate", newCheckOutDate);
+                    setErrors(prev => ({
+                      ...prev,
+                      checkOutDate: error
+                    }));
+                  }
                 }}
+                onBlur={handleBlur}
+                isInvalid={!!getFieldError("checkOutDate")}
                 required
               />
+              <Form.Control.Feedback type="invalid">
+                {getFieldError("checkOutDate")}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -267,10 +453,16 @@ const CheckInPage = () => {
                     type="number"
                     name="adultCount"
                     min="1"
+                    max="10"
                     value={form.adultCount}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    isInvalid={!!getFieldError("adultCount")}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {getFieldError("adultCount")}
+                  </Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col>
@@ -280,9 +472,15 @@ const CheckInPage = () => {
                     type="number"
                     name="childCount"
                     min="0"
+                    max="10"
                     value={form.childCount}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    isInvalid={!!getFieldError("childCount")}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {getFieldError("childCount")}
+                  </Form.Control.Feedback>
                 </Form.Group>
               </Col>
             </Row>
@@ -296,11 +494,14 @@ const CheckInPage = () => {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="Số điện thoại khách hàng"
+                onBlur={handleBlur}
+                placeholder="Số điện thoại khách hàng (VD: 0912345678)"
+                isInvalid={!!getFieldError("phone")}
               />
+              <Form.Control.Feedback type="invalid">
+                {getFieldError("phone")}
+              </Form.Control.Feedback>
             </Form.Group>
-
-            {/* 🎯 BỎ EMAIL HOÀN TOÀN */}
 
             {/* 🎯 DOCUMENT NUMBER: ẨN HOÀN TOÀN - LUÔN GỬI 000000 */}
             <input 
@@ -328,11 +529,14 @@ const CheckInPage = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Nationality</Form.Label>
+              <Form.Label>Nationality *</Form.Label>
               <Form.Select
                 name="nationality"
                 value={form.nationality}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                isInvalid={!!getFieldError("nationality")}
+                required
               >
                 <option value="">-- Chọn quốc tịch --</option>
                 {nations.map((nation) => (
@@ -341,6 +545,9 @@ const CheckInPage = () => {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {getFieldError("nationality")}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -349,6 +556,8 @@ const CheckInPage = () => {
                 name="roomType"
                 value={form.roomType}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                isInvalid={!!getFieldError("roomType")}
                 required
               >
                 <option value="">-- Chọn loại phòng --</option>
@@ -358,30 +567,44 @@ const CheckInPage = () => {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {getFieldError("roomType")}
+              </Form.Control.Feedback>
             </Form.Group>
 
             {/* 🎯 THÊM: Hiển thị reception info khi check-in */}
             <div className="mb-3 p-2 border rounded bg-light">
               <small>
                 <strong>Receptionist:</strong> {receptionInfo.name} 
-                {receptionInfo.id && ` (ID: ${receptionInfo.id})`}
               </small>
             </div>
 
-            <Button
-              onClick={handleCheckIn}
-              disabled={!form.guestName || !form.roomType || !form.checkOutDate || !receptionInfo.id}
-              variant={!receptionInfo.id ? "warning" : "primary"}
-            >
-              {!receptionInfo.id ? "⚠️ Chưa đăng nhập" : "Assign Room"}
-            </Button>
+            <div className="d-flex gap-2">
+              <Button
+                onClick={handleCheckIn}
+                disabled={!isFormValid()}
+                variant={!receptionInfo.id ? "warning" : "primary"}
+              >
+                {!receptionInfo.id ? "⚠️ Chưa đăng nhập" : "Assign Room"}
+              </Button>
+
+              <Button
+                variant="outline-secondary"
+                onClick={resetForm}
+              >
+                Clear Form
+              </Button>
+            </div>
 
             {assignedRoom && (
-              <div className="mt-3 p-3 border rounded bg-light">
-                ✅ Assigned Room:{" "}
-                <strong>{assignedRoom.number}</strong> ({assignedRoom.type})
+              <div className="mt-3 p-3 border rounded bg-success text-white">
+                ✅ <strong>Check-in thành công!</strong>
                 <br />
-                <small>Khách: {form.guestName}</small>
+                Phòng: <strong>{assignedRoom.number}</strong> ({assignedRoom.type})
+                <br />
+                Khách: <strong>{form.guestName}</strong>
+                <br />
+                Mã booking: <strong>{assignedRoom.reservationCode}</strong>
               </div>
             )}
           </Col>

@@ -20,9 +20,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // Tìm reservation bằng code
     List<Reservation> findByStatus(Reservation.Status status);
 
-    // Tìm reservation theo code
-    Optional<Reservation> findByReservationCode(String reservationCode);
-
     // Tìm reservation theo guest
     List<Reservation> findByGuest(Guest guest);
 
@@ -30,6 +27,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query("SELECT r FROM Reservation r WHERE r.status IN ('reserved', 'checked_in')")
     List<Reservation> findActiveReservations();
 
+    @Query("SELECT r FROM Reservation r WHERE r.reservationCode = :reservationCode")
+    Optional<Reservation> findByReservationCode(@Param("reservationCode") String reservationCode);
     Long countByArrivalDate (LocalDate arrivalDate);
 
     @Query("SELECT COUNT(r) FROM Reservation r WHERE r.arrivalDate >= :startOfDay AND r.arrivalDate < :startOfNextDay")

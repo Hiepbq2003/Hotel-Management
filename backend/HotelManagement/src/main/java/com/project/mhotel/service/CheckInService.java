@@ -25,72 +25,105 @@ public class CheckInService {
     private final PaymentRepository paymentRepository;
 
     private final Long DEFAULT_HOTEL_ID = 1L;
-
-    /**
-     * CHECK-IN cho khách đã booking online (reserved → checked_in)
-     */
     @Transactional
     public CheckInResponse checkInFromBooking(Long reservationId, Long receptionistId) {
-        Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+        try {
+            System.out.println("🔍 Validating reservation ID: " + reservationId);
 
-        // Validation với entity hiện tại
-        if (reservation.getStatus() != Reservation.Status.reserved) {
-            throw new RuntimeException("Cannot check-in. Reservation status: " + reservation.getStatus());
-        }
+            Reservation reservation = reservationRepository.findById(reservationId)
+                    .orElseThrow(() -> new RuntimeException("Reservation not found with ID: " + reservationId));
 
-        // Kiểm tra ngày arrival (dùng LocalDateTime từ entity)
-        if (reservation.getArrivalDate().isAfter(LocalDateTime.now())) {
-            throw new RuntimeException("Cannot check-in before arrival date: " + reservation.getArrivalDate());
-        }
+            System.out.println("📋 Reservation found: " + reservation.getReservationCode() + ", Status: " + reservation.getStatus());
 
-        UserAccount receptionist = userAccountRepository.findById(receptionistId)
-                .orElseThrow(() -> new RuntimeException("Receptionist not found"));
-
-        List<ReservationRoom> reservationRooms = reservationRoomRepository.findByReservation(reservation);
-        if (reservationRooms.isEmpty()) {
-            throw new RuntimeException("No rooms assigned to this reservation");
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-
-        // Check room availability và update status
-        for (ReservationRoom rr : reservationRooms) {
-            Room room = rr.getRoom();
-
-            if (room == null) {
-                throw new RuntimeException("No room assigned to reservation room ID: " + rr.getId());
+            // Validation với entity hiện tại
+            if (reservation.getStatus() != Reservation.Status.reserved) {
+                throw new RuntimeException("Cannot check-in. Reservation status is: " + reservation.getStatus() + ". Expected: reserved");
             }
 
-            if (room.getStatus() != Room.Status.available) {
-                throw new RuntimeException("Room " + room.getRoomNumber() + " is not available. Status: " + room.getStatus());
+            // Kiểm tra ngày arrival
+            LocalDateTime now = LocalDateTime.now();
+            if (reservation.getArrivalDate().isAfter(now)) {
+                throw new RuntimeException("Cannot check-in before arrival date. Arrival: " + reservation.getArrivalDate() + ", Current: " + now);
             }
 
-            // Cập nhật trạng thái phòng
-            room.setStatus(Room.Status.occupied);
-            roomRepository.save(room);
+            UserAccount receptionist = userAccountRepository.findById(receptionistId)
+                    .orElseThrow(() -> new RuntimeException("Receptionist not found with ID: " + receptionistId));
 
-            // Cập nhật reservation room - GIỮ NGUYÊN entity, chỉ update status
-            rr.setStatus(ReservationRoom.Status.checked_in);
-            reservationRoomRepository.save(rr);
+            List<ReservationRoom> reservationRooms = reservationRoomRepository.findByReservation(reservation);
+            if (reservationRooms.isEmpty()) {
+                throw new RuntimeException("No rooms assigned to reservation: " + reservation.getReservationCode());
+            }
+
+            System.out.println("🛏️ Found " + reservationRooms.size() + " reservation rooms");
+
+            // Check room availability và update status
+            for (ReservationRoom rr : reservationRooms) {
+                Room room = rr.getRoom();
+
+                // 🆕 FIX: Tự động gán phòng nếu chưa có
+                if (room == null) {
+                    System.out.println("⚠️ No room assigned for reservation room ID: " + rr.getId() + ". Auto-assigning room...");
+
+                    // Tìm phòng available cùng loại
+                    RoomType roomType = rr.getRoomType();
+                    if (roomType == null) {
+                        throw new RuntimeException("Cannot auto-assign room: Room type not specified for reservation room ID: " + rr.getId());
+                    }
+
+                    List<Room> availableRooms = roomRepository.findByHotel_Id(DEFAULT_HOTEL_ID)
+                            .stream()
+                            .filter(r -> r.getRoomType().equals(roomType) && r.getStatus() == Room.Status.available)
+                            .collect(Collectors.toList());
+
+                    if (availableRooms.isEmpty()) {
+                        throw new RuntimeException("No available " + roomType.getName() + " rooms for auto-assignment");
+                    }
+
+                    room = availableRooms.get(0);
+                    rr.setRoom(room); // 🆕 Gán phòng vào reservation room
+                    reservationRoomRepository.save(rr);
+                    System.out.println("✅ Auto-assigned room: " + room.getRoomNumber() + " to reservation room ID: " + rr.getId());
+                }
+
+                System.out.println("🔍 Checking room: " + room.getRoomNumber() + ", Status: " + room.getStatus());
+
+                if (room.getStatus() != Room.Status.available) {
+                    throw new RuntimeException("Room " + room.getRoomNumber() + " is not available. Current status: " + room.getStatus());
+                }
+
+                // Cập nhật trạng thái phòng
+                room.setStatus(Room.Status.occupied);
+                roomRepository.save(room);
+
+                // Cập nhật reservation room
+                rr.setStatus(ReservationRoom.Status.checked_in);
+                reservationRoomRepository.save(rr);
+
+                System.out.println("✅ Room " + room.getRoomNumber() + " updated to occupied");
+            }
+
+            // Cập nhật reservation status
+            reservation.setStatus(Reservation.Status.checked_in);
+            reservation.setUpdatedAt(now);
+            reservationRepository.save(reservation);
+
+            System.out.println("✅ Online check-in completed: " + reservation.getReservationCode());
+
+            return CheckInResponse.builder()
+                    .reservationCode(reservation.getReservationCode())
+                    .guestName(reservation.getGuest().getFullName())
+                    .roomNumbers(reservationRooms.stream()
+                            .map(rr -> rr.getRoom().getRoomNumber())
+                            .collect(Collectors.toList()))
+                    .checkInTime(now)
+                    .message("Check-in completed successfully")
+                    .build();
+
+        } catch (Exception e) {
+            System.out.println("❌ Service layer error: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Check-in service error: " + e.getMessage(), e);
         }
-
-        // Cập nhật reservation status
-        reservation.setStatus(Reservation.Status.checked_in);
-        reservation.setUpdatedAt(now);
-        reservationRepository.save(reservation);
-
-        System.out.println("✅ Online check-in completed: " + reservation.getReservationCode());
-
-        return CheckInResponse.builder()
-                .reservationCode(reservation.getReservationCode())
-                .guestName(reservation.getGuest().getFullName())
-                .roomNumbers(reservationRooms.stream()
-                        .map(rr -> rr.getRoom().getRoomNumber())
-                        .collect(Collectors.toList()))
-                .checkInTime(now)
-                .message("Check-in completed successfully")
-                .build();
     }
 
     /**
@@ -236,6 +269,10 @@ public class CheckInService {
     /**
      * CHECK-OUT với entity hiện tại
      */
+    /**
+     * CHECK-OUT với entity hiện tại
+     * VERSION MỚI: Kiểm tra phương thức thanh toán - Booking online: 80%, Walk-in: 100%
+     */
     @Transactional
     public CheckOutResponse checkOut(String roomNumber) {
         Room room = roomRepository.findByRoomNumber(roomNumber)
@@ -254,6 +291,22 @@ public class CheckInService {
         // Tính tổng tiền với entity hiện tại
         BigDecimal totalAmount = calculateTotalAmount(rr);
 
+        // 🆕 KIỂM TRA PHƯƠNG THỨC THANH TOÁN
+        BigDecimal finalAmount;
+        String paymentType;
+
+        if (reservation.getReservationCode().startsWith("WALKIN-")) {
+            // Walk-in: trả 100% giá
+            finalAmount = totalAmount;
+            paymentType = "WALK-IN (100%)";
+            System.out.println("💰 Walk-in payment: 100% = " + finalAmount);
+        } else {
+            // Booking online: trả 80% giá (giảm 20%)
+            finalAmount = totalAmount.multiply(BigDecimal.valueOf(0.8));
+            paymentType = "BOOKING ONLINE (80%)";
+            System.out.println("💰 Booking online payment: 80% = " + finalAmount + " (original: " + totalAmount + ")");
+        }
+
         LocalDateTime now = LocalDateTime.now();
 
         // Cập nhật reservation room
@@ -265,25 +318,23 @@ public class CheckInService {
         reservation.setUpdatedAt(now);
         reservationRepository.save(reservation);
 
-        // Cập nhật phòng thành cleaning
+        // Cập nhật phòng thành available
         room.setStatus(Room.Status.available);
         roomRepository.save(room);
 
-        // Tạo payment cho walk-in
-        if (reservation.getReservationCode().startsWith("WALKIN-")) {
-            Payment payment = Payment.builder()
-                    .reservation(reservation)
-                    .hotel(reservation.getHotel())
-                    .amount(totalAmount)
-                    .status(Payment.Status.completed)
-                    .paymentMethod("CASH")
-                    .paidAt(now)
-                    .transactionRef("CASH-" + System.currentTimeMillis())
-                    .build();
-            paymentRepository.save(payment);
-        }
+        // 🆕 Tạo payment với amount đã điều chỉnh
+        Payment payment = Payment.builder()
+                .reservation(reservation)
+                .hotel(reservation.getHotel())
+                .amount(finalAmount)
+                .status(Payment.Status.completed)
+                .paymentMethod("CASH")
+                .paidAt(now)
+                .transactionRef("CASH-" + System.currentTimeMillis())
+                .build();
+        paymentRepository.save(payment);
 
-        System.out.println("✅ Check-out completed: " + roomNumber + " - Amount: " + totalAmount);
+        System.out.println("✅ Check-out completed: " + roomNumber + " - Final Amount: " + finalAmount + " (" + paymentType + ")");
 
         return CheckOutResponse.builder()
                 .reservationCode(reservation.getReservationCode())
@@ -291,8 +342,11 @@ public class CheckInService {
                 .guestName(reservation.getGuest().getFullName())
                 .checkInDate(rr.getCheckinDate())
                 .checkOutDate(now)
-                .totalAmount(totalAmount)
-                .message("Check-out completed. Total: " + totalAmount + " VND")
+                .totalAmount(finalAmount)
+                .originalAmount(totalAmount) // 🆕 Thêm original amount để hiển thị
+                .paymentType(paymentType) // 🆕 Thêm loại thanh toán
+                .message("Check-out completed. " + paymentType + " - Total: " + finalAmount + " VND" +
+                        (reservation.getReservationCode().startsWith("WALKIN-") ? "" : " (Đã giảm 20% cho booking online)"))
                 .build();
     }
 
@@ -401,4 +455,31 @@ public class CheckInService {
                         : "❌ Không còn phòng trống cho loại " + type.getName())
                 .build();
     }
+    /**
+     * Xác thực document cho booking
+     */
+    @Transactional(readOnly = true)
+    public boolean verifyDocument(String reservationCode, String documentType, String documentNumber) {
+        Reservation reservation = reservationRepository.findByReservationCode(reservationCode)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        Guest guest = reservation.getGuest();
+
+        // 🎯 Kiểm tra document type và number
+        boolean isDocumentValid = documentType.equals(guest.getDocumentType())
+                && documentNumber.equals(guest.getDocumentNumber());
+
+        if (!isDocumentValid) {
+            throw new RuntimeException("Document information does not match");
+        }
+
+        // 🎯 Kiểm tra trạng thái reservation
+        if (reservation.getStatus() != Reservation.Status.reserved) {
+            throw new RuntimeException("Reservation is not in valid status for check-in");
+        }
+
+        return true;
+    }
+
+
 }
