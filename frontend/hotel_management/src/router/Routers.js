@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Layout from "../publicPage/Layout";
 import Home from "../publicPage/Home/Home";
 import Rooms from "../publicPage/Rooms";
@@ -19,14 +19,14 @@ import UserManagement from "../admin/UserManagement";
 import CustomerManagement from "../adminArea/CustomerManagement";
 import ServiceManagement from "../manager/ServiceManagement";
 import RoomManagement from "../manager/RoomManagement";
-
 import HotelAmenityManagement from "../manager/HotelAmenityManagement";
 import PaymentResult from "../publicPage/PaymentResult";
 import BookingPage from "../publicPage/BookingPage";
 import CheckInforBooking from "../staffPage/CheckInforBooking";
+
 function Routers() {
   return (
-    <Router>
+    <HashRouter>
       <Routes>
         {/* Layout chung cho trang public */}
         <Route path="/" element={<Layout />}>
@@ -40,6 +40,7 @@ function Routers() {
           <Route path="payment-result" element={<PaymentResult />} />
           <Route path="profile" element={<Profile />} />
         </Route>
+        
         {/* Các route riêng */}
         <Route path="/login" element={<Login />} />
 
@@ -60,8 +61,9 @@ function Routers() {
           <Route path="dashboard" element={<DashBoard />} />
           <Route path="user-management" element={<UserManagement />} />
           <Route path="customer-management" element={<CustomerManagement />} />
-
         </Route>
+
+        {/* ROUTE DÀNH CHO RECEPTIONIST */}
         <Route path="/reception" element={<Reception />}>
           <Route index element={<CheckInPage />} />
           <Route path="check-in" element={<CheckInPage />} />
@@ -69,10 +71,11 @@ function Routers() {
           <Route path="check-out" element={<CheckOutPage />} />
           <Route path="check-room" element={<CheckRoom />} />
         </Route>
+        
         {/* Route 404 để debug */}
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
       </Routes>
-    </Router>
+    </HashRouter>
   );
 }
 
