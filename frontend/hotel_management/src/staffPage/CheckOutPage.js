@@ -22,19 +22,17 @@ const CheckOutPage = () => {
   const [selectedGuest, setSelectedGuest] = useState(null);
   const [checkoutDetails, setCheckoutDetails] = useState(null);
 
-  // 🔹 Tải danh sách khách đang check-in
   const fetchCheckedInGuests = async () => {
     try {
       setLoading(true);
       const res = await api.get("/checkIn/today");
-      
-      // 🎯 Lọc chỉ những khách đang checked_in
+
       const activeCheckIns = res.filter(item => 
         item.status === "checked_in" || 
         item.status === "CHECKED_IN" ||
-        !item.status // Nếu không có status, mặc định là đang ở
+        !item.status 
       );
-      
+
       setCheckIns(activeCheckIns);
       setError(null);
     } catch (err) {
@@ -49,30 +47,26 @@ const CheckOutPage = () => {
     fetchCheckedInGuests();
   }, []);
 
-  // 🔹 Xác nhận checkout
   const confirmCheckOut = (guest) => {
     setSelectedGuest(guest);
     setShowConfirmModal(true);
   };
 
-  // 🔹 Thực hiện checkout
   const handleCheckOut = async () => {
     if (!selectedGuest) return;
 
     try {
       setLoading(true);
-      
-      // 🎯 Gọi API checkout - chỉ cần roomNumber theo backend
+
       const payload = {
         roomNumber: selectedGuest.roomNumber
       };
-      
+
       console.log("📤 Gửi request checkout:", payload);
-      
+
       const res = await api.post("/checkIn/checkout", payload);
       console.log("✅ Checkout Response:", res);
 
-      // 🎯 Hiển thị thông tin thanh toán nếu có
       if (res.totalAmount) {
         setCheckoutDetails({
           guestName: selectedGuest.guestName,
@@ -85,13 +79,12 @@ const CheckOutPage = () => {
       setSuccess(`✅ Khách ${selectedGuest.guestName} đã trả phòng ${selectedGuest.roomNumber}`);
       setShowConfirmModal(false);
       setSelectedGuest(null);
-      
-      // Refresh danh sách sau 2 giây
+
       setTimeout(() => {
         fetchCheckedInGuests();
         setCheckoutDetails(null);
       }, 2000);
-      
+
     } catch (err) {
       console.error("❌ Lỗi khi checkout:", err);
       const errorMsg = err.response?.data?.error || err.message || "Không thể checkout";
@@ -101,7 +94,6 @@ const CheckOutPage = () => {
     }
   };
 
-  // 🔹 Format tiền VND
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -109,7 +101,6 @@ const CheckOutPage = () => {
     }).format(amount);
   };
 
-  // 🔹 Format trạng thái
   const getStatusBadge = (status) => {
     switch (status?.toUpperCase()) {
       case "CHECKED_IN":
@@ -136,26 +127,21 @@ const CheckOutPage = () => {
 
   return (
     <Container className="mt-4">
-      {/* Header */}
       <div className="text-center mb-4">
         <h2 className="text-primary">🛎️ Quản lý Trả Phòng</h2>
         <p className="text-muted">Danh sách khách hàng đang lưu trú</p>
       </div>
-
-      {/* Thông báo */}
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
-      
+
       {success && (
         <Alert variant="success" dismissible onClose={() => setSuccess(null)}>
           {success}
         </Alert>
       )}
-
-      {/* Thông tin thanh toán sau checkout */}
       {checkoutDetails && (
         <Alert variant="info" className="mb-4">
           <h6>💰 Thông tin thanh toán</h6>
@@ -166,8 +152,6 @@ const CheckOutPage = () => {
           <p><strong>Trạng thái:</strong> <Badge bg="success">Đã thanh toán</Badge></p>
         </Alert>
       )}
-
-      {/* Danh sách khách đang ở */}
       <Card className="shadow-sm">
         <Card.Header className="bg-light">
           <h5 className="mb-0">
@@ -252,8 +236,6 @@ const CheckOutPage = () => {
           )}
         </Card.Body>
       </Card>
-
-      {/* Modal xác nhận checkout */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>✅ Xác nhận trả phòng</Modal.Title>
@@ -262,7 +244,7 @@ const CheckOutPage = () => {
           {selectedGuest && (
             <div>
               <p>Bạn có chắc muốn trả phòng cho khách hàng sau?</p>
-              
+
               <div className="border p-3 rounded bg-light">
                 <p><strong>Khách hàng:</strong> {selectedGuest.guestName}</p>
                 <p><strong>Phòng:</strong> {selectedGuest.roomNumber}</p>

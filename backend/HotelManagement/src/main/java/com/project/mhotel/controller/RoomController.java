@@ -3,7 +3,7 @@ package com.project.mhotel.controller;
 import com.project.mhotel.entity.Room.Status;
 import com.project.mhotel.service.RoomService;
 import com.project.mhotel.dto.RoomRequest;
-import com.project.mhotel.dto.RoomResponse; // CẬP NHẬT
+import com.project.mhotel.dto.RoomResponse; 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

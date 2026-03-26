@@ -17,13 +17,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             Reservation.Status status,
             LocalDateTime createdAt);
 
-    // Tìm reservation bằng code
     List<Reservation> findByStatus(Reservation.Status status);
 
-    // Tìm reservation theo guest
     List<Reservation> findByGuest(Guest guest);
 
-    // Tìm reservation đang active (reserved hoặc checked_in)
     @Query("SELECT r FROM Reservation r WHERE r.status IN ('reserved', 'checked_in')")
     List<Reservation> findActiveReservations();
 

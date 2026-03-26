@@ -28,21 +28,20 @@ function SignUpForm({ onRegisterSuccess }) {
             };
 
             await api.post("/auth/register", requestBody);
-            
+
             setState({ name: "", email: "", password: "", phone: "" });
-            
+
             if (onRegisterSuccess) {
                 onRegisterSuccess(); 
             }
 
         } catch (err) {
             console.error("Lỗi đăng ký:", err);
-            
-            // Xử lý lỗi trả về từ Backend (ví dụ: "Email đã tồn tại.")
+
             if (err.message) {
                 setError(err.message); 
             } else if (err.response && err.response.data) {
-     
+
                 setError(err.response.data);
             } else {
                 setError("Đăng ký thất bại. Vui lòng kiểm tra lại thông tin và kết nối mạng.");
@@ -62,8 +61,6 @@ function SignUpForm({ onRegisterSuccess }) {
                 </div>
 
                 <span>or use your email for registration</span>
-                
-                {/* Hiển thị lỗi */}
                 {error && <p style={{ color: 'red', margin: '10px 0', fontSize: '14px' }}>{error}</p>}
 
                 <input 
@@ -90,7 +87,7 @@ function SignUpForm({ onRegisterSuccess }) {
                     placeholder="Password" 
                     required
                 />
-                
+
                 <input 
                     type="text" 
                     name="phone" 

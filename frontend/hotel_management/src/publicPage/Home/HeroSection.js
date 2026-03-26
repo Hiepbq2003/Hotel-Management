@@ -1,57 +1,62 @@
 import React, { useEffect, useState } from "react";
 import { Carousel, Container, Row, Col, Form, Button, Alert, Spinner } from "react-bootstrap";
 import { FaRegCalendarAlt } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/apiConfig";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   const [roomTypes, setRoomTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState("info");
 
-  // 🔹 Fetch danh sách loại phòng
   useEffect(() => {
     api
-      .get("/room-type/hotel/1")
-      .then((res) => setRoomTypes(res || []))
-      .catch((err) => console.error("❌ Lỗi khi tải room types:", err));
+      .get("/room-type")
+      .then((res) => setRoomTypes(Array.isArray(res) ? res : []))
+      .catch((err) => console.error("Failed to load room types:", err));
   }, []);
 
-  // 🔹 Form dữ liệu
   const [form, setForm] = useState({
     checkInDate: "",
     checkOutDate: "",
     adultCount: 2,
     roomCount: 1,
-    roomType: "",
+    roomTypeId: "",
   });
 
-  // 🔹 Xử lý thay đổi input
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // 🔹 Kiểm tra phòng trống
-  const handleCheckAvailability = async (e) => {
+  const handleCheckAvailability = (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    try {
-      const payload = {
-        ...form,
-        checkInDate: new Date(form.checkInDate).toISOString(),
-        checkOutDate: new Date(form.checkOutDate).toISOString(),
-      };
+    const checkIn = new Date(form.checkInDate);
+    const checkOut = new Date(form.checkOutDate);
 
-      console.log("📤 Gửi yêu cầu kiểm tra phòng:", payload);
-      const res = await api.post("/booking/check-availability", payload);
-      console.log("✅ Phản hồi:", res);
-
-      setMessage(`✅ ${res.availableRooms || 0} phòng trống được tìm thấy.`);
-    } catch (err) {
-      console.error("❌ Lỗi khi kiểm tra phòng:", err);
-      setMessage("❌ Không tìm thấy phòng trống hoặc lỗi server.");
-    } finally {
+    if (checkOut <= checkIn) {
+      setMessage("Check-out date must be after check-in date.");
+      setMessageType("danger");
       setLoading(false);
+      return;
     }
+
+    const params = new URLSearchParams({
+      checkIn: form.checkInDate,
+      checkOut: form.checkOutDate,
+      adults: form.adultCount,
+    }).toString();
+
+    setTimeout(() => {
+      setLoading(false);
+      if (form.roomTypeId) {
+        navigate(`/booking/${form.roomTypeId}?${params}`);
+      } else {
+        navigate(`/rooms?${params}`);
+      }
+    }, 400);
   };
 
   const images = [
@@ -62,7 +67,6 @@ const HeroSection = () => {
 
   return (
     <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
-      {/* Carousel Background */}
       <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
         <Carousel fade controls={false} indicators={false} interval={5000}>
           {images.map((img, i) => (
@@ -81,8 +85,6 @@ const HeroSection = () => {
           ))}
         </Carousel>
       </div>
-
-      {/* Overlay content */}
       <div
         style={{
           position: "relative",
@@ -95,7 +97,6 @@ const HeroSection = () => {
       >
         <Container>
           <Row className="align-items-center" style={{ marginRight: "70px", marginLeft: "70px" }}>
-            {/* Left: Text */}
             <Col lg={6} md={12} className="text-lg-start text-center mb-4 mb-lg-0">
               <h1
                 style={{
@@ -123,12 +124,11 @@ const HeroSection = () => {
                   letterSpacing: "1px",
                   fontWeight: "500",
                 }}
+                onClick={() => navigate("/rooms")}
               >
                 DISCOVER NOW
               </Button>
             </Col>
-
-            {/* Right: Booking Form */}
             <Col
               lg={4}
               md={10}
@@ -139,12 +139,10 @@ const HeroSection = () => {
                 padding: "55px",
               }}
             >
-              <h3 className="mb-4 text-center fw-semibold">Booking Your Hotel</h3>
+              <h3 className="mb-4 text-center fw-semibold">Book Your Stay</h3>
 
               <Form onSubmit={handleCheckAvailability} className="text-secondary">
-                {message && <Alert variant="info">{message}</Alert>}
-
-                {/* Check In */}
+                {message && <Alert variant={messageType}>{message}</Alert>}
                 <Form.Group className="mb-3">
                   <Form.Label>Check In:</Form.Label>
                   <div style={{ position: "relative" }}>
@@ -154,6 +152,7 @@ const HeroSection = () => {
                       value={form.checkInDate}
                       onChange={handleChange}
                       required
+                      min={new Date().toISOString().split("T")[0]}
                       style={{ borderRadius: 0, paddingLeft: "35px" }}
                     />
                     <FaRegCalendarAlt
@@ -167,8 +166,6 @@ const HeroSection = () => {
                     />
                   </div>
                 </Form.Group>
-
-                {/* Check Out */}
                 <Form.Group className="mb-3">
                   <Form.Label>Check Out:</Form.Label>
                   <div style={{ position: "relative" }}>
@@ -178,6 +175,7 @@ const HeroSection = () => {
                       value={form.checkOutDate}
                       onChange={handleChange}
                       required
+                      min={form.checkInDate || new Date().toISOString().split("T")[0]}
                       style={{ borderRadius: 0, paddingLeft: "35px" }}
                     />
                     <FaRegCalendarAlt
@@ -191,42 +189,34 @@ const HeroSection = () => {
                     />
                   </div>
                 </Form.Group>
-
-                {/* Guests */}
                 <Form.Group className="mb-3">
                   <Form.Label>Guests:</Form.Label>
                   <Form.Select name="adultCount" value={form.adultCount} onChange={handleChange} style={{ borderRadius: 0 }}>
-                    <option value={1}>1 ADULT</option>
-                    <option value={2}>2 ADULTS</option>
-                    <option value={3}>3 ADULTS</option>
-                    <option value={4}>4 ADULTS</option>
+                    <option value={1}>1 Adult</option>
+                    <option value={2}>2 Adults</option>
+                    <option value={3}>3 Adults</option>
+                    <option value={4}>4 Adults</option>
                   </Form.Select>
                 </Form.Group>
-
-                {/* Room count */}
                 <Form.Group className="mb-3">
                   <Form.Label>Rooms:</Form.Label>
                   <Form.Select name="roomCount" value={form.roomCount} onChange={handleChange} style={{ borderRadius: 0 }}>
-                    <option value={1}>1 ROOM</option>
-                    <option value={2}>2 ROOMS</option>
-                    <option value={3}>3 ROOMS</option>
+                    <option value={1}>1 Room</option>
+                    <option value={2}>2 Rooms</option>
+                    <option value={3}>3 Rooms</option>
                   </Form.Select>
                 </Form.Group>
-
-                {/* Room Type */}
                 <Form.Group className="mb-4">
-                  <Form.Label>Room Type:</Form.Label>
-                  <Form.Select name="roomType" value={form.roomType} onChange={handleChange} style={{ borderRadius: 0 }}>
-                    <option value="">Select Room Type</option>
+                  <Form.Label>Room Type: <span style={{ color: "#aaa", fontWeight: 400, fontSize: "0.85em" }}>(Optional)</span></Form.Label>
+                  <Form.Select name="roomTypeId" value={form.roomTypeId} onChange={handleChange} style={{ borderRadius: 0 }}>
+                    <option value="">Any Room Type</option>
                     {roomTypes.map((rt) => (
-                      <option key={rt.id} value={rt.code}>
+                      <option key={rt.id} value={rt.id}>
                         {rt.name}
                       </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
-
-                {/* Button */}
                 <Button
                   variant="outline-dark"
                   type="submit"

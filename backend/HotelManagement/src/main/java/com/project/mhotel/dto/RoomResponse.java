@@ -22,7 +22,6 @@ public class RoomResponse {
         dto.setStatus(room.getStatus());
         dto.setDescription(room.getDescription());
 
-        // Chuyển đổi RoomType Entity sang RoomTypeDto
         RoomType roomTypeEntity = room.getRoomType();
         if (roomTypeEntity != null) {
             dto.setRoomType(new RoomTypeDto(
@@ -35,7 +34,6 @@ public class RoomResponse {
         return dto;
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getRoomNumber() { return roomNumber; }

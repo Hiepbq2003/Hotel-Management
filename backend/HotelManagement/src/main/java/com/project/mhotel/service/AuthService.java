@@ -4,13 +4,12 @@ import com.project.mhotel.dto.ChangePasswordRequest;
 import com.project.mhotel.dto.RegisterRequest;
 import com.project.mhotel.dto.ResetPasswordRequest;
 import com.project.mhotel.dto.UpdateProfileRequest;
-import com.project.mhotel.entity.CustomerAccount;
-import com.project.mhotel.entity.CustomerAccount.Status;
 import com.project.mhotel.entity.UserAccount;
-import com.project.mhotel.repository.CustomerAccountRepository;
+import com.project.mhotel.entity.UserAccount.Role;
+import com.project.mhotel.entity.UserAccount.Status;
 import com.project.mhotel.repository.UserAccountRepository;
 import com.project.mhotel.utils.EmailUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,21 +20,16 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    @Autowired
-    private CustomerAccountRepository customerAccountRepository;
-    @Autowired
-    private UserAccountRepository userAccountRepository;
-
-    @Autowired
-    private EmailUtil emailUtil;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder; // <-- Inject PasswordEncoder
+    private final UserAccountRepository userAccountRepository;
+    private final EmailUtil emailUtil;
+    private final PasswordEncoder passwordEncoder;
 
     private final Map<String, OtpData> otpStorage = new ConcurrentHashMap<>();
     private static final long OTP_VALIDITY_MINUTES = 5;
+
     private static class OtpData {
         final String otp;
         final long expiryTime;
@@ -50,144 +44,97 @@ public class AuthService {
         }
     }
 
-    // SỬA: Sử dụng PasswordEncoder.matches để so sánh mật khẩu thô và hash
     private boolean isPasswordMatch(String rawPassword, String storedHash) {
-        // Dùng PasswordEncoder để so sánh mật khẩu người dùng nhập với mật khẩu đã hash trong DB
         return passwordEncoder.matches(rawPassword, storedHash);
     }
 
-    public Optional<CustomerAccount> authenticateCustomer(String email, String rawPassword) {
-        Optional<CustomerAccount> account = customerAccountRepository.findByEmail(email);
-
+    public Optional<UserAccount> authenticate(String email, String rawPassword) {
+        Optional<UserAccount> account = userAccountRepository.findByEmail(email);
         if (account.isPresent()) {
-            CustomerAccount customer = account.get();
-            // Dùng logic so sánh đã hash
-            if (isPasswordMatch(rawPassword, customer.getPasswordHash()) && customer.getStatus() == Status.active) {
+            UserAccount user = account.get();
+            if (isPasswordMatch(rawPassword, user.getPasswordHash()) && user.getStatus() == Status.active) {
                 return account;
             }
         }
-
         return Optional.empty();
     }
 
-
-    public CustomerAccount registerCustomer(RegisterRequest request) throws IllegalArgumentException {
-
-        if (customerAccountRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email đã tồn tại.");
+    public UserAccount registerCustomer(RegisterRequest request) throws IllegalArgumentException {
+        if (userAccountRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists.");
         }
 
-        // SỬA: Băm mật khẩu trước khi lưu
-        String hashedPassword = passwordEncoder.encode(request.getPassword());
-
-        CustomerAccount newCustomer = CustomerAccount.builder()
+        UserAccount newUser = UserAccount.builder()
+                .username(request.getEmail())
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .phone(request.getPhone() != null ? request.getPhone() : "")
-                .passwordHash(hashedPassword) // <-- Lưu mật khẩu đã băm
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role(Role.customer)
                 .status(Status.active)
                 .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
-        return customerAccountRepository.save(newCustomer);
+        return userAccountRepository.save(newUser);
     }
 
     public void changePassword(ChangePasswordRequest request) throws IllegalArgumentException {
+        UserAccount user = userAccountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        CustomerAccount customer = customerAccountRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
-
-        // SỬA: Dùng isPasswordMatch để xác thực mật khẩu hiện tại
-        if (!isPasswordMatch(request.getCurrentPassword(), customer.getPasswordHash())) {
-            throw new IllegalArgumentException("Mật khẩu hiện tại không đúng.");
+        if (!isPasswordMatch(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
         }
 
-        // SỬA: Băm mật khẩu mới trước khi lưu
-        String newHashedPassword = passwordEncoder.encode(request.getNewPassword());
-
-        customer.setPasswordHash(newHashedPassword); // <-- Lưu mật khẩu đã băm
-        customer.setUpdatedAt(LocalDateTime.now());
-        customerAccountRepository.save(customer);
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userAccountRepository.save(user);
     }
 
-    public CustomerAccount updateCustomerProfile(String email, UpdateProfileRequest request) {
-
-        Optional<CustomerAccount> customerOptional = customerAccountRepository.findByEmail(email);
-
-        if (customerOptional.isEmpty()) {
-            throw new RuntimeException("Customer not found with email: " + email);
-        }
-
-        CustomerAccount customer = customerOptional.get();
+    public UserAccount updateProfile(String email, UpdateProfileRequest request) {
+        UserAccount user = userAccountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
-            customer.setFullName(request.getFullName());
+            user.setFullName(request.getFullName());
         }
-
         if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
-            customer.setPhone(request.getPhone());
+            user.setPhone(request.getPhone());
         }
 
-        customer.setUpdatedAt(LocalDateTime.now());
-
-        return customerAccountRepository.save(customer);
+        return userAccountRepository.save(user);
     }
 
     public boolean sendPasswordResetOtp(String email) {
-        CustomerAccount customer = customerAccountRepository.findByEmail(email)
-                .orElse(null);
-
-        if (customer == null) {
-
+        UserAccount user = userAccountRepository.findByEmail(email).orElse(null);
+        if (user == null) {
             return true;
         }
 
         String otp = String.format("%06d", new Random().nextInt(999999));
         otpStorage.put(email, new OtpData(otp));
 
-        System.out.println("DEBUG: Gửi OTP '" + otp + "' đến email: " + email);
-        boolean success = emailUtil.sendOTP(email, otp, customer.getFullName());
-
-        return success;
+        return emailUtil.sendOTP(email, otp, user.getFullName());
     }
 
     public void resetPassword(ResetPasswordRequest request) throws IllegalArgumentException {
-
         OtpData otpData = otpStorage.get(request.getEmail());
-
         if (otpData == null) {
-            throw new IllegalArgumentException("Email hoặc mã OTP không hợp lệ.");
+            throw new IllegalArgumentException("Invalid email or OTP.");
         }
-
         if (!otpData.isValid(request.getOtp())) {
-            throw new IllegalArgumentException("Mã OTP không hợp lệ hoặc đã hết hạn (5 phút).");
+            throw new IllegalArgumentException("OTP is invalid or has expired (5 minutes).");
         }
 
-        CustomerAccount customer = customerAccountRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
+        UserAccount user = userAccountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        // SỬA: Băm mật khẩu mới trước khi lưu
-        String newHashedPassword = passwordEncoder.encode(request.getNewPassword());
-
-        customer.setPasswordHash(newHashedPassword); // <-- Lưu mật khẩu đã băm
-        customer.setUpdatedAt(LocalDateTime.now());
-        customerAccountRepository.save(customer);
-
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userAccountRepository.save(user);
         otpStorage.remove(request.getEmail());
     }
 
+    // Keep for backward compat with AuthController
     public Optional<UserAccount> authenticateUser(String email, String rawPassword) {
-        Optional<UserAccount> account = userAccountRepository.findByEmail(email);
-
-        if (account.isPresent()) {
-            UserAccount user = account.get();
-            // SỬA: Sử dụng isPasswordMatch (đã cập nhật)
-            if (isPasswordMatch(rawPassword, user.getPasswordHash()) && user.getStatus() == UserAccount.Status.active) {
-                return account;
-            }
-        }
-
-        return Optional.empty();
+        return authenticate(email, rawPassword);
     }
 }

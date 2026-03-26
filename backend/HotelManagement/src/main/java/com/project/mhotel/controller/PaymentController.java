@@ -45,7 +45,7 @@ public class PaymentController {
         System.out.println("🌐 Remote Address: " + request.getRemoteAddr());
 
         try {
-            // Lấy parameters TRỰC TIẾP từ request
+
             Map<String, String> params = new HashMap<>();
             Enumeration<String> paramNames = request.getParameterNames();
 
@@ -62,7 +62,6 @@ public class PaymentController {
                 System.out.println("📊 Total parameters: " + params.size());
             }
 
-            // Xử lý kết quả thanh toán
             Map<String, Object> result = paymentService.processVnPayReturn(params);
 
             System.out.println("=== 📤 RESPONSE SENT ===");
@@ -100,17 +99,14 @@ public class PaymentController {
         }
     }
 
-    // API test và debug
     @GetMapping("/check-reservation-status")
     public ResponseEntity<Map<String, Object>> checkReservationStatus() {
         try {
             Map<String, Object> statusInfo = new HashMap<>();
 
-            // Lấy thông tin từ Payment entity
             statusInfo.put("payment_status_enum", java.util.Arrays.toString(Payment.Status.values()));
             statusInfo.put("reservation_status_enum", java.util.Arrays.toString(Reservation.Status.values()));
 
-            // Lấy thông tin từ database
             List<Reservation> reservations = reservationRepository.findAll();
             statusInfo.put("total_reservations", reservations.size());
 
@@ -131,7 +127,6 @@ public class PaymentController {
         }
     }
 
-    // API để manually xác nhận thanh toán (cho testing)
     @PostMapping("/manual-confirm")
     public ResponseEntity<?> manualConfirmPayment(@RequestBody Map<String, Object> payload) {
         try {
@@ -139,7 +134,6 @@ public class PaymentController {
             Reservation reservation = reservationRepository.findById(reservationId)
                     .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-            // Tạo payment record
             Payment payment = Payment.builder()
                     .reservation(reservation)
                     .hotel(reservation.getHotel())
@@ -150,7 +144,6 @@ public class PaymentController {
                     .build();
             paymentRepository.save(payment);
 
-            // Cập nhật reservation status
             reservation.setStatus(Reservation.Status.reserved);
             reservationRepository.save(reservation);
 

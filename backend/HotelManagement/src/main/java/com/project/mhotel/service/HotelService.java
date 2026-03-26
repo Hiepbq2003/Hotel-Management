@@ -17,22 +17,18 @@ public class HotelService {
     private final HotelRepository hotelRepository;
     private final RoomRepository roomRepository;
 
-    //  Lấy tất cả khách sạn
     public List<Hotel> getAllHotels() {
         return hotelRepository.findAll();
     }
 
-    //  Lấy khách sạn theo id
     public Optional<Hotel> getById(Long id) {
         return hotelRepository.findById(id);
     }
 
-    //  Thêm mới khách sạn
     public Hotel createHotel(Hotel hotel) {
         return hotelRepository.save(hotel);
     }
 
-    //  Cập nhật thông tin khách sạn
     public Hotel updateHotel(Long id, Hotel updatedHotel) {
         return hotelRepository.findById(id)
                 .map(hotel -> {
@@ -53,12 +49,10 @@ public class HotelService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách sạn ID: " + id));
     }
 
-    //  Xóa khách sạn
     public void deleteHotel(Long id) {
         hotelRepository.deleteById(id);
     }
 
-    //  Thêm phòng mới vào 1 khách sạn
     public Room addRoomToHotel(Long hotelId, Room room) {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách sạn ID: " + hotelId));
@@ -71,7 +65,6 @@ public class HotelService {
         return hotelRepository.findById(id);
     }
 
-    //  Lấy danh sách phòng theo khách sạn
     public List<Room> getRoomsByHotel(Long hotelId) {
         return roomRepository.findByHotel_Id(hotelId);
     }

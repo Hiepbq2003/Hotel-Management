@@ -1,6 +1,5 @@
 package com.project.mhotel.security;
 
-import com.project.mhotel.entity.CustomerAccount;
 import com.project.mhotel.entity.UserAccount;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,13 +20,6 @@ public class CustomUserDetails implements UserDetails {
         this.password = user.getPasswordHash();
         this.role = user.getRole().name();
         this.id = user.getId();
-    }
-
-    public CustomUserDetails(CustomerAccount customer) {
-        this.email = customer.getEmail();
-        this.password = customer.getPasswordHash();
-        this.role = "CUSTOMER";
-        this.id = customer.getId();
     }
 
     public Long getId() {

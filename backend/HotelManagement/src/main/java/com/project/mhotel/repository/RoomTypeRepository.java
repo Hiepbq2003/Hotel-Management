@@ -15,6 +15,5 @@ public interface RoomTypeRepository extends JpaRepository<RoomType, Long> {
     Optional<RoomType> findByHotelIdAndCode(Long hotelId, String code);
 
     boolean existsByHotelIdAndCode(Long hotelId, String code);
-    // Tìm room type theo hotel ID và code
 
 }

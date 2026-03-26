@@ -29,7 +29,6 @@ public class RoomTypeService {
     private final HotelAmenityRepository amenityRepository;
     private final RoomTypeAmenityRepository roomTypeAmenityRepository;
 
-
     public List<RoomType> getAll() {
         return roomTypeRepository.findAll();
     }
@@ -70,9 +69,6 @@ public class RoomTypeService {
     public void delete(Long id) {
         roomTypeRepository.deleteById(id);
     }
-
-
-    // --- DTO Methods ---
 
     public List<RoomTypeResponse> getAllDto() {
         return roomTypeRepository.findAll()
@@ -118,7 +114,6 @@ public class RoomTypeService {
         return toResponse(updated);
     }
 
-    // --- AMENITY MANAGEMENT METHOD (FIXED) ---
     @Transactional
     public RoomTypeResponse updateRoomTypeAmenities(Long roomTypeId, List<Long> amenityIds) {
         RoomType roomType = getById(roomTypeId);
@@ -145,8 +140,6 @@ public class RoomTypeService {
 
         return toResponse(saved);
     }
-
-    // --- Mapper Methods ---
 
     private RoomType toEntity(RoomTypeRequest dto, Hotel hotel) {
         RoomType roomType = new RoomType();

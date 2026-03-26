@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 
 const ServiceSection = () => {
-    // List of services
+
     const services = [
         { icon: <FaMapMarkerAlt />, title: "Travel Plan" },
         { icon: <FaUtensils />, title: "Catering Service" },
@@ -20,7 +20,6 @@ const ServiceSection = () => {
         { icon: <FaCocktail />, title: "Bar & Drink" },
     ];
 
-    // List of rooms
     const rooms = [
         {
             image:
@@ -141,8 +140,6 @@ const ServiceSection = () => {
                     </Col>
                 </Row>
             </Container>
-
-            {/* Our Rooms Section */}
             <Container fluid style={{ marginTop: "80px", marginBottom: "100px" }}>
                 <div style={{ textAlign: "center", marginBottom: "60px" }}>
                     <p

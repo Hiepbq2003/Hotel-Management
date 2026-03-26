@@ -17,26 +17,23 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Hotel
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_review_hotel"))
     private Hotel hotel;
 
-    // Quan hệ với Guest (nullable)
     @ManyToOne
     @JoinColumn(name = "guest_id",
             foreignKey = @ForeignKey(name = "fk_review_guest"))
     private Guest guest;
 
-    // Quan hệ với Reservation (nullable)
     @ManyToOne
     @JoinColumn(name = "reservation_id",
             foreignKey = @ForeignKey(name = "fk_review_reservation"))
     private Reservation reservation;
 
     @Column(nullable = false)
-    private Short rating; // 1-5
+    private Short rating; 
 
     @Column(columnDefinition = "TEXT")
     private String comment;

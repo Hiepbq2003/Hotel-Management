@@ -18,19 +18,16 @@ public class RoomRate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Hotel
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_roomrate_hotel"))
     private Hotel hotel;
 
-    // Quan hệ với RoomType
     @ManyToOne
     @JoinColumn(name = "room_type_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_roomrate_roomtype"))
     private RoomType roomType;
 
-    // Quan hệ với RatePlan
     @ManyToOne
     @JoinColumn(name = "rate_plan_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_roomrate_rateplan"))

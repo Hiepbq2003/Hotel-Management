@@ -13,5 +13,4 @@ public class UpdateProfileResponse {
     private String phone;
     private String email;
 
-
 }

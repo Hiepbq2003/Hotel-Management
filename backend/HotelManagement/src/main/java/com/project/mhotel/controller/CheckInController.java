@@ -21,7 +21,7 @@ public class CheckInController {
     private final CheckInService checkInService;
     private final RoomTypeRepository roomTypeRepository;
     private static final Long DEFAULT_HOTEL_ID = 1L;
-    // ✅ Nhận phòng, tự động gán phòng còn trống
+
     @GetMapping("/today")
     public List<CheckInTodayResponse> getTodayCheckIns() {
         return checkInService.getTodayCheckIns();
@@ -65,9 +65,8 @@ public class CheckInController {
 
         } catch (RuntimeException e) {
             System.out.println("❌ Check-in error: " + e.getMessage());
-            e.printStackTrace(); // 🆕 Thêm logging chi tiết
+            e.printStackTrace(); 
 
-            // 🆕 Trả về response chuẩn với cấu trúc Map
             return ResponseEntity.badRequest().body(Map.of(
                     "error", e.getMessage(),
                     "timestamp", LocalDateTime.now().toString()
@@ -84,12 +83,11 @@ public class CheckInController {
         }
     }
 
-    // ✅ Lấy danh sách reservation có thể check-in
     @GetMapping("/reservations")
     public List<ReservationResponse> getReservationsForCheckIn() {
         return checkInService.getReservationsForCheckIn();
     }
-    // ✅ API xác thực document cho booking
+
     @PostMapping("/verify-document")
     public ResponseEntity<?> verifyDocument(@RequestBody VerifyDocumentRequest request) {
         try {

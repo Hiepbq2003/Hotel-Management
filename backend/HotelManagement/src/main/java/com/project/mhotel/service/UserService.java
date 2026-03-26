@@ -42,8 +42,8 @@ public class UserService {
             throw new SecurityException("Bạn không có quyền reset mật khẩu. Chỉ Admin mới có quyền này.");
         }
 
-        if (targetUser.getRole() == Role.admin) {
-            throw new SecurityException("Không thể reset mật khẩu của tài khoản Admin.");
+        if (targetUser.getRole() == Role.manager) {
+            throw new SecurityException("Không thể reset mật khẩu của tài khoản Manager độc nhất.");
         }
 
         final String DEFAULT_PASSWORD = "123456";
@@ -54,8 +54,6 @@ public class UserService {
         return toUserResponse(userAccountRepository.save(targetUser));
     }
 
-
-    // Phương thức đã sửa ở câu trả lời trước (chỉ giữ lại ở đây để đảm bảo tính đầy đủ)
     public UserResponse createUser(UserRequest request, Role callerRole) {
 
         if (!callerRole.name().toUpperCase().equals(Role.admin.name().toUpperCase())) {
@@ -72,7 +70,6 @@ public class UserService {
 
         Hotel hotel = null;
 
-        // Băm mật khẩu trước khi lưu
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
         UserAccount newUser = UserAccount.builder()
@@ -91,7 +88,7 @@ public class UserService {
     }
 
     public UserResponse updateStaffDetails(Long targetUserId, UserRequest request, Role callerRole) {
-        // ... (Giữ nguyên logic cũ) ...
+
         UserAccount targetUser = userAccountRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Tài khoản người dùng không tồn tại."));
 
@@ -99,9 +96,9 @@ public class UserService {
             throw new SecurityException("Bạn không có quyền cập nhật thông tin chi tiết người dùng. Chỉ Admin mới có quyền này.");
         }
 
-        if (targetUser.getRole() == Role.admin && (request.getRole() != null && request.getRole() != targetUser.getRole())) {
-            // Thêm kiểm tra này để đảm bảo không cố gắng thay đổi vai trò Admin
-            throw new SecurityException("Không thể thay đổi vai trò của tài khoản Admin.");
+        if (targetUser.getRole() == Role.manager && (request.getRole() != null && request.getRole() != targetUser.getRole())) {
+
+            throw new SecurityException("Không thể thay đổi vai trò của tài khoản Manager độc nhất.");
         }
 
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
@@ -150,8 +147,8 @@ public class UserService {
             throw new SecurityException("Bạn không có quyền thay đổi trạng thái của người dùng này. Chỉ Admin mới có quyền này.");
         }
 
-        if (user.getRole() == Role.admin) {
-            throw new SecurityException("Không thể thay đổi trạng thái của tài khoản Admin.");
+        if (user.getRole() == Role.manager) {
+            throw new SecurityException("Không thể thay đổi trạng thái của tài khoản Manager độc nhất.");
         }
 
         user.setStatus(newStatus);

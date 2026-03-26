@@ -2,14 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/apiConfig';
 import { FaBed, FaCalendarCheck, FaDollarSign, FaCheck, FaTimes, FaUserTie, FaChartLine } from 'react-icons/fa';
 
-// --- Constants ---
 const ALLOWED_ACCESS_ROLES = ['ADMIN', 'MANAGER', 'RECEPTION'];
 
-// --- UTILITY FUNCTIONS ---
-
-/**
- * Hàm định dạng tiền tệ (VND)
- */
 const formatVND = (amount) => {
     const numAmount = Number(amount);
     if (isNaN(numAmount) || numAmount === null) return '0 VND';
@@ -21,11 +15,8 @@ const formatVND = (amount) => {
     }).replace('₫', 'VND');
 };
 
-/**
- * Hàm trích xuất lỗi chi tiết
- */
 const getErrorMessage = (err) => {
-    // ... (Giữ nguyên hàm này)
+
     if (err && err.message === "Request timeout") {
         return "Server không phản hồi (Timeout).";
     }
@@ -47,10 +38,6 @@ const getErrorMessage = (err) => {
     return message;
 };
 
-
-// --- CHART COMPONENTS ---
-
-// 1. Biểu đồ Tròn (Doughnut Chart Replacement)
 const DoughnutPlaceholder = ({ available, booked, total }) => {
     if (total === 0) {
         return <p className="text-muted text-center pt-5">Không có dữ liệu phòng.</p>;
@@ -106,7 +93,6 @@ const LegendItem = ({ color, label, value }) => (
     </div>
 );
 
-// 2. Biểu đồ Cột Doanh thu 30 ngày (Vertical Bar Chart)
 const RevenueBarChart = ({ data }) => {
     const maxRevenue = Math.max(...data.values);
 
@@ -139,9 +125,6 @@ const RevenueBarChart = ({ data }) => {
     );
 };
 
-/**
- * Hàm tạo dữ liệu doanh thu giả lập 30 ngày (Dùng Date thuần)
- */
 const generateMonthlyRevenueData = (monthlyRevenue) => {
     const numericRevenue = Number(monthlyRevenue);
     const DAYS_IN_MONTH = 30;
@@ -155,13 +138,13 @@ const generateMonthlyRevenueData = (monthlyRevenue) => {
     for (let i = DAYS_IN_MONTH - 1; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
-        
+
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        
+
         let label = '';
         if (i === 0) {
-            label = `${day}/${month}`; // Hôm nay
+            label = `${day}/${month}`; 
         } else if (date.getDate() === 1 || date.getDate() === 10 || date.getDate() === 20) {
             label = `${day}/${month}`;
         } else {
@@ -175,7 +158,6 @@ const generateMonthlyRevenueData = (monthlyRevenue) => {
 
     return { labels, values };
 };
-
 
 const DashBoard = () => {
     const [stats, setStats] = useState({
@@ -196,8 +178,6 @@ const DashBoard = () => {
         return generateMonthlyRevenueData(stats.totalMonthlyRevenue);
     }, [stats.totalMonthlyRevenue]);
 
-
-    // --- Data Fetching Logic ---
     const fetchDashboardStats = async () => {
         setLoading(true);
         setError(null);
@@ -220,7 +200,6 @@ const DashBoard = () => {
         }
     };
 
-    // --- Side Effects (Initial Load & Permission Check) ---
     useEffect(() => {
         if (!ALLOWED_ACCESS_ROLES.includes(currentUserRole)) {
             setError(`Bạn không có quyền truy cập trang Dashboard này. Chỉ ${ALLOWED_ACCESS_ROLES.join(', ')} mới được phép.`);
@@ -231,7 +210,6 @@ const DashBoard = () => {
         fetchDashboardStats();
     }, [currentUserRole]);
 
-    // Chuẩn bị dữ liệu hiển thị cho các Stats Cards
     const statsData = [
         {
             title: "Tổng số Phòng",
@@ -277,7 +255,6 @@ const DashBoard = () => {
         }] : [])
     ];
 
-    // --- RENDER ---
     if (loading) {
         return (
             <div className="container-fluid py-5 text-center">
@@ -300,7 +277,6 @@ const DashBoard = () => {
         );
     }
 
-
     return (
         <div className="container-fluid py-4">
             <h1 className='text-center mb-4 text-primary fw-bolder'>
@@ -310,8 +286,6 @@ const DashBoard = () => {
             <p className='text-center text-muted mb-5'>
                 Chào mừng, **{currentUserRole}**. Dưới đây là tổng quan hiệu suất kinh doanh hiện tại.
             </p>
-
-            {/* Hàng chứa các ô thống kê (Stats Cards) */}
             <div className="row">
                 {statsData.map((stat, index) => (
                     <div className="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4" key={index}>
@@ -336,8 +310,6 @@ const DashBoard = () => {
             </div>
 
             <hr className="my-5 border-2 border-primary opacity-25"/>
-
-            {/* Khu vực Biểu đồ/Bảng dữ liệu */}
             <div className="row">
                 <div className="col-lg-8 mb-4">
                     <div className="card shadow-lg h-100 rounded-4">
@@ -368,8 +340,6 @@ const DashBoard = () => {
             </div>
 
             <hr className="my-5 border-2 border-primary opacity-25"/>
-
-            {/* Bảng đặt phòng sắp tới (Giữ nguyên Placeholder) */}
             <div className="row">
                 <div className="col-12">
                     <div className="card shadow-lg rounded-4">

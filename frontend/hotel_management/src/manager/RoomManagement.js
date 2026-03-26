@@ -5,9 +5,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
 
 const DEFAULT_HOTEL_ID = 1; 
-const ALLOWED_ROLES = ['MANAGER']; 
+const ALLOWED_ROLES = ['ADMIN']; 
 
-// Định nghĩa các trạng thái phòng và màu sắc tương ứng
 const ROOM_STATUSES = {
     available: { label: "Sẵn sàng", variant: "success" },
     occupied: { label: "Đang ở", variant: "danger" },
@@ -16,36 +15,32 @@ const ROOM_STATUSES = {
 };
 
 const RoomManagement = () => {
-    
+
     const currentUserRole = localStorage.getItem('userRole');
 
-    // State gốc chứa toàn bộ dữ liệu từ API
     const [allRooms, setAllRooms] = useState([]); 
     const [roomTypes, setRoomTypes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
-    // State cho Modal/Form
+
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentRoom, setCurrentRoom] = useState({
         id: null,
         roomNumber: "",
-        // Đã thay đổi RoomType thành một object đơn giản để dễ dàng lấy ID
+
         roomType: { id: "" }, 
         floor: 1,
         status: "available",
         description: ""
     });
 
-    // State cho Filter và Search
     const [filter, setFilter] = useState({
-        roomType: '', // ID của loại phòng
-        floor: '',    // Số tầng
-        searchQuery: '' // Tìm kiếm theo số phòng
+        roomType: '', 
+        floor: '',    
+        searchQuery: '' 
     });
 
-    // State cho Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [roomsPerPage] = useState(20); 
 
@@ -54,12 +49,11 @@ const RoomManagement = () => {
         return <Badge bg={info.variant}>{info.label}</Badge>;
     };
 
-    // ------------------- FETCH DATA -------------------
     const fetchRooms = async () => {
         setLoading(true);
         setError(null);
         try {
-            // Lấy toàn bộ phòng (do backend hiện tại không hỗ trợ phân trang)
+
             const response = await api.get("/rooms"); 
             const data = response;
             setAllRooms(Array.isArray(data) ? data : []);
@@ -70,7 +64,7 @@ const RoomManagement = () => {
             setLoading(false);
         }
     };
-    
+
     const fetchRoomTypes = async () => {
         try {
             const response = await api.get("/room-type");
@@ -84,7 +78,7 @@ const RoomManagement = () => {
 
     useEffect(() => {
         if (!ALLOWED_ROLES.includes(currentUserRole)) {
-            setError('Bạn không có quyền truy cập trang Quản lý Phòng. Yêu cầu vai trò MANAGER.');
+            setError('Bạn không có quyền truy cập trang Quản lý Phòng. Yêu cầu vai trò ADMIN.');
             setLoading(false);
             return;
         }
@@ -94,24 +88,19 @@ const RoomManagement = () => {
 
     const canManageRooms = ALLOWED_ROLES.includes(currentUserRole);
 
-    // ------------------- SEARCH, FILTER, PAGINATION LOGIC -------------------
-
     const filteredRooms = useMemo(() => {
         let filtered = allRooms;
 
-        // 1. Lọc theo Loại phòng
         if (filter.roomType) {
             const roomTypeId = parseInt(filter.roomType);
             filtered = filtered.filter(room => room.roomType?.id === roomTypeId);
         }
 
-        // 2. Lọc theo Tầng
         if (filter.floor) {
             const floorNum = parseInt(filter.floor);
             filtered = filtered.filter(room => room.floor === floorNum);
         }
-        
-        // 3. Tìm kiếm theo Số phòng (Room Number)
+
         if (filter.searchQuery) {
             const searchLower = filter.searchQuery.toLowerCase().trim();
             filtered = filtered.filter(room => 
@@ -119,11 +108,10 @@ const RoomManagement = () => {
             );
         }
 
-        setCurrentPage(1); // Reset về trang 1 khi filter/search thay đổi
+        setCurrentPage(1); 
         return filtered;
     }, [allRooms, filter]);
 
-    // Pagination logic
     const indexOfLastRoom = currentPage * roomsPerPage;
     const indexOfFirstRoom = indexOfLastRoom - roomsPerPage;
     const currentRooms = filteredRooms.slice(indexOfFirstRoom, indexOfLastRoom);
@@ -131,24 +119,22 @@ const RoomManagement = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    // Lấy danh sách tầng duy nhất
     const uniqueFloors = useMemo(() => {
         const floors = [...new Set(allRooms.map(room => room.floor))].sort((a, b) => a - b);
-        return floors.filter(f => f != null); // Loại bỏ giá trị null
+        return floors.filter(f => f != null); 
     }, [allRooms]);
-    
-    // ------------------- MODAL & FORM HANDLERS -------------------
+
     const openModal = (room = null) => {
         if (!canManageRooms) {
             toast.error("Bạn không có quyền thực hiện thao tác này.");
             return;
         }
-        
+
         if (room) {
             setIsEditing(true);
             setCurrentRoom({
                 ...room,
-                // Đảm bảo lấy đúng ID của RoomType và chuyển sang String để hiển thị trong Select
+
                 roomType: { id: room.roomType?.id?.toString() || "" }, 
                 floor: room.floor || 1,
                 status: room.status || "available"
@@ -158,7 +144,7 @@ const RoomManagement = () => {
             setCurrentRoom({
                 id: null, 
                 roomNumber: "", 
-                // Set loại phòng mặc định là loại đầu tiên nếu có
+
                 roomType: { id: roomTypes[0]?.id?.toString() || "" }, 
                 floor: 1, 
                 status: "available", 
@@ -173,7 +159,7 @@ const RoomManagement = () => {
         setShowModal(false);
         setError(null); 
     };
-    
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilter(prev => ({ ...prev, [name]: value }));
@@ -194,12 +180,12 @@ const RoomManagement = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        
+
         if (!canManageRooms) {
             toast.error("Bạn không có quyền thực hiện thao tác này.");
             return;
         }
-        
+
         if (!currentRoom.roomNumber || !currentRoom.roomType.id) {
             setError("Số phòng và Loại phòng là bắt buộc!");
             toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc.");
@@ -207,30 +193,28 @@ const RoomManagement = () => {
         }
 
         try {
-            // CHỈNH SỬA Ở ĐÂY: Chuyển đổi cấu trúc dữ liệu sang DTO (flat structure)
+
             const dataToSend = {
-                // Giữ lại ID nếu đang chỉnh sửa
+
                 ...(isEditing && { id: currentRoom.id }), 
-                
+
                 roomNumber: currentRoom.roomNumber,
                 floor: parseInt(currentRoom.floor),
                 status: currentRoom.status,
                 description: currentRoom.description,
 
-                // SỬ DỤNG TÊN TRƯỜNG DTO (roomTypeId và hotelId)
                 roomTypeId: parseInt(currentRoom.roomType.id),
                 hotelId: DEFAULT_HOTEL_ID 
             };
-            
-            // Đảm bảo không gửi ID khi POST
+
             if (!isEditing) delete dataToSend.id; 
 
             if (isEditing) {
-                // PUT request
+
                 await api.put(`/rooms/${dataToSend.id}`, dataToSend);
                 toast.success(`✅ Cập nhật phòng ${dataToSend.roomNumber} thành công!`);
             } else {
-                // POST request
+
                 await api.post("/rooms", dataToSend);
                 toast.success(`➕ Thêm phòng ${dataToSend.roomNumber} mới thành công!`);
             }
@@ -239,8 +223,7 @@ const RoomManagement = () => {
         } catch (err) {
             console.error("Chi tiết lỗi API:", err); 
             let errorMessage = "Lỗi không xác định. Vui lòng thử lại.";
-            
-            // Xử lý lỗi từ response API
+
             if (err.response && err.response.data && err.response.data.message) {
                  errorMessage = err.response.data.message;
             } else if (err.message) {
@@ -258,13 +241,11 @@ const RoomManagement = () => {
             return;
         }
 
-        // Thay window.confirm bằng một modal custom trong môi trường thực tế, 
-        // nhưng dùng window.confirm cho mục đích đơn giản hóa code.
         if (!window.confirm(`Bạn có chắc muốn xóa phòng số "${roomNumber}" này? Thao tác này không thể hoàn tác.`)) return;
         try {
             await api.delete(`/rooms/${id}`);
             toast.info(`🗑️ Đã xóa phòng số "${roomNumber}" thành công!`);
-            fetchRooms(); // Tải lại danh sách
+            fetchRooms(); 
         } catch (err) {
              let errorMessage = "Không thể xóa. Có thể phòng đang được liên kết với một Reservation.";
              if (err.response && err.response.data && err.response.data.message) {
@@ -276,7 +257,6 @@ const RoomManagement = () => {
         }
     };
 
-    // ------------------- RENDER -------------------
     if (error && error.includes('không có quyền truy cập')) {
         return <p className="text-danger text-center mt-5" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>Lỗi: {error}</p>;
     }
@@ -297,10 +277,8 @@ const RoomManagement = () => {
             <h3 className="mb-4 text-center text-primary">Quản lý Phòng Khách sạn 🚪</h3>
 
             {error && !showModal && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
-            
-            {/* Thanh công cụ: Thêm mới, Tìm kiếm, Lọc */}
             <div className="d-flex flex-wrap justify-content-between mb-3 align-items-center bg-light p-3 rounded shadow-sm">
-                
+
                 {canManageRooms && (
                     <Button variant="success" className="me-3 mb-2 mb-md-0 shadow-sm" onClick={() => openModal()}>
                         ➕ Thêm phòng mới
@@ -308,7 +286,6 @@ const RoomManagement = () => {
                 )}
 
                 <Form className="d-flex flex-wrap align-items-center">
-                    {/* Filter Loại phòng */}
                     <Form.Group className="me-3 mb-2 mb-md-0">
                         <Form.Select
                             name="roomType"
@@ -324,8 +301,6 @@ const RoomManagement = () => {
                             ))}
                         </Form.Select>
                     </Form.Group>
-
-                    {/* Filter Tầng */}
                     <Form.Group className="me-3 mb-2 mb-md-0">
                         <Form.Select
                             name="floor"
@@ -341,8 +316,6 @@ const RoomManagement = () => {
                             ))}
                         </Form.Select>
                     </Form.Group>
-
-                    {/* Search Số phòng */}
                     <Form.Group>
                         <Form.Control
                             type="text"
@@ -355,7 +328,6 @@ const RoomManagement = () => {
                     </Form.Group>
                 </Form>
             </div>
-
 
             <div className="shadow-sm rounded table-responsive">
                 <Table bordered hover className="bg-white" style={{ minWidth: '800px' }}> 
@@ -413,15 +385,11 @@ const RoomManagement = () => {
                     </tbody>
                 </Table>
             </div>
-            
-            {/* Pagination */}
             {filteredRooms.length > roomsPerPage && (
                 <div className="d-flex justify-content-center mt-3">
                     <Pagination>
                         <Pagination.First onClick={() => paginate(1)} disabled={currentPage === 1} />
                         <Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
-                        
-                        {/* Hiển thị các nút trang ở giữa */}
                         {[...Array(totalPages)].map((_, i) => (
                             <Pagination.Item 
                                 key={i + 1} 
@@ -437,9 +405,6 @@ const RoomManagement = () => {
                     </Pagination>
                 </div>
             )}
-
-
-            {/* Modal Form */}
             {canManageRooms && (
                 <Modal show={showModal} onHide={closeModal}>
                     <Modal.Header closeButton className={isEditing ? "bg-warning text-white" : "bg-primary text-white"}>
@@ -459,7 +424,7 @@ const RoomManagement = () => {
                                     required
                                 />
                             </Form.Group>
-                            
+
                             <Form.Group className="mb-3">
                                 <Form.Label>Loại phòng <span className="text-danger">*</span></Form.Label>
                                 <Form.Select

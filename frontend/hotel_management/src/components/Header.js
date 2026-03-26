@@ -14,7 +14,7 @@ const Header = () => {
     const getUserInfo = () => {
         const token = localStorage.getItem('token');
         const storedFullName = localStorage.getItem('fullName') || 'Customer'; 
-        
+
         setUser({
             isLoggedIn: !!token,
             fullName: storedFullName 
@@ -22,13 +22,13 @@ const Header = () => {
     };
 
     const handleLogout = () => {
-    
+
         localStorage.removeItem('token');
         localStorage.removeItem('userRole');
         localStorage.removeItem('fullName');
-        
+
         setUser({ isLoggedIn: false, fullName: '' });
-        
+
         navigate('/login'); 
     };
 
@@ -70,7 +70,7 @@ const Header = () => {
                 </Dropdown>
             );
         } else {
-            // Chưa đăng nhập: Hiện link Login
+
             return (
                 <Dropdown align="end">
                     <Dropdown.Toggle
@@ -94,8 +94,7 @@ const Header = () => {
             );
         }
     };
-    
-    // Danh sách menu đã loại bỏ "News" và "Shop"
+
     const navItems = ["Home", "Rooms", "About Us", "Contact"];
 
     const getPath = (item) => {
@@ -115,7 +114,6 @@ const Header = () => {
 
     return (
         <header>
-            {/* --- Top Bar --- */}
             <Container fluid>
                 <Row className='justify-content-center' style={{
                     borderBottom: "1px solid #e0e0e0",
@@ -124,7 +122,6 @@ const Header = () => {
                         <div>
                             <Container>
                                 <Row className="align-items-center" >
-                                    {/* Left: contact */}
                                     <Col lg={6}>
                                         <ul
                                             style={{
@@ -145,8 +142,6 @@ const Header = () => {
                                             </li>
                                         </ul>
                                     </Col>
-
-                                    {/* Right: social + book + user */}
                                     <Col lg={6} className="text-end">
                                         <div
                                             style={{
@@ -155,7 +150,6 @@ const Header = () => {
                                                 gap: "25px",
                                             }}
                                         >
-                                            {/* Social icons */}
                                             <div>
                                                 {[FaFacebookF, FaTwitter, FaTripadvisor, FaInstagram].map((Icon, i) => (
                                                     <button
@@ -174,8 +168,6 @@ const Header = () => {
                                                     </button>
                                                 ))}
                                             </div>
-
-                                            {/* Book button */}
                                             <Link to="/booking"
                                                 style={{
                                                     backgroundColor: "var(--main-color)",
@@ -189,8 +181,6 @@ const Header = () => {
                                             >
                                                 BOOKING NOW
                                             </Link>
-
-                                            {/* User dropdown (Conditional Rendering) */}
                                             {renderUserSection()}
 
                                         </div>
@@ -200,7 +190,6 @@ const Header = () => {
                         </div>
                     </Col>
                 </Row>
-                {/* --- Navigation Bar --- */}
                 <Row className='justify-content-center' style={{ backgroundColor: "white", borderBottom: "1px solid #eee" }}>
                     <Col lg={9} >
                         <Navbar expand="lg" >
@@ -211,11 +200,10 @@ const Header = () => {
                                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                                 <Navbar.Collapse id="basic-navbar-nav">
                                     <Nav className="ms-auto">
-                                        {/* Sử dụng danh sách navItems mới */}
                                         {navItems.map((item, i) => (
                                             <NavLink
                                                 key={i}
-                                                to={getPath(item)} // Sử dụng hàm getPath để lấy đường dẫn
+                                                to={getPath(item)} 
                                                 className="nav-link"
                                                 style={({ isActive }) => ({
                                                     color: isActive ? "var(--main-color)" : "#333",

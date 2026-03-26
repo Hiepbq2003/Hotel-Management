@@ -5,7 +5,7 @@ import com.project.mhotel.dto.UserResponse;
 import com.project.mhotel.entity.UserAccount.Role;
 import com.project.mhotel.entity.UserAccount.Status;
 import com.project.mhotel.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,22 +15,20 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
-// Giữ lại allowedHeaders để tránh các lỗi CORS khác
+
 @CrossOrigin(origins = "*", allowedHeaders = {"Authorization", "Content-Type", "X-User-Role"})
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    // Vai trò Admin được gán cứng để vượt qua vấn đề Header
     private static final Role HARDCODED_ADMIN_ROLE = Role.admin;
 
-    // Endpoint: Thêm/Tạo mới người dùng (Admin-Only)
     @PostMapping
-    // Loại bỏ hoàn toàn @RequestHeader
+
     public ResponseEntity<?> createUser(@RequestBody UserRequest request) {
         try {
-            // Sử dụng vai trò Admin cứng
+
             UserResponse newUser = userService.createUser(request, HARDCODED_ADMIN_ROLE);
             return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
         } catch (IllegalArgumentException e) {
@@ -74,13 +72,11 @@ public class UserController {
         }
     }
 
-    // NEW Endpoint: Reset mật khẩu về mặc định (Admin-Only)
-    // URL: PUT /api/user/{userId}/reset-password
     @PutMapping("/{userId}/reset-password")
     public ResponseEntity<?> resetPassword(@PathVariable Long userId) {
 
         try {
-            // Sử dụng vai trò Admin cứng để gọi Service
+
             UserResponse updatedUser = userService.resetStaffPassword(userId, HARDCODED_ADMIN_ROLE);
             return ResponseEntity.ok(Map.of(
                     "message", "Đặt lại mật khẩu cho người dùng ID " + userId + " thành công. Mật khẩu mặc định: 123456.",
@@ -95,7 +91,6 @@ public class UserController {
         }
     }
 
-    // NEW Endpoint: Chỉnh sửa Chi tiết (Tên/SĐT và Vai trò) (Admin-Only)
     @PutMapping("/{id}/details")
     public ResponseEntity<?> updateStaffDetails(
             @PathVariable Long id,
@@ -112,7 +107,7 @@ public class UserController {
             }
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (SecurityException e) {
-            // SecurityException vẫn được ném ra từ UserService nếu Admin cố gắng sửa Admin khác
+
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi hệ thống khi cập nhật chi tiết người dùng: " + e.getMessage());

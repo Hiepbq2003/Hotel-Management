@@ -22,7 +22,7 @@ public class UserAccount {
             foreignKey = @ForeignKey(name = "fk_user_hotel"))
     private Hotel hotel;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(length = 100)
     private String username;
 
     @Column(name = "password_hash", nullable = false, length = 255)
@@ -31,15 +31,15 @@ public class UserAccount {
     @Column(name = "full_name", length = 200)
     private String fullName;
 
-    @Column(length = 150)
+    @Column(length = 150, unique = true)
     private String email;
 
     @Column(length = 50)
     private String phone;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "ENUM('admin','manager','reception','housekeeping') DEFAULT 'reception'")
-    private Role role = Role.reception;
+    @Column(nullable = false, columnDefinition = "ENUM('admin','manager','reception','housekeeping','customer') DEFAULT 'customer'")
+    private Role role = Role.customer;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "ENUM('active','inactive','blocked') DEFAULT 'active'")
@@ -49,14 +49,13 @@ public class UserAccount {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public enum Role {
-        admin, manager, reception, housekeeping
+        admin, manager, reception, housekeeping, customer
     }
 
     public enum Status {
         active, inactive, blocked
     }
 
-    // Optional: Quan hệ với HousekeepingTask (1 user được giao nhiều task)
     @OneToMany(mappedBy = "assignedTo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HouseKeepingTask> housekeepingTasks;
 }

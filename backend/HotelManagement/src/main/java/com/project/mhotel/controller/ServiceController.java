@@ -2,10 +2,11 @@ package com.project.mhotel.controller;
 
 import com.project.mhotel.entity.Services;
 import com.project.mhotel.service.ServiceService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -13,10 +14,10 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/service")
 @CrossOrigin(origins = "*", maxAge = 3600)
+@RequiredArgsConstructor
 public class ServiceController {
 
-    @Autowired
-    private ServiceService serviceService;
+    private final ServiceService serviceService;
 
     @GetMapping
     public ResponseEntity<List<Services>> getAllServices() {
@@ -29,7 +30,6 @@ public class ServiceController {
         return service.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // POST create new service
     @PostMapping
 
     public ResponseEntity<?> createService(@RequestBody Services service) {
@@ -37,7 +37,7 @@ public class ServiceController {
             Services createdService = serviceService.saveService(service);
             return new ResponseEntity<>(createdService, HttpStatus.CREATED);
         } catch (Exception e) {
-            // Bao gồm RuntimeException từ ServiceService nếu thiếu Hotel ID
+
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
         }
     }

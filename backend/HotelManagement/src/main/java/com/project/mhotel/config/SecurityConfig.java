@@ -9,7 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity; // 👈 DÒNG IMPORT CẦN THIẾT
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity; 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -26,7 +26,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // 👈 THÊM DÒNG NÀY ĐỂ KÍCH HOẠT @PreAuthorize
+@EnableMethodSecurity 
 public class SecurityConfig {
 
     @Autowired
@@ -59,7 +59,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
-                        // Các API công khai, cho phép mọi người truy cập
+
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/hotels/**",
@@ -70,11 +70,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        // Thiết lập phiên là STATELESS - Bắt buộc cho JWT
+
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider())
-                // Thêm JWT filter vào trước UsernamePasswordAuthenticationFilter để xử lý token
+
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         ;
         return http.build();

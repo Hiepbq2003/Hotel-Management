@@ -34,15 +34,12 @@ public interface ReservationRoomRepository extends JpaRepository<ReservationRoom
             @Param("checkOutDate") LocalDateTime checkOutDate);
     List<ReservationRoom> findByReservation(Reservation reservation);
 
-    // Tìm reservation room đang active theo số phòng
     @Query("SELECT rr FROM ReservationRoom rr WHERE " +
             "rr.room.roomNumber = :roomNumber AND rr.status = 'checked_in'")
     Optional<ReservationRoom> findActiveByRoomNumber(@Param("roomNumber") String roomNumber);
 
-    // Tìm reservation rooms theo trạng thái
     List<ReservationRoom> findByStatus(ReservationRoom.Status status);
 
-    // Tìm reservation rooms theo phòng và khoảng thời gian
     @Query("SELECT rr FROM ReservationRoom rr WHERE " +
             "rr.room.id = :roomId AND rr.status IN ('checked_in') AND " +
             "((rr.checkinDate <= :checkOut AND rr.checkoutDate >= :checkIn))")

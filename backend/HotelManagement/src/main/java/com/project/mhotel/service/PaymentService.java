@@ -23,32 +23,28 @@ import java.util.*;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
-    private final VnPayService vnPayService; // Thêm dependency này
+    private final VnPayService vnPayService; 
 
-    // THÊM PHƯƠNG THỨC BỊ THIẾU
     public String createVnPayPayment(Long reservationId, HttpServletRequest request) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        // Tạo payment với status completed ngay lập tức
         Payment payment = Payment.builder()
                 .reservation(reservation)
                 .hotel(reservation.getHotel())
                 .amount(reservation.getTotalAmount().multiply(new BigDecimal(4600)))
-                .status(Payment.Status.completed) // 🔥 CẬP NHẬT LUÔN THÀNH completed
+                .status(Payment.Status.completed) 
                 .paymentMethod("VNPay")
-                .paidAt(LocalDateTime.now()) // 🔥 Đặt paidAt ngay bây giờ
-                .transactionRef("PENDING_VNPay") // Tạm thời
+                .paidAt(LocalDateTime.now()) 
+                .transactionRef("PENDING_VNPay") 
                 .build();
 
         payment = paymentRepository.save(payment);
         System.out.println("✅ Payment created with COMPLETED status - ID: " + payment.getId());
 
-        // Vẫn tạo VNPay URL để thu tiền
         return vnPayService.generatePaymentUrl(payment, request);
     }
 
-    // CÁC PHƯƠNG THỨC KHÁC GIỮ NGUYÊN...
     public boolean validateVnPayReturn(Map<String, String> params) {
         try {
             String vnp_SecureHash = params.get("vnp_SecureHash");
@@ -57,12 +53,10 @@ public class PaymentService {
                 return false;
             }
 
-            // Create a copy and remove secure hash fields
             Map<String, String> paramsForHash = new TreeMap<>(params);
             paramsForHash.remove("vnp_SecureHash");
             paramsForHash.remove("vnp_SecureHashType");
 
-            // SỬA: Dùng US_ASCII để khớp với VnPayService
             StringBuilder hashData = new StringBuilder();
             Iterator<Map.Entry<String, String>> iterator = paramsForHash.entrySet().iterator();
             while (iterator.hasNext()) {
@@ -73,7 +67,7 @@ public class PaymentService {
                     }
                     hashData.append(entry.getKey());
                     hashData.append('=');
-                    // SỬA: Dùng US_ASCII để khớp với VnPayService
+
                     hashData.append(URLEncoder.encode(entry.getValue(), StandardCharsets.US_ASCII.toString()));
                 }
             }
@@ -81,7 +75,6 @@ public class PaymentService {
             String rawHashData = hashData.toString();
             System.out.println("VALIDATION - Raw Hash Data: " + rawHashData);
 
-            // Sử dụng HMAC-SHA512
             String calculatedHash = hmacSHA512(VnPayConfig.vnp_HashSecret, rawHashData);
             System.out.println("VALIDATION - Received Hash: " + vnp_SecureHash);
             System.out.println("VALIDATION - Calculated Hash: " + calculatedHash);
@@ -119,7 +112,6 @@ public class PaymentService {
         }
     }
 
-    // Method chính xử lý return từ VNPay
     @Transactional
     public Map<String, Object> processVnPayReturn(Map<String, String> params) {
         try {
@@ -134,7 +126,7 @@ public class PaymentService {
                     .orElseThrow(() -> new RuntimeException("Payment not found"));
 
             if ("00".equals(vnp_ResponseCode)) {
-                // 🎯 CHỈ CẦN CẬP NHẬT TRANSACTION REF
+
                 payment.setTransactionRef(vnp_TransactionNo);
                 paymentRepository.save(payment);
 
@@ -149,7 +141,7 @@ public class PaymentService {
                         "transactionRef", payment.getTransactionRef()
                 );
             } else {
-                // ❌ Nếu thanh toán thất bại, revert status
+
                 payment.setStatus(Payment.Status.failed);
                 payment.getReservation().setStatus(Reservation.Status.cancelled);
                 paymentRepository.save(payment);
@@ -168,12 +160,11 @@ public class PaymentService {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // Cập nhật payment
+
             payment.setStatus(Payment.Status.completed);
             payment.setTransactionRef(params.get("vnp_TransactionNo"));
             payment.setPaidAt(LocalDateTime.now());
 
-            // Cập nhật amount từ VNPay (chia cho 100 vì VNPay gửi amount * 100)
             if (params.get("vnp_Amount") != null) {
                 long amountFromVNPay = Long.parseLong(params.get("vnp_Amount"));
                 BigDecimal actualAmount = BigDecimal.valueOf(amountFromVNPay / 100.0);
@@ -182,7 +173,6 @@ public class PaymentService {
 
             paymentRepository.save(payment);
 
-            // Cập nhật reservation status thành reserved
             reservation.setStatus(Reservation.Status.reserved);
             reservation.setUpdatedAt(LocalDateTime.now());
             reservationRepository.save(reservation);
@@ -211,14 +201,12 @@ public class PaymentService {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // Cập nhật payment status thành failed
+
             payment.setStatus(Payment.Status.failed);
             payment.setTransactionRef(params.get("vnp_TransactionNo"));
             payment.setPaidAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            // Reservation vẫn giữ nguyên trạng thái pending_payment để cho phép thanh toán lại
-            // Không cập nhật status reservation ở đây
             reservation.setUpdatedAt(LocalDateTime.now());
             reservationRepository.save(reservation);
 
@@ -240,14 +228,12 @@ public class PaymentService {
         }
     }
 
-    // Lấy thông tin payment theo reservation
     public List<Payment> getPaymentsByReservation(Long reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
         return paymentRepository.findByReservationOrderByPaidAtDesc(reservation);
     }
 
-    // Kiểm tra trạng thái thanh toán của reservation
     public Map<String, Object> getPaymentStatus(Long reservationId) {
         Map<String, Object> status = new HashMap<>();
 
@@ -261,12 +247,10 @@ public class PaymentService {
         status.put("totalAmount", reservation.getTotalAmount());
         status.put("payments", payments);
 
-        // Kiểm tra nếu có payment thành công
         boolean hasSuccessfulPayment = payments.stream()
                 .anyMatch(p -> p.getStatus() == Payment.Status.completed);
         status.put("hasSuccessfulPayment", hasSuccessfulPayment);
 
-        // Tính tổng số tiền đã thanh toán
         BigDecimal totalPaid = payments.stream()
                 .filter(p -> p.getStatus() == Payment.Status.completed)
                 .map(Payment::getAmount)

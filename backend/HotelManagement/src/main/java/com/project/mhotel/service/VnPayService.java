@@ -21,25 +21,21 @@ public class VnPayService {
         try {
             System.out.println("=== BẮT ĐẦU TẠO VNPay URL (FIXED TIMEZONE) ===");
 
-            // 1. THIẾT LẬP THAM SỐ CƠ BẢN
             String vnp_Version = "2.1.0";
             String vnp_Command = "pay";
             String vnp_CurrCode = "VND";
 
-            // Amount calculation - multiply by 100
             long amount = payment.getAmount().longValue() * 100;
 
-            // THỜI GIAN QUAN TRỌNG: Dùng timezone GMT+7 (Việt Nam)
             TimeZone timeZone = TimeZone.getTimeZone("GMT+7");
             Calendar calendar = Calendar.getInstance(timeZone);
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
             formatter.setTimeZone(timeZone);
 
             String vnp_CreateDate = formatter.format(calendar.getTime());
-            calendar.add(Calendar.MINUTE, 15); // Thêm 15 phút
+            calendar.add(Calendar.MINUTE, 15); 
             String vnp_ExpireDate = formatter.format(calendar.getTime());
 
-            // Use payment ID as transaction reference
             String vnp_TxnRef = String.valueOf(payment.getId());
             String vnp_OrderInfo = "Hotel_Booking_" + payment.getId();
             String vnp_IpAddr = getClientIpAddress(request);
@@ -51,7 +47,6 @@ public class VnPayService {
             System.out.println("Create Date (GMT+7): " + vnp_CreateDate);
             System.out.println("Expire Date (GMT+7): " + vnp_ExpireDate);
 
-            // 2. TẠO PARAMS
             Map<String, String> vnp_Params = new TreeMap<>();
             vnp_Params.put("vnp_Version", vnp_Version);
             vnp_Params.put("vnp_Command", vnp_Command);
@@ -67,7 +62,6 @@ public class VnPayService {
             vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
             vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
 
-            // 3. TẠO HASH DATA VỚI URL ENCODING
             StringBuilder hashData = new StringBuilder();
             StringBuilder query = new StringBuilder();
 
@@ -81,7 +75,7 @@ public class VnPayService {
                 System.out.println(fieldName + " = " + fieldValue);
 
                 if (fieldValue != null && !fieldValue.isEmpty()) {
-                    // Build hash data - URL ENCODE values
+
                     if (hashData.length() > 0) {
                         hashData.append('&');
                     }
@@ -89,7 +83,6 @@ public class VnPayService {
                     hashData.append('=');
                     hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
 
-                    // Build query string
                     if (query.length() > 0) {
                         query.append('&');
                     }
@@ -102,11 +95,9 @@ public class VnPayService {
             String rawHashData = hashData.toString();
             System.out.println("RAW HASH DATA: " + rawHashData);
 
-            // 4. TẠO SECURE HASH VỚI HMAC-SHA512
             String vnp_SecureHash = hmacSHA512(VnPayConfig.vnp_HashSecret, rawHashData);
             System.out.println("SECURE HASH: " + vnp_SecureHash);
 
-            // 5. TẠO URL HOÀN CHỈNH
             String paymentUrl = VnPayConfig.vnp_Url + "?" + query.toString() +
                     "&vnp_SecureHashType=SHA512&vnp_SecureHash=" + vnp_SecureHash;
 

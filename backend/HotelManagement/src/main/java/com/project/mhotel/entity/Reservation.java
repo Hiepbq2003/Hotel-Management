@@ -24,7 +24,6 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Hotel
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_reservation_hotel"))
@@ -33,13 +32,11 @@ public class Reservation {
     @Column(name = "reservation_code", nullable = false, unique = true, length = 100)
     private String reservationCode;
 
-    // Quan hệ với Guest
     @ManyToOne
     @JoinColumn(name = "guest_id",
             foreignKey = @ForeignKey(name = "fk_reservation_guest"))
     private Guest guest;
 
-    // Người tạo đặt phòng
     @ManyToOne
     @JoinColumn(name = "created_by",
             foreignKey = @ForeignKey(name = "fk_reservation_user"))
@@ -76,19 +73,15 @@ public class Reservation {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    // Quan hệ với ReservationRoom
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReservationRoom> reservationRooms;
 
-    // Quan hệ với Payment
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments;
 
-    // Quan hệ với Invoice
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Invoice> invoices;
 
-    // Enum trạng thái đặt phòng
     public enum Status {
         pending_payment,
         reserved,

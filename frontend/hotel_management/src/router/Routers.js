@@ -23,12 +23,13 @@ import HotelAmenityManagement from "../manager/HotelAmenityManagement";
 import PaymentResult from "../publicPage/PaymentResult";
 import BookingPage from "../publicPage/BookingPage";
 import CheckInforBooking from "../staffPage/CheckInforBooking";
+import Housekeeping from "../staffPage/Housekeeping";
+import HousekeepingDashboard from "../staffPage/HousekeepingDashboard";
 
 function Routers() {
   return (
     <HashRouter>
       <Routes>
-        {/* Layout chung cho trang public */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
@@ -40,30 +41,23 @@ function Routers() {
           <Route path="payment-result" element={<PaymentResult />} />
           <Route path="profile" element={<Profile />} />
         </Route>
-        
-        {/* Các route riêng */}
         <Route path="/login" element={<Login />} />
-
-        {/* ROUTE DÀNH CHO MANAGER */}
         <Route path="/manager" element={<Manager />}>
           <Route index element={<DashBoard />} />
           <Route path="dashboard" element={<DashBoard />} />
           <Route path="room-types" element={<RoomTypeManagement />} />
           <Route path="service-management" element={<ServiceManagement />} />
-          <Route path="room-management" element={<RoomManagement />} />
+          <Route path="user-management" element={<UserManagement />} />
           <Route path="customer-management" element={<CustomerManagement />} />
           <Route path="amenities" element={<HotelAmenityManagement />} />
         </Route>
-
-        {/* *** ROUTE DÀNH CHO ADMIN *** */}
         <Route path="/admin" element={<Admin />}>
           <Route index element={<DashBoard />} />
           <Route path="dashboard" element={<DashBoard />} />
           <Route path="user-management" element={<UserManagement />} />
+          <Route path="room-management" element={<RoomManagement />} />
           <Route path="customer-management" element={<CustomerManagement />} />
         </Route>
-
-        {/* ROUTE DÀNH CHO RECEPTIONIST */}
         <Route path="/reception" element={<Reception />}>
           <Route index element={<CheckInPage />} />
           <Route path="check-in" element={<CheckInPage />} />
@@ -71,8 +65,10 @@ function Routers() {
           <Route path="check-out" element={<CheckOutPage />} />
           <Route path="check-room" element={<CheckRoom />} />
         </Route>
-        
-        {/* Route 404 để debug */}
+        <Route path="/housekeeping" element={<Housekeeping />}>
+          <Route index element={<HousekeepingDashboard />} />
+          <Route path="dashboard" element={<HousekeepingDashboard />} />
+        </Route>
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
       </Routes>
     </HashRouter>

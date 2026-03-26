@@ -16,11 +16,10 @@ public class Guest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với CustomerAccount (nullable)
     @ManyToOne
     @JoinColumn(name = "customer_id", referencedColumnName = "id",
             foreignKey = @ForeignKey(name = "fk_guest_customer"))
-    private CustomerAccount customer;
+    private UserAccount customer;
 
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;

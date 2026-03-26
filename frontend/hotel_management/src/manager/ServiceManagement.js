@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from "react";
-// Thêm Pagination cho chức năng phân trang
+
 import { Table, Button, Modal, Form, Spinner, Alert, Pagination } from "react-bootstrap"; 
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
 
-// Cấu hình cố định cho Khách sạn đơn lẻ (ID=1)
 const DEFAULT_HOTEL_ID = 1; 
 const ALLOWED_ROLES = ['MANAGER']; 
 
 const ServiceManagement = () => {
-    
-    // Lấy vai trò người dùng hiện tại
+
     const currentUserRole = localStorage.getItem('userRole');
-    // Cờ kiểm tra quyền quản lý (để ẩn/hiện nút)
+
     const canManageServices = ALLOWED_ROLES.includes(currentUserRole);
 
     const [services, setServices] = useState([]);
@@ -22,14 +20,11 @@ const ServiceManagement = () => {
 
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    
-    // START: New states for Search and Pagination
+
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [servicesPerPage] = useState(10); // Số lượng dịch vụ trên mỗi trang
-    // END: New states for Search and Pagination
-    
-    // State cho Service
+    const [servicesPerPage] = useState(10); 
+
     const [currentService, setCurrentService] = useState({
         id: null,
         code: "",
@@ -38,30 +33,27 @@ const ServiceManagement = () => {
         price: "", 
     });
 
-    // Hàm định dạng giá tiền (VND)
     const formatPrice = (price) => {
         if (price === null || price === undefined) return '';
         const numberPrice = parseFloat(price);
         if (isNaN(numberPrice)) return '';
-        // Định dạng tiền tệ Việt Nam (₫)
+
         return numberPrice.toLocaleString("vi-VN") + " ₫";
     };
 
-    // Hàm tải danh sách dịch vụ
     const fetchServices = async () => {
         if (!canManageServices || (error && error.includes('không có quyền truy cập'))) {
             setLoading(false);
             return;
         }
-        
+
         setLoading(true);
         setError(null);
         try {
-            // Lấy toàn bộ danh sách Services từ Backend
+
             const response = await api.get("/service");
             const data = response; 
-            
-            // ✅ ĐÃ SỬA: Bỏ logic lọc ở FE, tin tưởng Backend chỉ trả về data của Hotel ID=1
+
             setServices(Array.isArray(data) ? data : []);
 
         } catch (err) {
@@ -73,7 +65,7 @@ const ServiceManagement = () => {
     };
 
     useEffect(() => {
-        // Kiểm tra quyền truy cập cấp trang
+
         if (!ALLOWED_ROLES.includes(currentUserRole)) {
             setError('Bạn không có quyền truy cập trang Quản lý Dịch vụ. Yêu cầu vai trò MANAGER.');
             setLoading(false);
@@ -82,13 +74,12 @@ const ServiceManagement = () => {
         fetchServices();
     }, [currentUserRole]); 
 
-    // Mở Modal
     const openModal = (service = null) => {
         if (service) {
             setIsEditing(true);
             setCurrentService({
                 ...service,
-                // Chuyển giá trị sang string để hiển thị trong input number
+
                 price: service.price?.toString() || "" 
             });
         } else {
@@ -101,24 +92,20 @@ const ServiceManagement = () => {
         setShowModal(true);
     };
 
-    // Đóng Modal
     const closeModal = () => {
         setShowModal(false);
         setError(null); 
     };
 
-
-    // Xử lý Gửi form (Thêm mới/Cập nhật)
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        
+
         if (!canManageServices) {
             toast.error("Bạn không có quyền thực hiện thao tác này.");
             return;
         }
-        
-        // Validation cơ bản
+
         if (!currentService.code || !currentService.name || currentService.price === "") {
             setError("Mã dịch vụ, Tên dịch vụ và Giá là bắt buộc!");
             toast.error("Vui lòng nhập đủ thông tin bắt buộc.");
@@ -131,16 +118,14 @@ const ServiceManagement = () => {
             return;
         }
 
-
         try {
             const dataToSend = {
                 ...currentService,
                 price: priceValue,
-                // Gán cố định hotel id = 1
+
                 hotel: { id: DEFAULT_HOTEL_ID } 
             };
-            
-            // Loại bỏ ID nếu là thao tác thêm mới
+
             if (!isEditing) delete dataToSend.id; 
 
             if (isEditing) {
@@ -155,28 +140,26 @@ const ServiceManagement = () => {
         } catch (err) {
             console.error("Chi tiết lỗi API:", err); 
             let errorMessage = "Lỗi không xác định. Vui lòng kiểm tra Console/Server.";
-            
+
             if (err.response?.data?.message) {
                 errorMessage = err.response.data.message; 
             } else if (err.message) {
                 errorMessage = err.message;
             }
-            
+
             toast.error(`❌ Lỗi khi lưu: ${errorMessage}`);
             setError(`Lỗi khi lưu: ${errorMessage}`);
         }
     };
 
-    // Xử lý Xóa dịch vụ
     const handleDelete = async (id, name) => {
         if (!canManageServices) {
             toast.error("Bạn không có quyền thực hiện thao tác này.");
             return;
         }
 
-        // Thay window.confirm bằng Modal tùy chỉnh nếu cần, theo hướng dẫn chung
         if (!window.confirm(`Bạn có chắc muốn xóa dịch vụ "${name}" này?`)) return;
-        
+
         try {
             await api.delete(`/service/${id}`);
             toast.info(`🗑️ Đã xóa dịch vụ "${name}" thành công!`);
@@ -186,40 +169,31 @@ const ServiceManagement = () => {
             toast.error(`❌ Lỗi khi xóa: ${errorMessage}`);
         }
     };
-    
-    // START: Logic for Search and Pagination
-    // 1. Logic cho Tìm kiếm (Lọc Services)
+
     const filteredServices = services.filter(service =>
         service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         service.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         service.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // 2. Logic cho Phân trang (Tính toán dịch vụ trên trang hiện tại)
     const indexOfLastService = currentPage * servicesPerPage;
     const indexOfFirstService = indexOfLastService - servicesPerPage;
     const currentServices = filteredServices.slice(indexOfFirstService, indexOfLastService);
 
-    // Tính toán tổng số trang
     const totalPages = Math.ceil(filteredServices.length / servicesPerPage);
 
-    // Hàm chuyển trang
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-    
-    // Xử lý thay đổi Search Term (Đồng thời reset trang về 1)
+
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
-        setCurrentPage(1); // Reset về trang đầu tiên khi tìm kiếm
+        setCurrentPage(1); 
     };
-    // END: Logic for Search and Pagination
 
-    // Hiển thị lỗi quyền truy cập cấp trang
     if (!canManageServices) {
         return <p className="text-danger text-center mt-5 p-4 bg-light rounded shadow-sm" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
             Lỗi: Bạn không có quyền truy cập trang Quản lý Dịch vụ. Yêu cầu vai trò MANAGER.
         </p>;
     }
-
 
     if (loading) {
         return (
@@ -235,13 +209,10 @@ const ServiceManagement = () => {
             <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
 
             <h3 className="mb-4 text-center text-secondary border-bottom pb-2" style={{ fontWeight: 700, letterSpacing: '0.5px' }}>
-                {/* Tiêu đề được thiết kế lại */}
                 🛎️ QUẢN LÝ TIỆN ÍCH
             </h3>
 
             {error && !showModal && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
-
-            {/* START: Nút Thêm mới và Ô Tìm kiếm */}
             <div className="d-flex justify-content-between align-items-center mb-3"> 
                 {canManageServices && (
                     <Button variant="success" 
@@ -252,7 +223,7 @@ const ServiceManagement = () => {
                         ➕ THÊM DỊCH VỤ MỚI
                     </Button>
                 )}
-                
+
                 <Form className="d-flex w-50"> 
                     <Form.Control
                         type="search"
@@ -264,10 +235,6 @@ const ServiceManagement = () => {
                     />
                 </Form>
             </div>
-            {/* END: Nút Thêm mới và Ô Tìm kiếm */}
-
-
-            {/* Bảng dữ liệu được thiết kế lại */}
             <div className="shadow-2xl rounded-xl table-responsive bg-white p-3 border border-gray-200">
                 <Table striped bordered hover className="m-0 align-middle caption-top"> 
                     <caption className="text-primary fw-bold mb-2">
@@ -285,7 +252,6 @@ const ServiceManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {/* SỬ DỤNG currentServices THAY VÌ services */}
                         {currentServices.length > 0 ? (
                             currentServices.map((service, index) => (
                                 <tr key={service.id} className={index % 2 === 0 ? 'bg-light' : 'bg-white'}>
@@ -294,7 +260,6 @@ const ServiceManagement = () => {
                                     <td>{service.name}</td>
                                     <td className="text-end fw-bold text-success">{formatPrice(service.price)}</td>
                                     <td>
-                                        {/* Hiển thị tóm tắt, dùng title để xem đầy đủ */}
                                         <span title={service.description}>
                                             {service.description?.substring(0, 70) + (service.description?.length > 70 ? '...' : '')}
                                         </span>
@@ -334,15 +299,11 @@ const ServiceManagement = () => {
                     </tbody>
                 </Table>
             </div>
-
-            {/* START: Pagination Component */}
             {filteredServices.length > servicesPerPage && (
                 <div className="d-flex justify-content-center mt-3">
                     <Pagination>
                         <Pagination.First onClick={() => paginate(1)} disabled={currentPage === 1} />
                         <Pagination.Prev onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} />
-
-                        {/* Tạo các nút số trang */}
                         {[...Array(totalPages).keys()].map(number => (
                             <Pagination.Item 
                                 key={number + 1} 
@@ -358,9 +319,6 @@ const ServiceManagement = () => {
                     </Pagination>
                 </div>
             )}
-            {/* END: Pagination Component */}
-
-            {/* Modal Thêm/Sửa Dịch vụ */}
             <Modal show={showModal} onHide={closeModal} centered>
                 <Modal.Header closeButton className={isEditing ? "bg-warning text-dark" : "bg-primary text-white"}>
                     <Modal.Title>{isEditing ? "Chỉnh Sửa Dịch vụ" : "Thêm Dịch vụ mới"}</Modal.Title>
@@ -378,7 +336,7 @@ const ServiceManagement = () => {
                                 required
                             />
                         </Form.Group>
-                        
+
                         <Form.Group className="mb-3">
                             <Form.Label className="fw-bold">Mã dịch vụ (Code) <span className="text-danger">*</span></Form.Label>
                             <Form.Control
@@ -400,7 +358,7 @@ const ServiceManagement = () => {
                                 step="0.01" 
                             />
                         </Form.Group>
-                        
+
                         <Form.Group className="mb-3">
                             <Form.Label className="fw-bold">Mô tả</Form.Label>
                             <Form.Control

@@ -20,11 +20,10 @@ public class BookingRequest {
     private String roomType;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;
-    private Integer adultCount = 1;   // default value
+    private Integer adultCount = 1;   
     private Integer childCount = 0;
     private String notes;
 
-    // ✅ THÊM – hỗ trợ MULTI-ROOM booking
     private List<RoomBookingItem> rooms;
 
     @Data

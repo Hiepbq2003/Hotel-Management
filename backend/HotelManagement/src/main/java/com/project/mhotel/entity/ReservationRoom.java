@@ -21,25 +21,21 @@ public class ReservationRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Reservation
     @ManyToOne
     @JoinColumn(name = "reservation_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_reservationroom_reservation"))
     private Reservation reservation;
 
-    // Quan hệ với Room (nullable)
     @ManyToOne
     @JoinColumn(name = "room_id",
             foreignKey = @ForeignKey(name = "fk_reservationroom_room"))
     private Room room;
 
-    // Quan hệ với RoomType
     @ManyToOne
     @JoinColumn(name = "room_type_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_reservationroom_roomtype"))
     private RoomType roomType;
 
-    // Quan hệ với RatePlan (nullable)
     @ManyToOne
     @JoinColumn(name = "rate_plan_id",
             foreignKey = @ForeignKey(name = "fk_reservationroom_rateplan"))
@@ -50,7 +46,6 @@ public class ReservationRoom {
 
     @Column(name = "checkin_date", nullable = false)
     private LocalDateTime checkinDate;
-
 
     @Column(name = "checkout_date", nullable = false)
     private LocalDateTime checkoutDate;

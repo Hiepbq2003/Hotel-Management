@@ -21,7 +21,7 @@ public class BookingService {
     private final GuestRepository guestRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationRoomRepository reservationRoomRepository;
-    private final CustomerAccountRepository customerAccountRepository;
+    private final UserAccountRepository userAccountRepository;
     private final PaymentRepository paymentRepository;
 
     private final Long DEFAULT_HOTEL_ID = 1L;
@@ -29,34 +29,29 @@ public class BookingService {
     @Transactional
     public Reservation createBooking(BookingRequest req) {
 
-        // 1️⃣ Tìm RoomType
         RoomType roomType = roomTypeRepository
                 .findByHotelIdAndCode(DEFAULT_HOTEL_ID, req.getRoomType())
                 .orElseThrow(() -> new RuntimeException("Room type not found"));
 
-        // 2️⃣ Xử lý CustomerAccount nếu có
-        CustomerAccount customer = null;
+        UserAccount customer = null;
         if (req.getCustomerId() != null) {
-            customer = customerAccountRepository.findById(req.getCustomerId())
+            customer = userAccountRepository.findById(req.getCustomerId())
                     .orElseThrow(() -> new RuntimeException("Customer not found"));
         }
 
-        // 3️⃣ Tính số đêm
         long nights = Duration.between(req.getCheckInDate(), req.getCheckOutDate()).toDays();
         if (nights <= 0) nights = 1;
 
-        // 4️⃣ Tính tổng tiền
         int roomCount = (req.getRooms() == null || req.getRooms().isEmpty()) ? 1 : req.getRooms().size();
         BigDecimal totalAmount = roomType.getBasePrice()
                 .multiply(BigDecimal.valueOf(roomCount))
                 .multiply(BigDecimal.valueOf(nights));
 
-        // 5️⃣ Xác định guest chính THÔNG MINH HƠN
         Guest mainGuest;
         boolean isMultiRoom = req.getRooms() != null && !req.getRooms().isEmpty();
 
         if (isMultiRoom) {
-            // MULTI-ROOM: Dùng guest từ phòng đầu tiên làm guest chính
+
             BookingRequest.RoomBookingItem firstRoom = req.getRooms().get(0);
             String firstGuestName = (firstRoom.getGuestName() != null) ? firstRoom.getGuestName().trim() : null;
 
@@ -73,7 +68,7 @@ public class BookingService {
                     .documentNumber(firstRoom.getDocumentNumber())
                     .build();
         } else {
-            // SINGLE-ROOM: Dùng guest từ request chính
+
             String mainGuestName = (req.getGuestName() != null) ? req.getGuestName().trim() : null;
             if (mainGuestName == null || mainGuestName.isEmpty()) {
                 throw new RuntimeException("Guest name is required");
@@ -92,12 +87,11 @@ public class BookingService {
 
         guestRepository.save(mainGuest);
 
-        // 6️⃣ Tạo reservation
         Reservation reservation = Reservation.builder()
                 .hotel(roomType.getHotel())
                 .guest(mainGuest)
                 .reservationCode("RES-" + System.currentTimeMillis())
-                .status(Reservation.Status.reserved) // Sửa thành pending_payment để nhất quán
+                .status(Reservation.Status.reserved) 
                 .arrivalDate(req.getCheckInDate())
                 .departureDate(req.getCheckOutDate())
                 .pax(req.getAdultCount() + req.getChildCount())
@@ -107,17 +101,16 @@ public class BookingService {
                 .build();
         reservationRepository.save(reservation);
 
-        // 7️⃣ Xử lý multi-room nếu có
         if (isMultiRoom) {
             for (int i = 0; i < req.getRooms().size(); i++) {
                 BookingRequest.RoomBookingItem item = req.getRooms().get(i);
 
                 Guest roomGuest;
                 if (i == 0) {
-                    // Phòng đầu tiên dùng guest chính đã tạo
+
                     roomGuest = mainGuest;
                 } else {
-                    // Các phòng khác tạo guest mới
+
                     String itemGuestName = (item.getGuestName() != null) ? item.getGuestName().trim() : null;
                     if (itemGuestName == null || itemGuestName.isEmpty()) {
                         throw new RuntimeException("Guest name for room " + (i + 1) + " is required");
@@ -142,13 +135,13 @@ public class BookingService {
                         .adultCount(item.getAdultCount())
                         .childCount(item.getChildCount())
                         .nightlyPrice(roomType.getBasePrice())
-                        .status(ReservationRoom.Status.booked) // Đồng bộ trạng thái
+                        .status(ReservationRoom.Status.booked) 
                         .build();
 
                 reservationRoomRepository.save(rr);
             }
         } else {
-            // 8️⃣ Single room mode
+
             ReservationRoom rr = ReservationRoom.builder()
                     .reservation(reservation)
                     .roomType(roomType)
@@ -157,7 +150,7 @@ public class BookingService {
                     .adultCount(req.getAdultCount())
                     .childCount(req.getChildCount())
                     .nightlyPrice(roomType.getBasePrice())
-                    .status(ReservationRoom.Status.booked) // Đồng bộ trạng thái
+                    .status(ReservationRoom.Status.booked) 
                     .build();
 
             reservationRoomRepository.save(rr);
@@ -166,18 +159,15 @@ public class BookingService {
         return reservation;
     }
 
-    // Phương thức xử lý thanh toán thành công
     @Transactional
     public Reservation processPayment(Long reservationId, PaymentRequest paymentRequest) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        // Kiểm tra trạng thái hiện tại
         if (reservation.getStatus() != Reservation.Status.pending_payment) {
             throw new RuntimeException("Reservation is not in pending payment status");
         }
 
-        // Tạo payment record
         Payment payment = Payment.builder()
                 .reservation(reservation)
                 .hotel(reservation.getHotel())
@@ -189,11 +179,9 @@ public class BookingService {
                 .build();
         paymentRepository.save(payment);
 
-        // Cập nhật trạng thái reservation thành reserved
         reservation.setStatus(Reservation.Status.reserved);
         reservation.setUpdatedAt(LocalDateTime.now());
 
-        // Cập nhật trạng thái các reservation room
         if (reservation.getReservationRooms() != null) {
             for (ReservationRoom room : reservation.getReservationRooms()) {
                 room.setStatus(ReservationRoom.Status.booked);
@@ -203,13 +191,11 @@ public class BookingService {
         return reservationRepository.save(reservation);
     }
 
-    // Phương thức xử lý thanh toán thất bại
     @Transactional
     public Reservation processPaymentFailed(Long reservationId, PaymentRequest paymentRequest) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        // Tạo payment record với trạng thái failed
         Payment payment = Payment.builder()
                 .reservation(reservation)
                 .hotel(reservation.getHotel())
@@ -224,7 +210,6 @@ public class BookingService {
         return reservation;
     }
 
-    // Phương thức huỷ booking quá hạn thanh toán (24 giờ)
     @Transactional
     public void cancelOverdueBookings() {
         LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minusHours(24);
@@ -236,11 +221,10 @@ public class BookingService {
                 );
 
         for (Reservation reservation : overdueReservations) {
-            // Cập nhật trạng thái reservation thành cancelled
+
             reservation.setStatus(Reservation.Status.cancelled);
             reservation.setUpdatedAt(LocalDateTime.now());
 
-            // Cập nhật trạng thái các reservation room
             if (reservation.getReservationRooms() != null) {
                 for (ReservationRoom room : reservation.getReservationRooms()) {
                     room.setStatus(ReservationRoom.Status.cancelled);
@@ -249,7 +233,6 @@ public class BookingService {
 
             reservationRepository.save(reservation);
 
-            // Tạo payment record cho việc huỷ do quá hạn
             Payment payment = Payment.builder()
                     .reservation(reservation)
                     .hotel(reservation.getHotel())
@@ -263,7 +246,6 @@ public class BookingService {
         }
     }
 
-    // Phương thức lấy thông tin booking
     public Reservation getBooking(Long reservationId) {
         return reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));

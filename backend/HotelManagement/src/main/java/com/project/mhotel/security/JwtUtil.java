@@ -24,8 +24,6 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long JWT_TOKEN_VALIDITY;
 
-    // --- Private Methods ---
-
     private Key getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
@@ -39,8 +37,6 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
-
-    // --- Public Methods (Extract/Validate) ---
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
@@ -67,8 +63,6 @@ public class JwtUtil {
     public String extractUserRole(String token) {
         return extractClaim(token, claims -> (String) claims.get("role"));
     }
-
-    // --- Public Method (Generate) ---
 
     public String generateToken(String email, String role, Long id) {
         Map<String, Object> claims = new HashMap<>();

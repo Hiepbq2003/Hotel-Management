@@ -30,7 +30,6 @@ public class HotelAmenityController {
         return ResponseEntity.ok(amenities);
     }
 
-    // GET: Lấy tiện ích theo ID
     @GetMapping("/{id}")
     public ResponseEntity<HotelAmenityResponse> getAmenityById(@PathVariable Long id) {
         return amenityService.getAmenityById(id)
@@ -38,21 +37,18 @@ public class HotelAmenityController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST: Tạo tiện ích mới
     @PostMapping
     public ResponseEntity<HotelAmenityResponse> createAmenity(@RequestBody HotelAmenityRequest request) {
         HotelAmenityResponse newAmenity = amenityService.createAmenity(request);
         return ResponseEntity.ok(newAmenity);
     }
 
-    // PUT: Cập nhật tiện ích
     @PutMapping("/{id}")
     public ResponseEntity<HotelAmenityResponse> updateAmenity(@PathVariable Long id, @RequestBody HotelAmenityRequest request) {
         HotelAmenityResponse updatedAmenity = amenityService.updateAmenity(id, request);
         return ResponseEntity.ok(updatedAmenity);
     }
 
-    // DELETE: Xóa tiện ích
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAmenity(@PathVariable Long id) {
         amenityService.deleteAmenity(id);

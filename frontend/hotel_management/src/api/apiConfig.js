@@ -1,7 +1,6 @@
 const BASE_URL = "http://localhost:8083/api";
 const TIMEOUT = 5000;
 
-// ⚙️ Hàm fetch có timeout
 const fetchWithTimeout = (url, options = {}, timeout = TIMEOUT) => {
   return Promise.race([
     fetch(url, options),
@@ -11,7 +10,6 @@ const fetchWithTimeout = (url, options = {}, timeout = TIMEOUT) => {
   ]);
 };
 
-// ⚙️ Hàm xử lý chung cho tất cả request
 const request = async (endpoint, method = "GET", data = null) => {
   const token = localStorage.getItem("token");
 
@@ -28,7 +26,6 @@ const request = async (endpoint, method = "GET", data = null) => {
   try {
     const response = await fetchWithTimeout(`${BASE_URL}${endpoint}`, config);
 
-    // 🔍 Nếu server không trả về JSON hợp lệ
     const text = await response.text();
     let json;
     try {
@@ -37,12 +34,11 @@ const request = async (endpoint, method = "GET", data = null) => {
       json = { message: text };
     }
 
-    // 🧭 Xử lý lỗi HTTP
     if (!response.ok) {
       if (response.status === 401) {
         console.error("401 Unauthorized: Token hết hạn hoặc không hợp lệ.");
         localStorage.removeItem("token");
-        // window.location.href = "/login"; // nếu muốn tự động logout
+
       } else if (response.status === 403) {
         console.error("403 Forbidden: Không có quyền truy cập.");
       } else if (response.status >= 500) {
@@ -51,21 +47,21 @@ const request = async (endpoint, method = "GET", data = null) => {
       throw json;
     }
 
-    return json; // ✅ Thành công
+    return json; 
 
   } catch (error) {
-    if (error.message === "Request timeout") {
-      console.error("⏱️ Timeout: Server không phản hồi.");
-    } else if (error.message.includes("Failed to fetch")) {
-      console.error("🌐 Network Error: Không thể kết nối server.");
+    const msg = typeof error?.message === "string" ? error.message : "";
+    if (msg === "Request timeout") {
+      console.error("⏱️ Timeout: Server did not respond.");
+    } else if (msg.includes("Failed to fetch")) {
+      console.error("🌐 Network Error: Cannot connect to server.");
     } else {
-      console.error("❌ Lỗi không xác định:", error);
+      console.error("❌ Request error:", error);
     }
     throw error;
   }
 };
 
-// 🎯 Các hàm tiện lợi
 export const api = {
   get: (endpoint) => request(endpoint, "GET"),
   post: (endpoint, data) => request(endpoint, "POST", data),

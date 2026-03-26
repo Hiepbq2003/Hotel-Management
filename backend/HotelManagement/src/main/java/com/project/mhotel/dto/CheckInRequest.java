@@ -20,8 +20,6 @@ public class CheckInRequest {
     private String documentType;
     private String documentNumber;
 
-    // ✅ thêm user tạo check-in
     private Long receptionId;
 }
-
 

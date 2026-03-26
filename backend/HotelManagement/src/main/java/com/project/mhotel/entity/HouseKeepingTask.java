@@ -2,11 +2,11 @@ package com.project.mhotel.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
-import java.time.LocalDate;
 
 @Entity
-@Table(name = "housekeeping_task")
+@Table(name = "housekeeping_tasks")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,35 +17,56 @@ public class HouseKeepingTask {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "hotel_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_housekeeping_hotel"))
-    private Hotel hotel;
-
-    @ManyToOne
-    @JoinColumn(name = "room_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_housekeeping_room"))
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id", foreignKey = @ForeignKey(name = "fk_hktask_room"))
     private Room room;
 
-    @ManyToOne
-    @JoinColumn(name = "assigned_to",
-            foreignKey = @ForeignKey(name = "fk_housekeeping_user"))
+    @Column(name = "room_number")
+    private String roomNumber;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_to", foreignKey = @ForeignKey(name = "fk_hktask_user"))
     private UserAccount assignedTo;
 
-    @Column(name = "task_date", nullable = false)
-    private LocalDate taskDate;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reservation_id", foreignKey = @ForeignKey(name = "fk_hktask_reservation"))
+    private Reservation reservation;
+
+    @Column(length = 100)
+    private String type;     
+
+    @Column(length = 20)
+    private String priority; 
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "ENUM('pending','in_progress','done') DEFAULT 'pending'")
-    private Status status = Status.pending;
+    @Column(nullable = false)
+    private TaskStatus status;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+    
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
 
-    public enum Status {
-        pending, in_progress, done
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (status == null) {
+            status = TaskStatus.PENDING;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

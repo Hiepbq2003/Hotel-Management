@@ -3,7 +3,6 @@ import { Container, Row, Col, Card, Button, Spinner, Alert } from "react-bootstr
 import api from "../api/apiConfig";
 import { useNavigate } from "react-router-dom";
 
-// Đã loại bỏ IMAGE_SEEDS và getRoomImageUrl.
 const DEFAULT_PLACEHOLDER_URL = "https://via.placeholder.com/800x500?text=Room+Image+Not+Set";
 
 const Rooms = () => {
@@ -15,10 +14,9 @@ const Rooms = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        // API call to fetch room types
+
         const data = await api.get("/room-type"); 
-        
-        // Dữ liệu từ BE đã có trường 'image' (URL)
+
         setRooms(data || []);
         setError(null);
       } catch (err) {
@@ -75,7 +73,7 @@ const Rooms = () => {
       )}
 
       <Row className="g-4">
-        {rooms.map((room) => ( // Không cần index nữa
+        {rooms.map((room) => ( 
           <Col key={room.id} lg={4} md={6}>
             <Card
               className="h-100 shadow-sm border-0"
@@ -95,7 +93,7 @@ const Rooms = () => {
             >
               <Card.Img
                 variant="top"
-                // SỬ DỤNG TRƯỜNG 'image' TỪ BACKEND
+
                 src={room.image || DEFAULT_PLACEHOLDER_URL} 
                 alt={room.name}
                 style={{

@@ -25,13 +25,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT SUM(p.amount) FROM Payment p " +
             "WHERE FUNCTION('YEAR', p.paidAt) = :year " +
             "AND FUNCTION('MONTH', p.paidAt) = :month " +
-            "AND p.status = 'completed'") // Lọc theo status đã hoàn thành
+            "AND p.status = 'completed'") 
     BigDecimal sumTotalAmountByMonthAndYear(
             @Param("year") int year,
             @Param("month") int month);
 
     @Query("SELECT SUM(p.amount) FROM Payment p " +
             "WHERE FUNCTION('YEAR', p.paidAt) = :year " +
-            "AND p.status = 'completed'") // Lọc theo status đã hoàn thành
+            "AND p.status = 'completed'") 
     BigDecimal sumTotalAmountByYear(@Param("year") int year);
 }

@@ -22,27 +22,22 @@ const RoomManagement = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // State cho search và filter
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [roomTypeFilter, setRoomTypeFilter] = useState("all");
   const [floorFilter, setFloorFilter] = useState("all");
 
-  // State cho phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // State cho modal change status
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [updating, setUpdating] = useState(false);
 
-  // State cho room types
   const [roomTypes, setRoomTypes] = useState([]);
   const [floors, setFloors] = useState([]);
 
-  // 🔹 Load danh sách rooms
   const fetchRooms = async () => {
     try {
       setLoading(true);
@@ -58,7 +53,6 @@ const RoomManagement = () => {
     }
   };
 
-  // 🔹 Load room types
   const fetchRoomTypes = async () => {
     try {
       const res = await api.get("/room-type/hotel/1");
@@ -73,7 +67,6 @@ const RoomManagement = () => {
     fetchRoomTypes();
   }, []);
 
-  // 🔹 Extract unique floors từ rooms
   useEffect(() => {
     if (rooms.length > 0) {
       const uniqueFloors = [...new Set(rooms.map(room => room.floor).filter(Boolean))].sort();
@@ -81,11 +74,9 @@ const RoomManagement = () => {
     }
   }, [rooms]);
 
-  // 🔹 Filter rooms
   useEffect(() => {
     let filtered = rooms;
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(room =>
         room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,38 +84,32 @@ const RoomManagement = () => {
       );
     }
 
-    // Status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter(room => room.status === statusFilter);
     }
 
-    // Room type filter
     if (roomTypeFilter !== "all") {
       filtered = filtered.filter(room => room.roomType?.code === roomTypeFilter);
     }
 
-    // Floor filter
     if (floorFilter !== "all") {
       filtered = filtered.filter(room => room.floor === parseInt(floorFilter));
     }
 
     setFilteredRooms(filtered);
-    setCurrentPage(1); // Reset về trang 1 khi filter thay đổi
+    setCurrentPage(1); 
   }, [searchTerm, statusFilter, roomTypeFilter, floorFilter, rooms]);
 
-  // 🔹 Tính toán dữ liệu phân trang
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentRooms = filteredRooms.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
 
-  // 🔹 Tạo số trang cho pagination
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
 
-  // 🔹 Hiển thị tối đa 5 trang
   const getVisiblePages = () => {
     const delta = 2;
     const range = [];
@@ -151,21 +136,18 @@ const RoomManagement = () => {
     return rangeWithDots;
   };
 
-  // 🔹 Xử lý mở modal change status
   const handleOpenStatusModal = (room) => {
     setSelectedRoom(room);
     setNewStatus(room.status);
     setShowStatusModal(true);
   };
 
-  // 🔹 Xử lý thay đổi status
   const handleChangeStatus = async () => {
     if (!selectedRoom || !newStatus) return;
 
     try {
       setUpdating(true);
-      
-      // Cập nhật room status
+
       await api.put(`/rooms/${selectedRoom.id}`, {
         roomNumber: selectedRoom.roomNumber,
         roomTypeId: selectedRoom.roomType?.id,
@@ -176,10 +158,9 @@ const RoomManagement = () => {
 
       setSuccess(`✅ Đã cập nhật trạng thái phòng ${selectedRoom.roomNumber} thành ${getStatusLabel(newStatus)}`);
       setShowStatusModal(false);
-      
-      // Refresh danh sách
+
       fetchRooms();
-      
+
     } catch (err) {
       console.error("❌ Lỗi cập nhật trạng thái:", err);
       setError("Lỗi cập nhật trạng thái phòng");
@@ -188,7 +169,6 @@ const RoomManagement = () => {
     }
   };
 
-  // 🔹 Get status badge color
   const getStatusBadge = (status) => {
     switch (status) {
       case "available":
@@ -204,7 +184,6 @@ const RoomManagement = () => {
     }
   };
 
-  // 🔹 Get status label
   const getStatusLabel = (status) => {
     switch (status) {
       case "available":
@@ -220,14 +199,12 @@ const RoomManagement = () => {
     }
   };
 
-  // 🔹 Get room type name
   const getRoomTypeName = (roomType) => {
     return roomType?.name || "N/A";
   };
 
   return (
     <Container className="mt-4">
-      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h3>Reception - Quản lý Phòng</h3>
@@ -237,8 +214,6 @@ const RoomManagement = () => {
           Tổng: {rooms.length} phòng
         </Badge>
       </div>
-
-      {/* Search và Filter Section */}
       <Card className="p-3 shadow-sm mb-4">
         <Row>
           <Col md={3}>
@@ -332,12 +307,8 @@ const RoomManagement = () => {
           </Col>
         </Row>
       </Card>
-
-      {/* Thông báo */}
       {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
       {success && <Alert variant="success" onClose={() => setSuccess(null)} dismissible>{success}</Alert>}
-
-      {/* Thống kê */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
           <Badge bg="info" className="me-2">
@@ -353,8 +324,6 @@ const RoomManagement = () => {
           </small>
         </div>
       </div>
-
-      {/* Danh sách phòng */}
       <Card className="shadow-sm">
         <Card.Header className="bg-light">
           <div className="d-flex justify-content-between align-items-center">
@@ -365,7 +334,7 @@ const RoomManagement = () => {
             </div>
           </div>
         </Card.Header>
-        
+
         <Card.Body className="p-0">
           {loading ? (
             <div className="text-center p-4">
@@ -426,8 +395,6 @@ const RoomManagement = () => {
                   ))}
                 </tbody>
               </Table>
-
-              {/* Phân trang */}
               {totalPages > 1 && (
                 <div className="d-flex justify-content-between align-items-center p-3 border-top">
                   <div>
@@ -435,7 +402,7 @@ const RoomManagement = () => {
                       Hiển thị {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredRooms.length)} của {filteredRooms.length} phòng
                     </small>
                   </div>
-                  
+
                   <Pagination className="mb-0">
                     <Pagination.First 
                       onClick={() => setCurrentPage(1)} 
@@ -487,8 +454,6 @@ const RoomManagement = () => {
           )}
         </Card.Body>
       </Card>
-
-      {/* Modal Change Status */}
       <Modal show={showStatusModal} onHide={() => setShowStatusModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Đổi trạng thái phòng</Modal.Title>

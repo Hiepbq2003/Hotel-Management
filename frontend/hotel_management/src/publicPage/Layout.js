@@ -6,7 +6,6 @@ import Header from "../components/Header";
 const Layout = () => {
     const location = useLocation();
 
-    // Ẩn Breadcrumbs trên trang chủ (tùy bạn)
     const hideBreadcrumb =
         location.pathname === "/" || location.pathname === "/home";
     return (

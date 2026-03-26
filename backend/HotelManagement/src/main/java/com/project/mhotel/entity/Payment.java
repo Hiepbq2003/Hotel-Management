@@ -18,13 +18,11 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Reservation (nullable)
     @ManyToOne
     @JoinColumn(name = "reservation_id",
             foreignKey = @ForeignKey(name = "fk_payment_reservation"))
     private Reservation reservation;
 
-    // Quan hệ với Hotel
     @ManyToOne
     @JoinColumn(name = "hotel_id",
             foreignKey = @ForeignKey(name = "fk_payment_hotel"))
@@ -49,7 +47,6 @@ public class Payment {
     @Column(nullable = false, columnDefinition = "ENUM('completed','pending','failed','refunded') DEFAULT 'completed'")
     private Status status = Status.completed;
 
-    // Người tạo (nullable)
     @ManyToOne
     @JoinColumn(name = "created_by",
             foreignKey = @ForeignKey(name = "fk_payment_user"))

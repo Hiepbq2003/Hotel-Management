@@ -12,15 +12,10 @@ import {
     Form 
 } from 'react-bootstrap'; 
 import api from '../api/apiConfig'; 
+import AppPagination from '../components/AppPagination';
 
-// --- Constants ---
 const ALLOWED_ROLES = ['ADMIN', 'MANAGER']; 
 const STATUS_OPTIONS = ['active', 'inactive', 'blocked'];
-
-// =================================================================================
-// 1. CREATE CUSTOMER MODAL (Thêm mới khách hàng)
-// Cập nhật validation: Mật khẩu chỉ cần 6 ký tự số
-// =================================================================================
 
 function CreateCustomerModal({ show, handleClose, handleCreate }) {
     const [formData, setFormData] = useState({
@@ -39,28 +34,24 @@ function CreateCustomerModal({ show, handleClose, handleCreate }) {
 
     const handleInternalCreate = (e) => {
         e.preventDefault();
-        
+
         const { fullName, email, phone, password, confirmPassword } = formData;
 
-        // 1. Check required fields
         if (!fullName || !email || !password || !confirmPassword) {
             setValidationError('Vui lòng điền đầy đủ Tên, Email, Mật khẩu và Xác nhận Mật khẩu.');
             return;
         }
 
-        // 2. Password match check
         if (password !== confirmPassword) {
             setValidationError('Mật khẩu và Xác nhận Mật khẩu không khớp.');
             return;
         }
-        
-        // 3. Email format check
+
         if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
             setValidationError('Email không hợp lệ.');
             return;
         }
 
-        // 4. Password format check (chỉ cần 6 ký tự số)
         if (!/^\d{6}$/.test(password)) {
              setValidationError('Mật khẩu phải là 6 ký tự số.');
              return;
@@ -68,11 +59,10 @@ function CreateCustomerModal({ show, handleClose, handleCreate }) {
 
         handleCreate({ fullName, email, phone, password });
 
-        // Reset form và validation sau khi gọi API
         setFormData({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
         setValidationError('');
     };
-    
+
     useEffect(() => {
         if (!show) {
             setFormData({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
@@ -88,7 +78,7 @@ function CreateCustomerModal({ show, handleClose, handleCreate }) {
             <Modal.Body>
                 <Form onSubmit={handleInternalCreate}>
                     {validationError && <Alert variant="danger">{validationError}</Alert>}
-                    
+
                     <Form.Group className="mb-3">
                         <Form.Label>Họ và Tên (*)</Form.Label>
                         <Form.Control 
@@ -185,14 +175,14 @@ function EditCustomerModal({ show, handleClose, customer, statusOptions, handleS
 
     const handleInternalSave = (e) => {
         e.preventDefault();
-        
+
         if (!formData.fullName.trim()) {
             setValidationError('Tên đầy đủ không được để trống.');
             return;
         }
 
         if (customer) {
-            // Chỉ gửi những gì cần thiết: customerId, fullName, phone, status
+
             handleSaveDetailsAndStatus(customer.id, formData.fullName, formData.phone, formData.status);
         }
     };
@@ -206,7 +196,7 @@ function EditCustomerModal({ show, handleClose, customer, statusOptions, handleS
                 {customer && (
                     <Form onSubmit={handleInternalSave}>
                         {validationError && <Alert variant="danger">{validationError}</Alert>}
-                        
+
                         <Form.Group className="mb-3">
                             <Form.Label>ID</Form.Label>
                             <Form.Control type="text" value={customer.id} disabled />
@@ -215,7 +205,7 @@ function EditCustomerModal({ show, handleClose, customer, statusOptions, handleS
                             <Form.Label>Email</Form.Label>
                             <Form.Control type="text" value={customer.email} disabled />
                         </Form.Group>
-                        
+
                         <Form.Group className="mb-3">
                             <Form.Label>Họ và Tên (*)</Form.Label>
                             <Form.Control 
@@ -227,7 +217,7 @@ function EditCustomerModal({ show, handleClose, customer, statusOptions, handleS
                                 required
                             />
                         </Form.Group>
-                        
+
                         <Form.Group className="mb-3">
                             <Form.Label>Số điện thoại</Form.Label>
                             <Form.Control 
@@ -266,22 +256,18 @@ function EditCustomerModal({ show, handleClose, customer, statusOptions, handleS
     );
 }
 
-
-// =================================================================================
-// MAIN COMPONENT: CustomerManagement
-// =================================================================================
-
 function CustomerManagement() {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const currentUserRole = localStorage.getItem('userRole'); 
-    
-    // States cho Modals
+
     const [showCreateModal, setShowCreateModal] = useState(false);
-    // Chỉ cần 1 Modal Edit duy nhất
     const [showEditModal, setShowEditModal] = useState(false); 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
         if (!ALLOWED_ROLES.includes(currentUserRole)) {
@@ -296,7 +282,7 @@ function CustomerManagement() {
         try {
             setLoading(true);
             const response = await api.get('/customer'); 
-            // Đảm bảo response là mảng, sử dụng response.data nếu dùng axios, hoặc response nếu apiConfig đã handle
+
             setCustomers(response?.data || response || []); 
             setError(null);
         } catch (err) {
@@ -311,7 +297,6 @@ function CustomerManagement() {
         return ALLOWED_ROLES.includes(currentUserRole);
     };
 
-    // --- Modal Handlers ---
     const handleShowEditModal = (customer) => {
         if (canPerformAction()) {
             setSelectedCustomer(customer);
@@ -334,13 +319,12 @@ function CustomerManagement() {
         setShowEditModal(false);
         setSelectedCustomer(null);
     };
-    
-    // --- CRUD Logic (CREATE) ---
+
     const handleCreateCustomer = async ({ fullName, email, phone, password }) => {
         try {
-            // API call: POST /api/customer
+
             await api.post('/customer', { fullName, email, phone, password });
-            
+
             alert(`Tạo tài khoản ${fullName} thành công!`);
             handleCloseAllModals();
             fetchCustomers(); 
@@ -349,21 +333,19 @@ function CustomerManagement() {
                                 ? typeof err.response.data === 'string' ? err.response.data : "Lỗi server hoặc email đã tồn tại."
                                 : "Lỗi không xác định khi tạo khách hàng.";
             alert(`Lỗi khi tạo khách hàng: ${errorMessage}`);
-            // Không fetchCustomers ở đây nếu chỉ là lỗi validate/conflict để người dùng xem lại form
+
         }
     };
 
-    // --- CRUD Logic (EDIT Details + Status) ---
     const handleSaveDetailsAndStatus = async (customerId, fullName, phone, status) => {
-        // 1. Cập nhật Tên và SĐT (PUT /api/customer/{id})
+
         try {
             await api.put(`/customer/${customerId}`, { fullName, phone });
-            
-            // 2. Cập nhật Trạng thái (PUT /api/customer/{id}/status)
+
             if (selectedCustomer.status !== status) {
                  await api.put(`/customer/${customerId}/status`, { newStatus: status });
             }
-            
+
             alert(`Cập nhật thông tin và trạng thái cho ID ${customerId} thành công!`);
             handleCloseAllModals();
             fetchCustomers(); 
@@ -376,7 +358,6 @@ function CustomerManagement() {
         }
     };
 
-    // --- CRUD Logic (DELETE) ---
     const handleDeleteCustomer = async (customerId, fullName) => {
         if (!canPerformAction()) {
             alert("Bạn không có quyền xóa khách hàng.");
@@ -385,7 +366,7 @@ function CustomerManagement() {
 
         if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản khách hàng: ${fullName} (ID: ${customerId})?`)) {
             try {
-                // API call: DELETE /api/customer/{id}
+
                 await api.delete(`/customer/${customerId}`); 
                 alert(`Xóa khách hàng ${fullName} thành công!`);
                 fetchCustomers();
@@ -397,8 +378,7 @@ function CustomerManagement() {
             }
         }
     };
-    
-    // --- Helper cho Status Badge ---
+
     const getStatusVariant = (status) => {
         switch (status?.toLowerCase()) {
             case 'active': return 'success';
@@ -408,7 +388,6 @@ function CustomerManagement() {
         }
     }
 
-    // --- Render Logic ---
     if (loading) {
         return (
             <Container className="mt-5 text-center">
@@ -441,7 +420,6 @@ function CustomerManagement() {
             {!error && (
                 <Row className="mb-3">
                     <Col className="d-flex justify-content-between">
-                        {/* Nút Thêm Mới */}
                         <Button 
                             variant="primary" 
                             onClick={handleShowCreateModal} 
@@ -456,10 +434,25 @@ function CustomerManagement() {
                 </Row>
             )}
 
+
             {!error && customers.length === 0 && (
                 <Alert variant="info" className="text-center">
                     <p className="mb-0">Danh sách khách hàng trống.</p>
                 </Alert>
+            )}
+
+            {!error && (
+                <Row className="mb-2">
+                    <Col md={4}>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Search by name or email..."
+                            value={searchTerm}
+                            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                        />
+                    </Col>
+                </Row>
             )}
 
             {!error && customers.length > 0 && (
@@ -477,7 +470,14 @@ function CustomerManagement() {
                             </tr>
                         </thead>
                         <tbody>
-                            {customers?.map((customer) => { 
+                            {(() => {
+                                const filtered = customers.filter(c =>
+                                    !searchTerm ||
+                                    c.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    c.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                                );
+                                const paged = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+                                return paged.map((customer) => { 
                                 const editable = canPerformAction(); 
 
                                 return (
@@ -498,7 +498,6 @@ function CustomerManagement() {
                                         <td className="text-center">
                                             {editable && (
                                                 <>
-                                                    {/* Nút Sửa Gộp (TT + Status) */}
                                                     <Button 
                                                         variant="warning" 
                                                         size="sm"
@@ -508,8 +507,6 @@ function CustomerManagement() {
                                                     >
                                                         <i className="bi bi-pencil-fill"></i> Sửa
                                                     </Button>
-                                                    
-                                                    {/* Nút Xóa */}
                                                     <Button 
                                                         variant="danger" 
                                                         size="sm"
@@ -526,20 +523,22 @@ function CustomerManagement() {
                                         </td>
                                     </tr>
                                 );
-                            })}
+                            })})()}
                         </tbody>
                     </Table>
+                    <AppPagination
+                        totalItems={customers.filter(c => !searchTerm || c.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || c.email?.toLowerCase().includes(searchTerm.toLowerCase())).length}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                        currentPage={currentPage}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             )}
-            
-            {/* 1. Modal Thêm Khách hàng Mới */}
             <CreateCustomerModal 
                 show={showCreateModal}
                 handleClose={handleCloseAllModals}
                 handleCreate={handleCreateCustomer}
             />
-
-            {/* 2. Modal Sửa thông tin (Tên, SĐT và Trạng thái) */}
             {selectedCustomer && (
                 <EditCustomerModal 
                     show={showEditModal}

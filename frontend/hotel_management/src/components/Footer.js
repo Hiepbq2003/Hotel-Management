@@ -6,7 +6,6 @@ import { GrSend } from "react-icons/gr";
 const Footer = () => {
     return (
         <footer style={{ marginTop: "40px" }}>
-            {/* --- Footer Top --- */}
             <Row
                 className="justify-content-center text-light text-center text-lg-start"
                 style={{
@@ -17,7 +16,6 @@ const Footer = () => {
                 <Col lg={9}>
                     <Container>
                         <Row className="justify-content-between g-4">
-                            {/* --- Left: Brand --- */}
                             <Col lg={4} md={6}>
                                 <div
                                     style={{
@@ -67,8 +65,6 @@ const Footer = () => {
                                 </div>
 
                             </Col>
-
-                            {/* --- Middle: Contact --- */}
                             <Col lg={4} md={6}>
                                 <p
                                     style={{
@@ -86,8 +82,6 @@ const Footer = () => {
                                     United States
                                 </div>
                             </Col>
-
-                            {/* --- Right: Newsletter --- */}
                             <Col lg={4} md={12}>
                                 <p
                                     style={{
@@ -133,8 +127,6 @@ const Footer = () => {
                     </Container>
                 </Col>
             </Row>
-
-            {/* --- Footer Bottom --- */}
             <Row
                 className="justify-content-center text-center text-secondary text-lg-start"
                 style={{

@@ -1,4 +1,4 @@
-// Giả định nội dung HotelAmenityResponse.java đã có:
+
 package com.project.mhotel.dto;
 
 import com.project.mhotel.entity.HotelAmenity;
@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.List; // Cần import List
+import java.util.List; 
 
 @Data
 @NoArgsConstructor

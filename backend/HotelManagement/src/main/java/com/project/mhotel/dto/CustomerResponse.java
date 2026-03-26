@@ -1,6 +1,6 @@
 package com.project.mhotel.dto;
 
-import com.project.mhotel.entity.CustomerAccount.Status;
+import com.project.mhotel.entity.UserAccount.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

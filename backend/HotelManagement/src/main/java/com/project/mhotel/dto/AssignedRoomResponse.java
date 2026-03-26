@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 @Builder
 public class AssignedRoomResponse {
     private String reservationCode;
-    private String number;      // room number
-    private String type;        // room type name
+    private String number;      
+    private String type;        
     private String guestName;
     private LocalDateTime checkInDate;
     private LocalDateTime checkOutDate;

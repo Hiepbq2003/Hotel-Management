@@ -2,10 +2,10 @@ package com.project.mhotel.service;
 
 import com.project.mhotel.dto.HotelAmenityRequest;
 import com.project.mhotel.dto.HotelAmenityResponse;
-import com.project.mhotel.dto.RoomTypeDto; // NEW IMPORT
+import com.project.mhotel.dto.RoomTypeDto; 
 import com.project.mhotel.entity.Hotel;
 import com.project.mhotel.entity.HotelAmenity;
-import com.project.mhotel.entity.RoomTypeAmenity; // NEW IMPORT
+import com.project.mhotel.entity.RoomTypeAmenity; 
 import com.project.mhotel.repository.HotelAmenityRepository;
 import com.project.mhotel.repository.HotelRepository;
 import org.springframework.stereotype.Service;
@@ -25,26 +25,22 @@ public class HotelAmenityService {
         this.hotelRepository = hotelRepository;
     }
 
-    // --- GET METHODS (UPDATED) ---
-
     public List<HotelAmenityResponse> getAllAmenities() {
         return amenityRepository.findAll().stream()
-                .map(this::toResponse) // SỬ DỤNG PHƯƠNG THỨC MỚI CÓ XỬ LÝ MỐI QUAN HỆ
+                .map(this::toResponse) 
                 .collect(Collectors.toList());
     }
 
     public List<HotelAmenityResponse> getAmenitiesByHotel(Long hotelId) {
         return amenityRepository.findByHotel_Id(hotelId).stream()
-                .map(this::toResponse) // SỬ DỤNG PHƯƠNG THỨC MỚI
+                .map(this::toResponse) 
                 .collect(Collectors.toList());
     }
 
     public Optional<HotelAmenityResponse> getAmenityById(Long id) {
         return amenityRepository.findById(id)
-                .map(this::toResponse); // SỬ DỤNG PHƯƠNG THỨC MỚI
+                .map(this::toResponse); 
     }
-
-    // --- CREATE METHOD ---
 
     public HotelAmenityResponse createAmenity(HotelAmenityRequest request) {
         if (request.getHotelId() == null) {
@@ -58,17 +54,14 @@ public class HotelAmenityService {
             throw new RuntimeException("Amenity name already exists in this hotel.");
         }
 
-        // 3. Map DTO sang Entity và lưu
         HotelAmenity newAmenity = HotelAmenity.builder()
                 .hotel(hotel)
                 .name(request.getName())
                 .description(request.getDescription())
                 .build();
 
-        return toResponse(amenityRepository.save(newAmenity)); // SỬ DỤNG PHƯƠNG THỨC MỚI
+        return toResponse(amenityRepository.save(newAmenity)); 
     }
-
-    // --- UPDATE METHOD ---
 
     public HotelAmenityResponse updateAmenity(Long id, HotelAmenityRequest request) {
         HotelAmenity existingAmenity = amenityRepository.findById(id)
@@ -81,15 +74,11 @@ public class HotelAmenityService {
             throw new RuntimeException("Amenity name already exists in this hotel.");
         }
 
-
         existingAmenity.setName(request.getName());
         existingAmenity.setDescription(request.getDescription());
 
-
         return toResponse(amenityRepository.save(existingAmenity));
     }
-
-    // --- DELETE METHOD ---
 
     public void deleteAmenity(Long id) {
         if (!amenityRepository.existsById(id)) {
@@ -97,7 +86,6 @@ public class HotelAmenityService {
         }
         amenityRepository.deleteById(id);
     }
-
 
     private HotelAmenityResponse toResponse(HotelAmenity entity) {
 
@@ -118,7 +106,6 @@ public class HotelAmenityService {
         response.setRoomTypes(roomTypeDtos);
         return response;
     }
-
 
     private RoomTypeDto toRoomTypeDto(com.project.mhotel.entity.RoomType roomTypeEntity) {
         return new RoomTypeDto(roomTypeEntity.getId(), roomTypeEntity.getName(), roomTypeEntity.getCode());

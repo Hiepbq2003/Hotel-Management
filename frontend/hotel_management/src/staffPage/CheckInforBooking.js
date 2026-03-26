@@ -20,35 +20,31 @@ const CheckInforBooking = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // 🎯 State cho form check-in
+
   const [checkInForm, setCheckInForm] = useState({
     reservationCode: "",
     documentType: "CCCD",
-    documentNumber: "000000", // 🆕 Đặt giá trị mặc định
+    documentNumber: "000000", 
   });
 
-  // 🎯 State cho reception info
   const [receptionInfo, setReceptionInfo] = useState({
     id: null,
     name: "",
     role: ""
   });
 
-  // 🎯 State cho modal xác nhận
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
 
-  // 🔹 Load reception info
   useEffect(() => {
     const loadReceptionInfo = () => {
       const customerId = localStorage.getItem("customerId");
       const userId = localStorage.getItem("userId");
       const fullName = localStorage.getItem("fullName");
       const userRole = localStorage.getItem("userRole");
-      
+
       const receptionId = userId || customerId;
-      
+
       setReceptionInfo({
         id: receptionId,
         name: fullName || "Unknown Receptionist",
@@ -63,7 +59,6 @@ const CheckInforBooking = () => {
     loadReceptionInfo();
   }, []);
 
-  // 🔹 Load danh sách reservations có thể check-in
   const fetchReservations = async () => {
     try {
       setLoading(true);
@@ -83,7 +78,6 @@ const CheckInforBooking = () => {
     fetchReservations();
   }, []);
 
-  // 🔹 Tìm kiếm reservation
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredReservations(reservations);
@@ -96,11 +90,10 @@ const CheckInforBooking = () => {
       (res.email && res.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (res.phone && res.phone.includes(searchTerm))
     );
-    
+
     setFilteredReservations(filtered);
   }, [searchTerm, reservations]);
 
-  // 🔹 Xử lý thay đổi form
   const handleFormChange = (e) => {
     setCheckInForm({
       ...checkInForm,
@@ -108,18 +101,16 @@ const CheckInforBooking = () => {
     });
   };
 
-  // 🆕 Tự động điền document number khi chọn reservation từ bảng
   const handleSelectReservation = (reservation) => {
     setCheckInForm({
       reservationCode: reservation.reservationCode,
       documentType: "CCCD",
-      documentNumber: "000000" // 🆕 Luôn đặt giá trị mặc định
+      documentNumber: "000000" 
     });
     setSelectedReservation(reservation);
     setError(null);
   };
 
-  // 🔹 Xác thực mã booking và document
   const handleVerifyBooking = async () => {
     try {
       if (!checkInForm.reservationCode.trim()) {
@@ -127,14 +118,12 @@ const CheckInforBooking = () => {
         return;
       }
 
-      // 🆕 Không cần kiểm tra document number nữa vì đã có giá trị mặc định
       if (!checkInForm.documentNumber.trim()) {
         setCheckInForm(prev => ({ ...prev, documentNumber: "000000" }));
       }
 
       setLoading(true);
-      
-      // 🎯 Tìm reservation theo mã
+
       const reservation = reservations.find(
         res => res.reservationCode === checkInForm.reservationCode
       );
@@ -147,7 +136,7 @@ const CheckInforBooking = () => {
       setSelectedReservation(reservation);
       setShowConfirmModal(true);
       setError(null);
-      
+
     } catch (err) {
       console.error("❌ Lỗi xác thực booking:", err);
       setError("Lỗi xác thực thông tin booking");
@@ -156,50 +145,46 @@ const CheckInforBooking = () => {
     }
   };
 
-  // 🔹 Xử lý check-in
 const handleCheckIn = async () => {
     try {
       if (!selectedReservation) {
         setError("❌ Vui lòng chọn reservation trước khi check-in");
         return;
       }
-  
-      // 🎯 Kiểm tra reception ID
+
       if (!receptionInfo.id) {
         setError("❌ Không tìm thấy thông tin receptionist. Vui lòng đăng nhập lại.");
         return;
       }
-  
+
       setLoading(true);
       setError(null);
-      
+
       const reservationId = selectedReservation.id;
       const receptionistId = parseInt(receptionInfo.id);
-  
+
       console.log("📤 Gửi request check-in:", {
         reservationId: reservationId,
         receptionistId: receptionistId,
         documentType: checkInForm.documentType,
         documentNumber: checkInForm.documentNumber
       });
-  
-      // 🎯 VALIDATION trước khi gọi API
+
       if (!reservationId || reservationId <= 0) {
         throw new Error("Reservation ID không hợp lệ: " + reservationId);
       }
-  
+
       if (!receptionistId || receptionistId <= 0) {
         throw new Error("Receptionist ID không hợp lệ: " + receptionistId);
       }
-  
-      // 🎯 Gọi API check-in với error handling chi tiết
+
       try {
         const response = await api.post(
           `/checkIn/reservation/${reservationId}?receptionistId=${receptionistId}`
         );
-  
+
         console.log("✅ Check-in response:", response);
-  
+
         setSuccess(`✅ Check-in thành công cho ${selectedReservation.guestName}`);
         setShowConfirmModal(false);
         setCheckInForm({
@@ -208,10 +193,9 @@ const handleCheckIn = async () => {
           documentNumber: "000000",
         });
         setSelectedReservation(null);
-        
-        // Refresh danh sách
+
         fetchReservations();
-        
+
       } catch (apiError) {
         console.error("❌ API Error chi tiết:", {
           name: apiError.name,
@@ -220,22 +204,21 @@ const handleCheckIn = async () => {
           response: apiError.response,
           config: apiError.config
         });
-  
-        // 🆕 Phân loại lỗi
+
         if (apiError.response) {
-          // Backend trả về lỗi
+
           const errorData = apiError.response.data;
           const errorMsg = errorData?.error || errorData?.message || `HTTP ${apiError.response.status}`;
           setError(`❌ Lỗi từ server: ${errorMsg}`);
         } else if (apiError.request) {
-          // Request được gửi nhưng không nhận được response
+
           setError("❌ Không nhận được phản hồi từ server. Kiểm tra kết nối mạng.");
         } else {
-          // Lỗi khi thiết lập request
+
           setError(`❌ Lỗi thiết lập request: ${apiError.message}`);
         }
       }
-      
+
     } catch (err) {
       console.error("❌ Lỗi tổng thể check-in:", err);
       setError(`❌ Lỗi hệ thống: ${err.message}`);
@@ -246,7 +229,6 @@ const handleCheckIn = async () => {
 
   return (
     <Container className="mt-4">
-      {/* 🎯 Header với reception info */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3>Reception - Check-in từ Booking Online</h3>
         <div className="text-end">
@@ -256,11 +238,9 @@ const handleCheckIn = async () => {
           </small>
         </div>
       </div>
-
-      {/* 🎯 Form xác thực booking */}
       <Card className="p-4 shadow-sm mb-4">
         <h5 className="text-primary mb-3">🔐 Xác thực Booking</h5>
-        
+
         <Row>
           <Col md={4}>
             <Form.Group className="mb-3">
@@ -306,12 +286,10 @@ const handleCheckIn = async () => {
         {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
         {success && <Alert variant="success" className="mt-3">{success}</Alert>}
       </Card>
-
-      {/* 🎯 Danh sách booking có thể check-in */}
       <Card className="p-4 shadow-sm">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="text-primary">📋 Danh sách Booking chờ Check-in</h5>
-          
+
           <Form.Group className="w-25">
             <Form.Control
               type="text"
@@ -379,8 +357,6 @@ const handleCheckIn = async () => {
           </Table>
         )}
       </Card>
-
-      {/* 🎯 Modal xác nhận check-in */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>✅ Xác nhận Check-in</Modal.Title>
@@ -389,7 +365,7 @@ const handleCheckIn = async () => {
           {selectedReservation && (
             <div>
               <p>Bạn có chắc muốn check-in cho booking sau?</p>
-              
+
               <div className="border p-3 rounded bg-light">
                 <p><strong>Mã Booking:</strong> {selectedReservation.reservationCode}</p>
                 <p><strong>Khách hàng:</strong> {selectedReservation.guestName}</p>

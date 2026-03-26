@@ -19,18 +19,15 @@ const CheckInPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🎯 THÊM: State cho reception info
   const [receptionInfo, setReceptionInfo] = useState({
     id: null,
     name: "",
     role: ""
   });
 
-  // 🆕 State cho validation errors
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
-  // ✅ Helper to format datetime-local correctly for local timezone
   const formatDateTimeLocal = (date) => {
     const pad = (n) => n.toString().padStart(2, "0");
     const year = date.getFullYear();
@@ -76,7 +73,6 @@ const CheckInPage = () => {
 
   const [selectedTime, setSelectedTime] = useState("12:00");
 
-  // 🔹 Load Room Types
   useEffect(() => {
     api
       .get("/room-type/hotel/1")
@@ -84,16 +80,15 @@ const CheckInPage = () => {
       .catch((err) => console.error("❌ Lỗi khi tải room types:", err));
   }, []);
 
-  // 🔹 Load reception info khi component mount
   useEffect(() => {
     const loadReceptionInfo = () => {
       const customerId = localStorage.getItem("customerId");
       const userId = localStorage.getItem("userId");
       const fullName = localStorage.getItem("fullName");
       const userRole = localStorage.getItem("userRole");
-      
+
       const receptionId = userId;
-      
+
       setReceptionInfo({
         id: receptionId,
         name: fullName || "Unknown Receptionist",
@@ -108,7 +103,6 @@ const CheckInPage = () => {
     loadReceptionInfo();
   }, []);
 
-  // 🔹 Load danh sách check-in hôm nay
   const fetchTodayCheckIns = async () => {
     try {
       const res = await api.get("/checkIn/today");
@@ -126,7 +120,6 @@ const CheckInPage = () => {
     fetchTodayCheckIns();
   }, []);
 
-  // 🆕 VALIDATION RULES
   const validateField = (name, value) => {
     let error = "";
 
@@ -190,12 +183,11 @@ const CheckInPage = () => {
     return error;
   };
 
-  // 🆕 VALIDATE FORM
   const validateForm = () => {
     const newErrors = {};
-    
+
     Object.keys(form).forEach(field => {
-      if (field !== "documentNumber") { // Skip documentNumber validation
+      if (field !== "documentNumber") { 
         const error = validateField(field, form[field]);
         if (error) {
           newErrors[field] = error;
@@ -207,11 +199,10 @@ const CheckInPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 🆕 HANDLE BLUR (when user leaves a field)
   const handleBlur = (e) => {
     const { name, value } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
-    
+
     const error = validateField(name, value);
     setErrors(prev => ({
       ...prev,
@@ -219,16 +210,14 @@ const CheckInPage = () => {
     }));
   };
 
-  // 🆕 HANDLE CHANGE với validation real-time
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     setForm(prev => ({ 
       ...prev, 
       [name]: name === "adultCount" || name === "childCount" ? parseInt(value) || 0 : value 
     }));
 
-    // Real-time validation sau khi user đã touch field
     if (touched[name]) {
       const error = validateField(name, value);
       setErrors(prev => ({
@@ -238,7 +227,6 @@ const CheckInPage = () => {
     }
   };
 
-  // 🔹 Khi chọn mốc giờ checkout
   const handleCheckoutTimeChange = (e) => {
     const newTime = e.target.value;
     setSelectedTime(newTime);
@@ -250,7 +238,6 @@ const CheckInPage = () => {
     const newCheckOutDate = formatDateTimeLocal(dateOnly);
     setForm(prev => ({ ...prev, checkOutDate: newCheckOutDate }));
 
-    // Validate checkOutDate
     if (touched.checkOutDate) {
       const error = validateField("checkOutDate", newCheckOutDate);
       setErrors(prev => ({
@@ -260,7 +247,6 @@ const CheckInPage = () => {
     }
   };
 
-  // 🆕 RESET FORM
   const resetForm = () => {
     setForm({
       guestName: "",
@@ -280,25 +266,23 @@ const CheckInPage = () => {
     setAssignedRoom(null);
   };
 
-  // 🔹 Xử lý Check-in
   const handleCheckIn = async () => {
-    // Mark all fields as touched để hiển thị tất cả errors
+
     const allTouched = {};
     Object.keys(form).forEach(key => {
       allTouched[key] = true;
     });
     setTouched(allTouched);
 
-    // Validate form
     if (!validateForm()) {
       alert("❌ Vui lòng kiểm tra lại thông tin trong form!");
       return;
     }
 
     try {
-      // 🎯 LẤY RECEPTION ID
+
       const receptionId = receptionInfo.id;
-      
+
       if (!receptionId) {
         alert("❌ Không tìm thấy thông tin receptionist. Vui lòng đăng nhập lại.");
         return;
@@ -312,7 +296,7 @@ const CheckInPage = () => {
         email: "",
         documentNumber: "000000",
       };
-      
+
       console.log("📤 Payload gửi lên backend:", payload);
       const res = await api.post("/checkIn/assign", payload);
       console.log("✅ Response từ backend:", res);
@@ -327,13 +311,12 @@ const CheckInPage = () => {
         `✅ Đã nhận phòng ${res.number} (${res.type}) cho khách ${form.guestName}`
       );
 
-      // Reset form sau khi check-in thành công
       resetForm();
-      fetchTodayCheckIns(); // Refresh list
-      
+      fetchTodayCheckIns(); 
+
     } catch (err) {
       console.error("❌ Lỗi check-in:", err);
-      
+
       const errorMessage = err.response?.data?.error || 
                           err.response?.data?.message || 
                           err.message || 
@@ -342,12 +325,10 @@ const CheckInPage = () => {
     }
   };
 
-  // 🆕 Helper để hiển thị error
   const getFieldError = (fieldName) => {
     return touched[fieldName] && errors[fieldName] ? errors[fieldName] : "";
   };
 
-  // 🆕 Check if form is valid
   const isFormValid = () => {
     return form.guestName && 
            form.roomType && 
@@ -358,7 +339,6 @@ const CheckInPage = () => {
 
   return (
     <Container className="mt-4">
-      {/* 🎯 THÊM: Hiển thị thông tin receptionist */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3>Reception - Guest Check-in</h3>
         <div className="text-end">
@@ -369,8 +349,6 @@ const CheckInPage = () => {
           </small>
         </div>
       </div>
-
-      {/* ==================== FORM CHECK-IN ==================== */}
       <Card className="p-4 shadow-sm mb-5">
         <Row>
           <Col md={6}>
@@ -415,7 +393,6 @@ const CheckInPage = () => {
                   const newCheckOutDate = formatDateTimeLocal(date);
                   setForm(prev => ({ ...prev, checkOutDate: newCheckOutDate }));
 
-                  // Validate
                   if (touched.checkOutDate) {
                     const error = validateField("checkOutDate", newCheckOutDate);
                     setErrors(prev => ({
@@ -502,8 +479,6 @@ const CheckInPage = () => {
                 {getFieldError("phone")}
               </Form.Control.Feedback>
             </Form.Group>
-
-            {/* 🎯 DOCUMENT NUMBER: ẨN HOÀN TOÀN - LUÔN GỬI 000000 */}
             <input 
               type="hidden" 
               name="documentNumber" 
@@ -571,8 +546,6 @@ const CheckInPage = () => {
                 {getFieldError("roomType")}
               </Form.Control.Feedback>
             </Form.Group>
-
-            {/* 🎯 THÊM: Hiển thị reception info khi check-in */}
             <div className="mb-3 p-2 border rounded bg-light">
               <small>
                 <strong>Receptionist:</strong> {receptionInfo.name} 
@@ -610,8 +583,6 @@ const CheckInPage = () => {
           </Col>
         </Row>
       </Card>
-
-      {/* ==================== DANH SÁCH CHECK-IN HÔM NAY ==================== */}
       <Card className="p-4 shadow-sm">
         <h3 className="mb-4 text-primary">🛎️ Guests Checked In Today</h3>
 

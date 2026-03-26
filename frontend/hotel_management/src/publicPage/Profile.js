@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Row, Col, Badge, Modal, Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/apiConfig'; // Giả định đường dẫn này là đúng
+import api from '../api/apiConfig'; 
 import { FaUserCircle, FaEnvelope, FaIdBadge, FaUser, FaPhoneAlt, FaLock, FaEdit } from 'react-icons/fa'; 
-import Breadcrumbs from '../components/Breadcrumbs'; 
+
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -14,26 +14,22 @@ const Profile = () => {
         role: 'GUEST',
         isLoggedIn: false
     });
-    
-    // State quản lý Modal
-    const [showProfileModal, setShowProfileModal] = useState(false); // Modal cho Tên và SĐT
-    const [showPasswordModal, setShowPasswordModal] = useState(false); // Modal cho Mật khẩu
-    
-    // State cho form chỉnh sửa Profile (Name, Phone)
+
+    const [showProfileModal, setShowProfileModal] = useState(false); 
+    const [showPasswordModal, setShowPasswordModal] = useState(false); 
+
     const [editProfileForm, setEditProfileForm] = useState({ fullName: '', phone: '' });
-    // State cho form đổi Mật khẩu
+
     const [newPassword, setNewPassword] = useState({ current: '', new: '', confirm: '' });
 
-    // --- Data Fetching ---
     useEffect(() => {
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('userRole');
-        
-        // Lấy thông tin từ localStorage
+
         const storedFullName = localStorage.getItem('fullName') || 'Guest User';
         const storedEmail = localStorage.getItem('email') || 'N/A';
         const storedPhone = localStorage.getItem('phone') || 'Chưa cập nhật'; 
-        
+
         setUserInfo({
             fullName: storedFullName,
             email: storedEmail,
@@ -42,21 +38,16 @@ const Profile = () => {
             isLoggedIn: !!token
         });
 
-        // Bắt buộc đăng nhập
         if (!token) {
             navigate('/login'); 
         }
     }, [navigate]);
 
-    // Hàm định dạng vai trò
     const formatRole = (role) => {
         if (!role) return 'Customer';
         return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
     };
-    
-    // --- HANDLERS ---
 
-    // Mở Modal chỉnh sửa Profile và gán giá trị hiện tại
     const handleShowProfileModal = () => {
         setEditProfileForm({ 
             fullName: userInfo.fullName, 
@@ -64,14 +55,13 @@ const Profile = () => {
         });
         setShowProfileModal(true);
     };
-    
-    // ⭐ ĐÃ SỬA LỖI READING 'phone'
+
     const handleProfileUpdate = async (e) => { 
         e.preventDefault();
-        
+
         const { fullName, phone } = editProfileForm;
         const email = userInfo.email;
-        
+
         if (!fullName.trim()) {
             alert("Tên không được để trống.");
             return;
@@ -83,7 +73,7 @@ const Profile = () => {
              alert("Số điện thoại không hợp lệ (phải là 10-15 chữ số).");
              return;
         }
-        
+
         try {
             const requestBody = { 
                 email: email,             
@@ -92,36 +82,31 @@ const Profile = () => {
             };
 
             const response = await api.put('/auth/user/profile', requestBody); 
-            
-            // ⭐ LOGIC FIX LỖI: Kiểm tra response.data có tồn tại không.
-            // Nếu có, dùng dữ liệu trả về từ server. Nếu không (lỗi backend không trả body), 
-            // dùng dữ liệu đã gửi đi (requestBody).
+
             const updatedProfileData = response.data && response.data.email ? response.data : requestBody;
-            
+
             const newPhone = updatedProfileData.phone || ''; 
             const newFullName = updatedProfileData.fullName || '';
 
-            // Cập nhật localStorage chỉ khi API call thành công
             localStorage.setItem('fullName', newFullName);
             localStorage.setItem('phone', newPhone);
-            
+
             setUserInfo(prev => ({ 
                 ...prev, 
                 fullName: newFullName,
                 phone: newPhone || 'Chưa cập nhật'
             }));
-            
+
             setShowProfileModal(false);
             alert("Cập nhật thông tin thành công!");
         } catch (error) {
-             // Xử lý lỗi API chi tiết hơn
+
              const apiError = error.response?.data?.message || error.message; 
              const errorMessage = apiError || "Đã xảy ra lỗi khi cập nhật profile.";
              alert(`Lỗi cập nhật profile: ${errorMessage}`);
         }
     };
 
-    // Xử lý Đổi Mật khẩu (API Call)
     const handlePasswordChange = async (e) => { 
         e.preventDefault();
         const { current, new: newPass, confirm } = newPassword;
@@ -139,7 +124,7 @@ const Profile = () => {
             alert("Mật khẩu mới phải khác mật khẩu hiện tại.");
             return;
         }
-        
+
         try {
             await api.post('/auth/change-password', { 
                 email: email, 
@@ -149,10 +134,10 @@ const Profile = () => {
 
             setShowPasswordModal(false);
             alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
-            
+
             localStorage.removeItem('token');
             localStorage.removeItem('userRole'); 
-            
+
             navigate('/login'); 
 
         } catch (error) {
@@ -160,15 +145,12 @@ const Profile = () => {
             const errorMessage = apiError || "Đã xảy ra lỗi khi đổi mật khẩu.";
             alert(`Lỗi: ${errorMessage}`);
         }
-        
+
         setNewPassword({ current: '', new: '', confirm: '' });
     };
 
-    // --- RENDER ---
-    
     return (
         <>
-            <Breadcrumbs title="User Profile" page="Profile" />
             <Container style={{ paddingTop: '50px', paddingBottom: '100px' }}>
                 <Row className="justify-content-center">
                     <Col lg={8} md={10}>
@@ -176,7 +158,7 @@ const Profile = () => {
                             <Card.Header 
                                 className="text-center text-white" 
                                 style={{ 
-                                    backgroundColor: 'var(--main-color)', // Giả định CSS Variable
+                                    backgroundColor: 'var(--main-color)', 
                                     padding: '20px', 
                                     fontSize: '1.5rem', 
                                     fontWeight: '600'
@@ -186,7 +168,6 @@ const Profile = () => {
                                 Thông tin tài khoản
                             </Card.Header>
                             <Card.Body>
-                                {/* Họ và Tên */}
                                 <Row className="py-3 border-bottom align-items-center">
                                     <Col xs={4} className="text-muted fw-bold">
                                         <FaIdBadge style={{ marginRight: '10px', color: '#FFBF58' }} />
@@ -196,8 +177,6 @@ const Profile = () => {
                                         {userInfo.fullName}
                                     </Col>
                                 </Row>
-
-                                {/* Email */}
                                 <Row className="py-3 border-bottom align-items-center">
                                     <Col xs={4} className="text-muted fw-bold">
                                         <FaEnvelope style={{ marginRight: '10px', color: '#FFBF58' }} />
@@ -207,8 +186,6 @@ const Profile = () => {
                                         {userInfo.email}
                                     </Col>
                                 </Row>
-                                
-                                {/* SỐ ĐIỆN THOẠ */}
                                 <Row className="py-3 border-bottom align-items-center">
                                     <Col xs={4} className="text-muted fw-bold">
                                         <FaPhoneAlt style={{ marginRight: '10px', color: '#FFBF58' }} />
@@ -218,8 +195,6 @@ const Profile = () => {
                                         {userInfo.phone}
                                     </Col>
                                 </Row>
-
-                                {/* Vai trò */}
                                 <Row className="py-3 align-items-center">
                                     <Col xs={4} className="text-muted fw-bold">
                                         <FaUser style={{ marginRight: '10px', color: '#FFBF58' }} />
@@ -231,8 +206,6 @@ const Profile = () => {
                                         </Badge>
                                     </Col>
                                 </Row>
-                                
-                                {/* ACTION BUTTONS */}
                                 <div className="d-grid gap-2 mt-4">
                                     <Button variant="primary" onClick={handleShowProfileModal}>
                                         <FaEdit style={{ marginRight: '8px' }} /> Chỉnh sửa thông tin
@@ -246,8 +219,6 @@ const Profile = () => {
                     </Col>
                 </Row>
             </Container>
-            
-            {/* Modal Chỉnh sửa Profile (Tên + SĐT) */}
             <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Chỉnh sửa thông tin cá nhân</Modal.Title>
@@ -279,8 +250,6 @@ const Profile = () => {
                     </Form>
                 </Modal.Body>
             </Modal>
-            
-            {/* Modal Đổi Mật Khẩu */}
             <Modal show={showPasswordModal} onHide={() => setShowPasswordModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title><FaLock style={{ marginBottom: '3px', marginRight: '5px' }} /> Đổi Mật Khẩu</Modal.Title>

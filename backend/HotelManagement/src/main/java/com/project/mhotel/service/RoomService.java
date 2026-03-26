@@ -1,7 +1,7 @@
 package com.project.mhotel.service;
 
 import com.project.mhotel.dto.RoomRequest;
-import com.project.mhotel.dto.RoomResponse; // CẬP NHẬT
+import com.project.mhotel.dto.RoomResponse; 
 import com.project.mhotel.entity.Hotel;
 import com.project.mhotel.entity.Room;
 import com.project.mhotel.entity.Room.Status;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors; // CẬP NHẬT
+import java.util.stream.Collectors; 
 
 @Service
 public class RoomService {
@@ -28,40 +28,34 @@ public class RoomService {
         this.hotelRepository = hotelRepository;
     }
 
-    // FIX: Trả về List<RoomResponse>
     public List<RoomResponse> getAllRooms() {
         return roomRepository.findAll().stream()
-                .map(RoomResponse::fromEntity) // Dùng mapper để trả về DTO
+                .map(RoomResponse::fromEntity) 
                 .collect(Collectors.toList());
     }
 
-    // FIX: Trả về Optional<RoomResponse>
     public Optional<RoomResponse> getRoomById(Long id) {
         return roomRepository.findById(id)
                 .map(RoomResponse::fromEntity);
     }
 
-    // FIX: Trả về List<RoomResponse>
     public List<RoomResponse> getRoomsByHotel(Long hotelId) {
         return roomRepository.findByHotel_Id(hotelId).stream()
                 .map(RoomResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    // FIX: Trả về List<RoomResponse>
     public List<RoomResponse> getRoomsByStatus(Status status) {
         return roomRepository.findByStatus(status).stream()
                 .map(RoomResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    // FIX: Trả về Optional<RoomResponse>
     public Optional<RoomResponse> getRoomByHotelAndNumber(Long hotelId, String roomNumber) {
         return Optional.ofNullable(roomRepository.findByHotel_IdAndRoomNumber(hotelId, roomNumber))
                 .map(RoomResponse::fromEntity);
     }
 
-    // PHƯƠNG THỨC MỚI: Xử lý tạo Room từ DTO, trả về RoomResponse
     public RoomResponse createRoomFromRequest(RoomRequest roomRequest) {
         if (roomRequest.getRoomTypeId() == null) {
             throw new RuntimeException("RoomType ID is required for creating a room.");
@@ -86,11 +80,9 @@ public class RoomService {
 
         Room savedRoom = roomRepository.save(newRoom);
 
-        // FIX: Trả về DTO
         return RoomResponse.fromEntity(savedRoom);
     }
 
-    // PHƯƠNG THỨC MỚI: Xử lý cập nhật Room từ DTO, trả về RoomResponse
     public RoomResponse updateRoomFromRequest(Long id, RoomRequest roomRequest) {
         Room existingRoom = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Room not found with ID: " + id));
@@ -117,11 +109,9 @@ public class RoomService {
 
         Room updatedRoom = roomRepository.save(existingRoom);
 
-        // FIX: Trả về DTO
         return RoomResponse.fromEntity(updatedRoom);
     }
 
-    // Giữ phương thức deleteRoom
     public void deleteRoom(Long id) {
         if (!roomRepository.existsById(id)) {
             throw new RuntimeException("Room not found with ID: " + id);

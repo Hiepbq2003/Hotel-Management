@@ -51,7 +51,7 @@ public class EmailUtil {
             });
 
             Message message = new MimeMessage(session);
-            // Đảm bảo mã hóa UTF-8 cho tên người gửi
+
             message.setFrom(new InternetAddress(fromEmail, FROM_NAME, "UTF-8"));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject(subject);

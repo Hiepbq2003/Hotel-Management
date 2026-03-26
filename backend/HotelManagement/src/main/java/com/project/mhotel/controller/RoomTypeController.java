@@ -2,7 +2,7 @@ package com.project.mhotel.controller;
 
 import com.project.mhotel.dto.RoomTypeRequest;
 import com.project.mhotel.dto.RoomTypeResponse;
-import com.project.mhotel.dto.RoomTypeAmenityUpdateRequest; // Import DTO mới cho Amenity
+import com.project.mhotel.dto.RoomTypeAmenityUpdateRequest; 
 import com.project.mhotel.service.RoomTypeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

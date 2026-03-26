@@ -17,13 +17,11 @@ public class Invoice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Quan hệ với Reservation (nullable)
     @ManyToOne
     @JoinColumn(name = "reservation_id",
             foreignKey = @ForeignKey(name = "fk_invoice_reservation"))
     private Reservation reservation;
 
-    // Quan hệ với Hotel
     @ManyToOne
     @JoinColumn(name = "hotel_id",
             foreignKey = @ForeignKey(name = "fk_invoice_hotel"))

@@ -52,7 +52,6 @@ const Home = () => {
         },
     ];
 
-    // Danh sách ảnh cho các loại phòng
     const ROOM_IMAGES = [
         "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=500&h=350&fit=crop",
         "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=500&h=350&fit=crop",
@@ -65,10 +64,11 @@ const Home = () => {
     useEffect(() => {
         const fetchFeaturedRooms = async () => {
             try {
-                const data = await api.get("/room-type/hotel/1");
-                // Lấy 6 phòng đầu tiên để hiển thị
-                const featuredRooms = data.slice(0, 3);
-                setRooms(featuredRooms);
+                const data = await api.get("/room-type");
+
+                const allRooms = Array.isArray(data) ? data : [];
+                const shuffled = [...allRooms].sort(() => Math.random() - 0.5);
+                setRooms(shuffled.slice(0, 5));
                 setError(null);
             } catch (err) {
                 console.error("Error fetching featured rooms:", err);
@@ -81,7 +81,8 @@ const Home = () => {
         fetchFeaturedRooms();
     }, []);
 
-    const getRoomImage = (index) => {
+    const getRoomImage = (room, index) => {
+        if (room.image && (room.image.startsWith('http') || room.image.startsWith('/'))) return room.image;
         return ROOM_IMAGES[index % ROOM_IMAGES.length];
     };
 
@@ -95,11 +96,8 @@ const Home = () => {
     return (
         <>
             <HeroSection />
-            
-            {/* About us - Updated content for Mr.STELLAR */}
             <Container style={{ marginTop: "120px", marginBottom: "140px", paddingRight: "50px", paddingLeft: "100px" }}>
                 <Row className="align-items-center">
-                    {/* Left side: Text */}
                     <Col lg={6} md={12} style={{ paddingRight: "20px" }}>
                         <p
                             style={{
@@ -140,32 +138,27 @@ const Home = () => {
                             EXPLORE ROOMS
                         </p>
                     </Col>
-
-                    {/* Right side: Images */}
                     <Col
                         lg={6}
                         md={12}
                         style={{
                             display: "flex",
-                            flexDirection: "row", 
-                            alignItems: "center", 
-                            gap: "35px", 
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: "35px",
                         }}
                     >
-                        {/* Image 1 */}
                         <img
                             src="https://images.squarespace-cdn.com/content/v1/6484fbeb3187284c2d37c26d/1119053e-90c0-42b7-897d-d0d63b172689/PRJ-center11-cafe.jpg"
                             alt="Hotel exterior 1"
                             style={{
-                                width: "50%", 
+                                width: "50%",
                                 borderRadius: "12px",
                                 boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
                                 objectFit: "cover",
-                                height: "420px", 
+                                height: "420px",
                             }}
                         />
-
-                        {/* Image 2 */}
                         <img
                             src="https://a0.muscache.com/im/pictures/miso/Hosting-574118191615566465/original/c678f3b2-0d23-4055-8853-72a8725e177b.jpeg?im_w=720"
                             alt="Hotel exterior 2"
@@ -181,8 +174,6 @@ const Home = () => {
                 </Row>
             </Container>
             <hr style={{ marginBottom: "100px" }}></hr>
-
-            {/* Featured Rooms Section */}
             <Container style={{ marginBottom: "100px" }}>
                 <div style={{ textAlign: "center", marginBottom: "50px" }}>
                     <p
@@ -235,7 +226,7 @@ const Home = () => {
                                 >
                                     <Card.Img
                                         variant="top"
-                                        src={getRoomImage(index)}
+                                        src={getRoomImage(room, index)}
                                         alt={room.name}
                                         style={{
                                             height: "250px",
@@ -253,7 +244,7 @@ const Home = () => {
                                                 <span style={{ fontSize: "14px", color: "#666" }}>/night</span>
                                             </h5>
                                         </div>
-                                        
+
                                         <p
                                             style={{
                                                 color: "#6c757d",
@@ -299,13 +290,10 @@ const Home = () => {
             </Container>
 
             <ServiceSection />
-            <TestimonialsSection/>
-            
-            {/* Blog Section */}
+            <TestimonialsSection />
             <Row className="justify-content-center">
                 <Col lg={9}>
                     <Container style={{ marginTop: "80px", marginBottom: "100px", textAlign: "center" }}>
-                        {/* Heading */}
                         <p
                             style={{
                                 textTransform: "uppercase",
@@ -318,8 +306,6 @@ const Home = () => {
                             Hotel News
                         </p>
                         <h1 style={{ fontWeight: "700", marginBottom: "50px" }}>Our Blog & Event</h1>
-
-                        {/* Blog Grid */}
                         <Row className="justify-content-center g-4">
                             {blogs.map((blog, i) => (
                                 <Col key={i} lg={4} md={6}>
@@ -332,7 +318,6 @@ const Home = () => {
                                             cursor: "pointer",
                                         }}
                                     >
-                                        {/* Image */}
                                         <Card.Img
                                             src={blog.image}
                                             alt={blog.title}
@@ -342,7 +327,6 @@ const Home = () => {
                                                 transition: "transform 0.4s ease",
                                             }}
                                         />
-                                        {/* Overlay content */}
                                         <div
                                             style={{
                                                 position: "absolute",

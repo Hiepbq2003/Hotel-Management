@@ -1,13 +1,11 @@
 package com.project.mhotel.dto;
 
-// DTO này được dùng để nhúng (embed) trong RoomResponse
 public class RoomTypeDto {
 
     private Long id;
     private String name;
     private String code;
 
-    // Constructors, Getters, Setters
     public RoomTypeDto() {}
 
     public RoomTypeDto(Long id, String name, String code) {

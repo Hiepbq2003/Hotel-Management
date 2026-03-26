@@ -7,19 +7,19 @@ const TestimonialsSection = () => {
     const testimonials = [
         {
             name: "Eleanor Vance",
-            image: "https://picsum.photos/seed/person1/100", // Placeholder profile image 1
+            image: "https://picsum.photos/seed/person1/100", 
             quote:
                 "The level of service at Mr.STELLAR exceeded all expectations. From the immaculate, modern rooms to the personalized dining experiences, every detail contributed to a truly luxurious and memorable escape. Highly recommended for travelers seeking exclusivity and comfort.",
         },
         {
             name: "Marcus Chen",
-            image: "https://picsum.photos/seed/person2/100", // Placeholder profile image 2
+            image: "https://picsum.photos/seed/person2/100", 
             quote:
                 "A truly stellar experience! The location was perfect, the amenities were world-class, and the staff treated us like royalty. This is the definition of five-star hospitality. We felt completely refreshed and will definitely be returning next year.",
         },
         {
             name: "Olivia Harrison",
-            image: "https://picsum.photos/seed/person3/100", // Placeholder profile image 3
+            image: "https://picsum.photos/seed/person3/100", 
             quote:
                 "We loved every minute of our stay. The tranquil atmosphere and the stunning views provided the perfect getaway. The concierge service was outstanding, arranging everything we needed swiftly and professionally.",
         },
@@ -33,7 +33,7 @@ const TestimonialsSection = () => {
                 padding: "100px 0",
                 textAlign: "center",
                 position: "relative",
-                height: "650px", // Increased height slightly to accommodate new image/text layout
+                height: "650px", 
             }}
         >
             <Container style={{ maxWidth: "900px" }}>
@@ -105,7 +105,6 @@ const TestimonialsSection = () => {
                         position: "relative",
                     }}
                 >
-                    {/* CSS to position controls far outside the container */}
                     <style>
                         {`
                         .carousel-control-prev {
@@ -125,12 +124,11 @@ const TestimonialsSection = () => {
                                     color: "#555",
                                     lineHeight: "1.9",
                                     marginBottom: "30px",
-                                    fontStyle: "italic", // Adding italic for better quote look
+                                    fontStyle: "italic", 
                                 }}
                             >
                                 "{t.quote}"
                             </p>
-                            {/* Profile Picture */}
                             <img
                                 src={t.image}
                                 alt={t.name}

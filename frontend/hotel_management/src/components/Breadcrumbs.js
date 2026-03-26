@@ -12,7 +12,7 @@ const Breadcrumbs = () => {
         }
         return segment;
     });
-    
+
     if (pathnames.length === 0) return null;
 
     return (
@@ -21,7 +21,7 @@ const Breadcrumbs = () => {
             style={{ 
                 '--bs-breadcrumb-divider': "'>'",
                 fontSize: '0.95rem',
-      
+
                 background: 'linear-gradient(90deg, #e1ecf7ff 0%, #7171c7ff 100%)', 
                 border: '1px solid #dcdcdc',
                 borderRadius: '8px',

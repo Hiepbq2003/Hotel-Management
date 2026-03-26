@@ -1,20 +1,18 @@
 import React, { useEffect, useState, useMemo } from "react";
-// Thêm Pagination cho chức năng phân trang
+
 import { Table, Button, Modal, Form, Spinner, Alert, Pagination } from "react-bootstrap"; 
 import { ToastContainer, toast } from 'react-toastify'; 
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../api/apiConfig"; 
 
-// Cấu hình cố định cho Khách sạn đơn lẻ (ID=1)
 const DEFAULT_HOTEL_ID = 1; 
 const ALLOWED_ROLES = ['MANAGER']; 
 
-// Hàm định dạng ngày tháng
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
         const date = new Date(dateString);
-        // Định dạng dd/MM/yyyy HH:mm
+
         return date.toLocaleDateString('vi-VN', { 
             year: 'numeric', 
             month: '2-digit', 
@@ -29,24 +27,21 @@ const formatDate = (dateString) => {
 };
 
 const HotelAmenityManagement = () => {
-    
+
     const currentUserRole = localStorage.getItem('userRole');
     const canManageAmenities = ALLOWED_ROLES.includes(currentUserRole);
 
-    // State gốc chứa toàn bộ dữ liệu từ API
     const [allAmenities, setAllAmenities] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    
-    // State cho Search và Pagination
+
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [amenitiesPerPage] = useState(10); // 10 tiện ích trên mỗi trang
-    
-    // State cho Tiện ích (Đã cập nhật: BỎ iconUrl, isActive)
+    const [amenitiesPerPage] = useState(10); 
+
     const [currentAmenity, setCurrentAmenity] = useState({
         id: null,
         hotelId: DEFAULT_HOTEL_ID, 
@@ -54,17 +49,16 @@ const HotelAmenityManagement = () => {
         description: "",
     });
 
-    // Hàm tải danh sách Tiện ích
     const fetchAmenities = async () => {
         if (!canManageAmenities || (error && error.includes('không có quyền truy cập'))) {
             setLoading(false);
             return;
         }
-        
+
         setLoading(true);
         setError(null);
         try {
-            // Endpoint đã cấu hình ở BE: /api/hotel-amenities?hotelId=1
+
             const response = await api.get(`/hotel-amenities?hotelId=${DEFAULT_HOTEL_ID}`);
             const data = response; 
             setAllAmenities(Array.isArray(data) ? data : []);
@@ -86,36 +80,30 @@ const HotelAmenityManagement = () => {
         fetchAmenities();
     }, [currentUserRole]); 
 
-    // Logic cho Tìm kiếm và Phân trang (sử dụng useMemo để tối ưu)
     const filteredAmenities = useMemo(() => {
-        // 1. Lọc/Tìm kiếm
+
         const filtered = allAmenities.filter(amenity =>
             amenity.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (amenity.description && amenity.description.toLowerCase().includes(searchTerm.toLowerCase()))
         );
-        
-        // Luôn reset trang về 1 khi filter/search thay đổi
+
         if (currentPage !== 1) setCurrentPage(1); 
-        
+
         return filtered;
     }, [allAmenities, searchTerm]);
 
-
-    // 2. Logic cho Phân trang
     const indexOfLastAmenity = currentPage * amenitiesPerPage;
     const indexOfFirstAmenity = indexOfLastAmenity - amenitiesPerPage;
     const currentAmenities = filteredAmenities.slice(indexOfFirstAmenity, indexOfLastAmenity);
 
     const totalPages = Math.ceil(filteredAmenities.length / amenitiesPerPage);
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-    
-    // Xử lý thay đổi Search Term
+
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
-        // Việc reset page đã được xử lý trong useMemo
+
     };
 
-    // Mở Modal
     const openModal = (amenity = null) => {
         if (amenity) {
             setIsEditing(true);
@@ -135,30 +123,25 @@ const HotelAmenityManagement = () => {
         setShowModal(true);
     };
 
-    // Đóng Modal
     const closeModal = () => {
         setShowModal(false);
         setError(null); 
     };
 
-    // Xử lý thay đổi Input
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setCurrentAmenity({ ...currentAmenity, [name]: value });
     };
 
-
-    // Xử lý Gửi form (Thêm mới/Cập nhật)
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        
+
         if (!canManageAmenities) {
             toast.error("Bạn không có quyền thực hiện thao tác này.");
             return;
         }
-        
-        // Validation cơ bản
+
         if (!currentAmenity.name) {
             setError("Tên tiện ích là bắt buộc!");
             toast.error("Vui lòng nhập đủ thông tin bắt buộc.");
@@ -166,13 +149,13 @@ const HotelAmenityManagement = () => {
         }
 
         try {
-            // DTO gửi lên Backend (Đã cập nhật: BỎ iconUrl, isActive)
+
             const dataToSend = {
                 hotelId: currentAmenity.hotelId, 
                 name: currentAmenity.name,
                 description: currentAmenity.description,
             };
-            
+
             if (isEditing) {
                 await api.put(`/hotel-amenities/${currentAmenity.id}`, dataToSend);
                 toast.success(`✅ Cập nhật tiện ích "${dataToSend.name}" thành công!`);
@@ -185,19 +168,18 @@ const HotelAmenityManagement = () => {
         } catch (err) {
             console.error("Chi tiết lỗi API:", err); 
             let errorMessage = "Lỗi không xác định. Vui lòng kiểm tra Server.";
-            
+
             if (err.response?.data?.message) {
                 errorMessage = err.response.data.message; 
             } else if (err.message) {
                 errorMessage = err.message;
             }
-            
+
             toast.error(`❌ Lỗi khi lưu: ${errorMessage}`);
             setError(`Lỗi khi lưu: ${errorMessage}`);
         }
     };
 
-    // Xử lý Xóa tiện ích
     const handleDelete = async (id, name) => {
         if (!canManageAmenities) {
             toast.error("Bạn không có quyền thực hiện thao tác này.");
@@ -205,7 +187,7 @@ const HotelAmenityManagement = () => {
         }
 
         if (!window.confirm(`Bạn có chắc muốn xóa tiện ích "${name}" này? Thao tác này không thể hoàn tác.`)) return;
-        
+
         try {
             await api.delete(`/hotel-amenities/${id}`);
             toast.info(`🗑️ Đã xóa tiện ích "${name}" thành công!`);
@@ -215,8 +197,7 @@ const HotelAmenityManagement = () => {
             toast.error(`❌ Lỗi khi xóa: ${errorMessage}`);
         }
     };
-    
-    // --- RENDER ---
+
     if (!canManageAmenities) {
         return <p className="text-danger text-center mt-5 p-4 bg-light rounded shadow-sm" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
             Lỗi: Bạn không có quyền truy cập trang Quản lý Tiện ích. Yêu cầu vai trò **MANAGER**.
@@ -241,8 +222,6 @@ const HotelAmenityManagement = () => {
             </h3>
 
             {error && !showModal && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
-
-            {/* START: Nút Thêm mới và Ô Tìm kiếm */}
             <div className="d-flex justify-content-between align-items-center mb-3"> 
                 {canManageAmenities && (
                     <Button variant="success" 
@@ -253,7 +232,7 @@ const HotelAmenityManagement = () => {
                         ➕ THÊM TIỆN ÍCH MỚI
                     </Button>
                 )}
-                
+
                 <Form className="d-flex w-50"> 
                     <Form.Control
                         type="search"
@@ -265,10 +244,6 @@ const HotelAmenityManagement = () => {
                     />
                 </Form>
             </div>
-            {/* END: Nút Thêm mới và Ô Tìm kiếm */}
-
-
-            {/* Bảng dữ liệu */}
             <div className="shadow-2xl rounded-xl table-responsive bg-white p-3 border border-gray-200">
                 <Table striped bordered hover className="m-0 align-middle caption-top"> 
                     <caption className="text-primary fw-bold mb-2">
@@ -329,8 +304,6 @@ const HotelAmenityManagement = () => {
                     </tbody>
                 </Table>
             </div>
-
-            {/* START: Pagination Component */}
             {filteredAmenities.length > amenitiesPerPage && (
                 <div className="d-flex justify-content-center mt-3">
                     <Pagination>
@@ -352,9 +325,6 @@ const HotelAmenityManagement = () => {
                     </Pagination>
                 </div>
             )}
-            {/* END: Pagination Component */}
-
-            {/* Modal Thêm/Sửa Tiện ích */}
             <Modal show={showModal} onHide={closeModal} centered>
                 <Modal.Header closeButton className={isEditing ? "bg-warning text-dark" : "bg-primary text-white"}>
                     <Modal.Title>{isEditing ? "Chỉnh Sửa Tiện ích" : "Thêm Tiện ích mới"}</Modal.Title>
@@ -373,7 +343,7 @@ const HotelAmenityManagement = () => {
                                 required
                             />
                         </Form.Group>
-                        
+
                         <Form.Group className="mb-3">
                             <Form.Label className="fw-bold">Mô tả</Form.Label>
                             <Form.Control
@@ -384,7 +354,7 @@ const HotelAmenityManagement = () => {
                                 onChange={handleInputChange}
                             />
                         </Form.Group>
-                        
+
                     </Modal.Body>
 
                     <Modal.Footer>
